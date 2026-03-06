@@ -7,10 +7,26 @@ DEVDIR="${DEVDIR:-$(cd "$(dirname "$0")/.." && pwd)}"
 SNAP_DIR="$DEVDIR/itksnap"
 BUILD_DIR="$DEVDIR/build-leaks"
 
-# --- Adjust these paths to your local ITK/VTK installs ---
-ITK_DIR="${ITK_DIR:-/path/to/itk/build}"
-VTK_DIR="${VTK_DIR:-/path/to/vtk/lib/cmake/vtk-9.3}"
-# ----------------------------------------------------------
+# Source local config for default paths (may define ITK_DIR, VTK_DIR, QT_PREFIX)
+CONFIG="$DEVDIR/config.local.sh"
+if [ -f "$CONFIG" ]; then
+  # shellcheck source=../config.local.sh
+  source "$CONFIG"
+fi
+
+ITK_DIR="${ITK_DIR:-}"
+VTK_DIR="${VTK_DIR:-}"
+
+errors=0
+if [ -z "$ITK_DIR" ]; then
+  echo "ERROR: ITK_DIR not set. Define it in config.local.sh or set it in the environment." >&2
+  errors=$((errors + 1))
+fi
+if [ -z "$VTK_DIR" ]; then
+  echo "ERROR: VTK_DIR not set. Define it in config.local.sh or set it in the environment." >&2
+  errors=$((errors + 1))
+fi
+[ $errors -gt 0 ] && exit 1
 
 if [ ! -d "$SNAP_DIR/.git" ]; then
   echo "ERROR: itksnap not found at $SNAP_DIR. Run scripts/setup.sh first." >&2

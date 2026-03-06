@@ -3,11 +3,17 @@ itksnap/
 
 # Build directories
 build/
+build-debug/
 build-leaks/
 build-release/
+
+# Dependency sources, builds, and installs (scripts/build-deps.sh)
+lib/
+*/aqtinstall.log
 
 # macOS
 .DS_Store
 
 # Leak test logs (large, generated)
 memory_leak_profiling/asan_logs/
+config.local.sh
