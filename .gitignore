@@ -14,6 +14,7 @@ build-greedy/
 # Dependency sources, builds, and installs (scripts/build-deps.sh)
 lib/
 */aqtinstall.log
+aqtinstall.log
 
 # macOS
 .DS_Store

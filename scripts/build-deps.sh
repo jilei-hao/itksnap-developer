@@ -65,8 +65,34 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-JOBS=$(sysctl -n hw.logicalcpu)
+if [[ "$(uname)" == "Darwin" ]]; then
+  JOBS=$(sysctl -n hw.logicalcpu)
+else
+  JOBS=$(nproc)
+fi
 ARCH=$(uname -m)   # arm64 or x86_64
+
+# Portable in-place sed (BSD/macOS requires an explicit backup suffix argument)
+sed_inplace() {
+  if [[ "$(uname)" == "Darwin" ]]; then
+    sed -i '' "$@"
+  else
+    sed -i "$@"
+  fi
+}
+
+# On Linux, ensure required dev packages are present before attempting to build
+if [[ "$(uname)" != "Darwin" ]] && command -v apt-get &>/dev/null; then
+  MISSING_PKGS=()
+  for pkg in libfreetype-dev zlib1g-dev libpng-dev libtiff-dev liblz4-dev liblzma-dev; do
+    dpkg -s "$pkg" &>/dev/null || MISSING_PKGS+=("$pkg")
+  done
+  if [ "${#MISSING_PKGS[@]}" -gt 0 ]; then
+    echo "ERROR: Missing required system packages: ${MISSING_PKGS[*]}" >&2
+    echo "       Run: sudo apt-get install -y ${MISSING_PKGS[*]}" >&2
+    exit 1
+  fi
+fi
 
 mkdir -p "$LIB_DIR"
 
@@ -78,15 +104,126 @@ echo "    macOS target:     ${TARGET_OSX_VERSION}"
 echo "    Parallel jobs:    ${JOBS}"
 echo ""
 
+# --- Helper: resolve a Qt kit root from a path that may point to the kit root,
+#     lib/cmake, or lib/cmake/Qt6.  Prints the kit root and returns 0 on success.
+qt_find_root() {
+  local p="$1"
+  [ -d "$p" ] || return 1
+  if   [ -f "$p/lib/cmake/Qt6/Qt6Config.cmake" ]; then echo "$p"; return 0
+  elif [ -f "$p/Qt6/Qt6Config.cmake" ];            then echo "$(cd "$p/../.." && pwd)"; return 0
+  elif [ -f "$p/Qt6Config.cmake" ];                then echo "$(cd "$p/../../.." && pwd)"; return 0
+  fi
+  return 1
+}
+
 # --- Helper: set or update a key=value line in config.local.sh ---
 update_config() {
   local key="$1" val="$2"
+  touch "$CONFIG"
   if grep -q "^${key}=" "$CONFIG"; then
-    sed -i '' "s|^${key}=.*|${key}=${val}|" "$CONFIG"
+    sed_inplace "s|^${key}=.*|${key}=${val}|" "$CONFIG"
   else
+    # Ensure the file ends with a newline before appending
+    if [[ -s "$CONFIG" ]] && [[ "$(tail -c1 "$CONFIG" | wc -l)" -eq 0 ]]; then
+      echo "" >> "$CONFIG"
+    fi
     echo "${key}=${val}" >> "$CONFIG"
   fi
 }
+
+# ============================================================
+# Detect already-installed deps and validate QT_PREFIX
+# Updates config.local.sh with any paths found.
+# ============================================================
+detect_installed() {
+  echo "==> Detecting already-installed dependencies..."
+  local found_any=0
+
+  # ITK — check ITK_DIR from config first, then the default install path
+  local itk_cfg="${ITK_DIR:-}"
+  local itk_default="$ITK_INSTALL/lib/cmake/ITK-${ITK_VERSION}"
+  if [ -n "$itk_cfg" ] && [ -f "$itk_cfg/ITKConfig.cmake" ]; then
+    echo "    ITK: found at $itk_cfg (from config)"
+    update_config "ITK_DIR" "$itk_cfg"
+    found_any=1
+  elif [ -f "$itk_default/ITKConfig.cmake" ]; then
+    echo "    ITK: found at $itk_default (default install)"
+    update_config "ITK_DIR" "$itk_default"
+    found_any=1
+  else
+    echo "    ITK: not detected"
+  fi
+
+  # VTK — same pattern
+  local vtk_cfg="${VTK_DIR:-}"
+  local vtk_default="$VTK_INSTALL/lib/cmake/vtk-${VTK_VERSION}"
+  if [ -n "$vtk_cfg" ] && [ -d "$vtk_cfg" ]; then
+    echo "    VTK: found at $vtk_cfg (from config)"
+    update_config "VTK_DIR" "$vtk_cfg"
+    found_any=1
+  elif [ -d "$vtk_default" ]; then
+    echo "    VTK: found at $vtk_default (default install)"
+    update_config "VTK_DIR" "$vtk_default"
+    found_any=1
+  else
+    echo "    VTK: not detected"
+  fi
+
+  # Qt — try to find a valid kit root from several sources.
+  # Also try resolving the kit root from a qmake binary
+  qt_root_from_qmake() {
+    local qmake_bin="$1"
+    command -v "$qmake_bin" &>/dev/null || return 1
+    local prefix
+    prefix=$("$qmake_bin" -query QT_INSTALL_PREFIX 2>/dev/null) || return 1
+    [ -d "$prefix" ] && echo "$prefix"
+  }
+
+  local qt_valid=0
+  local qt_root=""
+  if [ -n "${QT_PREFIX:-}" ]; then
+    if qt_root=$(qt_find_root "$QT_PREFIX"); then
+      echo "    Qt: QT_PREFIX valid — kit root at $qt_root"
+      qt_valid=1
+    elif [ ! -d "$QT_PREFIX" ]; then
+      echo "    Qt: WARNING — QT_PREFIX='$QT_PREFIX' does not exist"
+    else
+      echo "    Qt: WARNING — QT_PREFIX='$QT_PREFIX' exists but Qt6Config.cmake not found"
+    fi
+  fi
+  if [ "$qt_valid" -eq 0 ]; then
+    # Try qmake6 / qmake on PATH
+    for qmake in qmake6 qmake; do
+      if qt_root=$(qt_root_from_qmake "$qmake"); then
+        echo "    Qt: found via $qmake at $qt_root"
+        qt_valid=1; break
+      fi
+    done
+  fi
+  if [ "$qt_valid" -eq 0 ]; then
+    # Check the aqt-downloaded location
+    local aqt_prefix
+    if [[ "$(uname)" == "Darwin" ]]; then
+      aqt_prefix="$QT_INSTALL/${QT_VERSION}/macos"
+    else
+      aqt_prefix="$QT_INSTALL/${QT_VERSION}/gcc_64"
+    fi
+    if qt_root=$(qt_find_root "$aqt_prefix"); then
+      echo "    Qt: found aqt install at $qt_root"
+      qt_valid=1
+    fi
+  fi
+  if [ "$qt_valid" -eq 1 ]; then
+    update_config "QT_PREFIX" "$qt_root"
+  else
+    echo "    Qt: not detected"
+  fi
+
+  [ "$found_any" -eq 1 ] || true
+  echo ""
+}
+
+detect_installed
 
 # ============================================================
 # Qt  (downloaded first — VTK needs it)
@@ -95,8 +232,17 @@ download_qt() {
   local qt_prefix="$QT_INSTALL/$QT_VERSION/macos"
   local sentinel="$qt_prefix/lib/cmake/Qt6/Qt6Config.cmake"
 
+  # If QT_PREFIX from config already points to a valid Qt installation, skip download
+  local existing_root
+  if [ "$FORCE_QT" -eq 0 ] && existing_root=$(qt_find_root "${QT_PREFIX:-}"); then
+    echo "==> Qt already present via QT_PREFIX — skipping aqt download. (use --force-qt to re-download)"
+    update_config "QT_PREFIX" "$existing_root"
+    return
+  fi
+
   if [ -f "$sentinel" ] && [ "$FORCE_QT" -eq 0 ]; then
     echo "==> Qt ${QT_VERSION} already present — skipping. (use --force-qt to re-download)"
+    update_config "QT_PREFIX" "$qt_prefix"
     return
   fi
 
@@ -132,12 +278,20 @@ download_qt() {
 # so you can point at Homebrew Qt or any other installation to override
 # the aqt-downloaded Qt (which may link against removed frameworks like AGL).
 qt_prefix_for_cmake() {
-  if [ -n "${QT_PREFIX:-}" ] && [ -d "$QT_PREFIX" ]; then
-    echo "$QT_PREFIX"
-    return
+  # QT_PREFIX from config takes priority; re-use the same multi-layout resolver
+  if [ -n "${QT_PREFIX:-}" ]; then
+    local root
+    if root=$(qt_find_root "$QT_PREFIX" 2>/dev/null); then
+      echo "$root"; return
+    fi
   fi
-  local aqt_prefix="$QT_INSTALL/$QT_VERSION/macos"
-  if [ -d "$aqt_prefix/lib/cmake/Qt6" ]; then
+  local aqt_prefix
+  if [[ "$(uname)" == "Darwin" ]]; then
+    aqt_prefix="$QT_INSTALL/$QT_VERSION/macos"
+  else
+    aqt_prefix="$QT_INSTALL/$QT_VERSION/gcc_64"
+  fi
+  if [ -f "$aqt_prefix/lib/cmake/Qt6/Qt6Config.cmake" ]; then
     echo "$aqt_prefix"
   else
     echo ""
@@ -152,6 +306,7 @@ build_itk() {
 
   if [ -f "$sentinel" ] && [ "$FORCE_ITK" -eq 0 ]; then
     echo "==> ITK ${ITK_FULL_VERSION} already installed — skipping. (use --force-itk to rebuild)"
+    update_config "ITK_DIR" "$ITK_INSTALL/lib/cmake/ITK-${ITK_VERSION}"
     return
   fi
 
@@ -194,6 +349,7 @@ build_vtk() {
 
   if [ -d "$sentinel" ] && [ "$FORCE_VTK" -eq 0 ]; then
     echo "==> VTK ${VTK_FULL_VERSION} already installed — skipping. (use --force-vtk to rebuild)"
+    update_config "VTK_DIR" "$VTK_INSTALL/lib/cmake/vtk-${VTK_VERSION}"
     return
   fi
 
@@ -216,7 +372,7 @@ build_vtk() {
   local octree_node="$VTK_SRC/Utilities/octree/octree/octree_node.txx"
   if grep -q "_M_chilren" "$octree_node" 2>/dev/null; then
     echo "==> Patching octree_node.txx typo (_M_chilren -> m_children)..."
-    sed -i '' 's/_M_chilren/m_children/g' "$octree_node"
+    sed_inplace 's/_M_chilren/m_children/g' "$octree_node"
   fi
 
   echo "==> VTK: configuring (Qt prefix: $qt_prefix)..."
@@ -276,13 +432,6 @@ build_vtk() {
 [ "$SKIP_QT"  -eq 0 ] && download_qt
 [ "$SKIP_ITK" -eq 0 ] && build_itk
 [ "$SKIP_VTK" -eq 0 ] && build_vtk
-
-# Update config.local.sh with the paths to the freshly built deps
-echo ""
-echo "==> Updating config.local.sh..."
-[ "$SKIP_ITK" -eq 0 ] && update_config "ITK_DIR" "$ITK_INSTALL/lib/cmake/ITK-${ITK_VERSION}"
-[ "$SKIP_VTK" -eq 0 ] && update_config "VTK_DIR" "$VTK_INSTALL/lib/cmake/vtk-${VTK_VERSION}"
-[ "$SKIP_QT"  -eq 0 ] && update_config "QT_PREFIX" "$QT_INSTALL/${QT_VERSION}/macos"
 
 echo ""
 echo "==> All done."
