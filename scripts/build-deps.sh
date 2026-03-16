@@ -84,7 +84,7 @@ sed_inplace() {
 # On Linux, ensure required dev packages are present before attempting to build
 if [[ "$(uname)" != "Darwin" ]] && command -v apt-get &>/dev/null; then
   MISSING_PKGS=()
-  for pkg in libfreetype-dev zlib1g-dev libpng-dev libtiff-dev liblz4-dev liblzma-dev; do
+  for pkg in libfreetype-dev zlib1g-dev libpng-dev libtiff-dev liblz4-dev liblzma-dev libssh-dev; do
     dpkg -s "$pkg" &>/dev/null || MISSING_PKGS+=("$pkg")
   done
   if [ "${#MISSING_PKGS[@]}" -gt 0 ]; then
