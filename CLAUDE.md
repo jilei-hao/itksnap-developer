@@ -129,6 +129,48 @@ MallocStackLogging=1 leaks --atExit -- build-leaks/ITK-SNAP \
 
 **Local leak build:** `/Users/jileihao/dev/itksnap-dev/build-leaks/` (binary at `build-leaks/ITK-SNAP`). Re-sign after every `ninja` relink.
 
+## greedy_python Project
+
+Python bindings for the [Greedy](https://github.com/pyushkevich/greedy) diffeomorphic registration library. Source lives at `greedy_python/` (branch `test/integration` of https://github.com/jilei-hao/greedy_python). Listed in `.gitignore` — tracked separately.
+
+### Build order
+
+greedy_python depends on a standalone Greedy build (not the subproject build inside itksnap):
+
+```bash
+# 1. Build standalone Greedy (first time or after itksnap submodule updates)
+scripts/build-greedy.sh
+
+# 2. Build the Python extension
+scripts/build-greedy-python.sh
+```
+
+**Key paths:**
+- Standalone Greedy build: `build-greedy/` (sources from `itksnap/Submodules/greedy/`)
+- Greedy install: `build-greedy/install/` (contains `GreedyConfig.cmake`)
+- Python extension: `/Users/jileihao/dev/greedy_python/build/_picsl_greedy.cpython-*.so` (copied to `src/picsl_greedy/`)
+
+**Why a separate Greedy build?** itksnap builds greedy as a subproject (`GREEDY_BUILD_AS_SUBPROJECT=ON`) which does not produce a `GreedyConfig.cmake`. The standalone build in `build-greedy/` installs the config and library headers needed by greedy_python.
+
+**Eigen3** (needed for lmshoot): provided by Homebrew at `/opt/homebrew/Cellar/eigen@3/3.4.1`.
+
+### Running tests
+
+```bash
+# Run all tests (uses greedy test data from itksnap/Submodules/greedy/testing/data)
+scripts/run-greedy-python-tests.sh
+
+# Run a single test file
+scripts/run-greedy-python-tests.sh -k test_registration
+
+# Override greedy_python source path if needed
+GP_SRC=/custom/path/greedy_python scripts/run-greedy-python-tests.sh
+```
+
+Tests require `SimpleITK` and `numpy` (`pip install SimpleITK numpy pytest`). Test data is read from `itksnap/Submodules/greedy/testing/data` via `GREEDY_TEST_DATA_DIR`.
+
+**Known test status:** 14/15 pass. `test_propagation_basic` fails due to an in-memory image-passing bug in `src/picsl_greedy/_greedy_api.py` (PropagationWrapper does not yet support in-memory sitk.Image arguments).
+
 ## Code Style
 
 Uses `.clang-format` at the repository root. The CMake code uses a mix of old-style (`SET`, `IF`) and modern CMake conventions; prefer matching the existing style in the file being edited. C++17 is required.

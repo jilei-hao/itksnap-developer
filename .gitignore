@@ -1,11 +1,15 @@
 # The itksnap clone — tracked separately at github.com/jilei-hao/itksnap
 itksnap/
 
+# greedy_python — tracked separately at github.com/jilei-hao/greedy_python
+greedy_python/
+
 # Build directories
 build/
 build-debug/
 build-leaks/
 build-release/
+build-greedy/
 
 # Dependency sources, builds, and installs (scripts/build-deps.sh)
 lib/
