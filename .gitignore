@@ -10,6 +10,7 @@ build-debug/
 build-leaks/
 build-release/
 build-greedy/
+build-convertmesh/
 
 # Dependency sources, builds, and installs (scripts/build-deps.sh)
 lib/
