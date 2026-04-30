@@ -11,6 +11,7 @@ build-leaks/
 build-release/
 build-greedy/
 build-convertmesh/
+build-cmrep/
 
 # Dependency sources, builds, and installs (scripts/build-deps.sh)
 lib/
