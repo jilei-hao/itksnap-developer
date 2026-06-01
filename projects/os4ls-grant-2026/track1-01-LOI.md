@@ -49,6 +49,11 @@ imaging stored in remote/cloud archives (local filesystem, remote Linux via SSH,
 Flywheel), with DICOM/BIDS-aware organization, partial reads, and workspaces that
 reference remote data without local download.
 
+Aim 4 — Interoperability. Via open formats and reference integrations, ITK-SNAP becomes
+composable with the tools researchers use downstream: standardized segmentation
+interchange with 3D Slicer (preserving label semantics via DICOM-SEG), and a bridge that
+turns segmentations into simulation-ready meshes for biomechanics (FEBio/OpenSim).
+
 The work builds on mature, working components (ITK-SNAP, itksnap-dls, greedy, SegFlow4D)
 and is integration-heavy rather than greenfield — well-suited to AI-assisted development
 within a focused two-year effort, and validated by ITK-SNAP's existing automated test
@@ -73,16 +78,17 @@ machine-consumable labels and feedback; a human-in-the-loop **data engine** that
 expert corrections into training data; and access to AI models from local/remote/cloud
 GPUs without coding.
 
-Upstream/downstream: the headless API + MCP endpoint let agents and other tools (3D
-Slicer, napari/MONAI pipelines) use ITK-SNAP as the human checkpoint and reuse the same
-model backend; greedy, FireANTs, and SegFlow4D gain a shared, scriptable surface.
+Upstream/downstream: the API + MCP endpoint and open formats let other tools reuse
+ITK-SNAP as the human checkpoint — standardized DICOM-SEG interchange with 3D Slicer,
+node in napari/MONAI pipelines, and a segmentation→mesh bridge feeding biomechanics
+(FEBio/OpenSim); greedy, FireANTs, and SegFlow4D gain a shared scriptable surface.
 
 AI enablement / large-scale data: making expert judgment orchestrable enables
 human-in-the-loop active learning and large-cohort, auditable training-data generation —
-exactly the data-preparation work that underpins model training and evaluation — with
-remote/partial data access for scale.
+the data-prep that underpins model training and evaluation — with remote/partial data
+access for scale.
 
-*(≈1,450 chars.)*
+*(≈1,480 chars — verify against the 1,500 cap in the portal.)*
 
 ---
 
@@ -120,6 +126,8 @@ fully into AI-native research.
   - greedy — https://github.com/pyushkevich/greedy
   - SegFlow4D — https://github.com/jilei-hao/segflow4d
   - *(FireANTs used as an optional dependency/backend, not a funded project.)*
+  - *(3D Slicer and FEBio/OpenSim are interoperability targets via open formats, not
+    funded projects.)*
 - **Applicant / host organization:** [fill in — org that would receive the grant /
   fiscal sponsor].
 - **Statement of PI involvement:** The PI is a core maintainer of ITK-SNAP; the proposed
@@ -133,3 +141,6 @@ fully into AI-native research.
 - License name for ITK-SNAP (state explicitly; confirm GPL/version).
 - Host org / fiscal sponsor and PI of record.
 - Whether to name FireANTs at all in the LOI vs. only at full-application stage.
+- Confirm DICOM-SEG round-trip scope with a 3D Slicer user, and (for the FEBio stretch)
+  validate mesh requirements with a biomechanics user — even informal partner interest
+  strengthens the interop claim.

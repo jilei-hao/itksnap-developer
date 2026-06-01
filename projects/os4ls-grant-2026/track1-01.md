@@ -25,9 +25,11 @@ the model serving and remote-data access that make those workflows practical.
 
 - Single mature, widely-cited project (ITK-SNAP) with a working AI-serving preliminary
   (`itksnap-dls`) → fits Track 1's "domain-specific tool with demonstrated adoption."
-- Three tightly-coupled aims around **one composable surface** — not four parallel
-  mini-projects. The aims reinforce each other (the API consumes the serving protocol;
-  remote access carries both data and GPU inference).
+- Tightly-coupled aims around **one composable surface** — not parallel mini-projects.
+  The aims reinforce each other (the API consumes the serving protocol; remote access
+  carries both data and GPU inference; interop reuses the same API + open formats). Interop
+  (Aim 4) is deliberately scoped thin — one reference integration (Slicer) plus open
+  formats — with the FEBio bridge as a stretch, so it extends the surface without sprawl.
 - Deliberately **excludes** the GUI rewrite (RFA out-of-scope: "AI-assisted rewrite of
   a legacy tool"), new-model development, and data-hosting infrastructure.
 
@@ -121,6 +123,24 @@ verification, correction, and interaction-capture** an orchestrable pipeline ste
 - **3.4 Remote-aware workspaces** — workspaces reference remote images and can be
   edited/saved without pulling full image data locally. Credentials via OS keychain.
 
+### Aim 4 — Interoperability bridges (open formats + reference integrations)
+*Makes ITK-SNAP composable with the tools researchers use downstream. Principle: ship
+**open formats + one or two reference integrations**, not a pairwise connector zoo
+(standards scale; bespoke connectors become a maintenance sink). The Aim 1 API/MCP
+surface is itself the primary, toolkit-agnostic connector.*
+
+- **4.1 Standardized segmentation interchange with 3D Slicer** *(primary).* Round-trip
+  that preserves **label semantics** — names, colors, hierarchy, anatomical coding
+  (SNOMED/FMA) — not just pixels, using **DICOM-SEG** as the lingua franca. Both tools are
+  already ITK/VTK/NRRD-based, so this is low-risk, high daily-workflow value, and it makes
+  ITK-SNAP the human-in-the-loop checkpoint for Slicer-based pipelines.
+- **4.2 Segmentation → simulation-ready mesh bridge (FEBio / OpenSim)** *(stretch).*
+  Multi-label segmentation → clean surface → **tetrahedral volume mesh** (TetGen / CGAL /
+  gmsh) with per-label material tags → export to **FEBio (`.feb`) / OpenSim**. A
+  *previously-unavailable capability* for the cardiac / mitral-valve / musculoskeletal
+  biomechanics audience; leverages existing greedy/c3d/VTK + cm-rep/ConvertMesh mesh work,
+  and can consume SegFlow4D's 4D meshes (Aim 1.4) for dynamic (time-resolved) biomechanics.
+
 ---
 
 ## Why this scope is achievable in Track 1 — the coding-agent multiplier
@@ -170,10 +190,12 @@ agents convert roughly a traditional ~2.5–3 FTE-year scope into something a fo
 ### Built-in relief valve (prioritization)
 
 If effort runs over, scope sheds in this order, leaving a coherent deliverable at each
-step: Aim 3 advanced features (Flywheel search, remote workspaces) → Aim 2.4 multi-user
-queueing → Aim 1.4 4D propagation polish. The **MVP core that must ship**: headless API +
-Python wrapper + agent endpoint + human-in-the-loop primitives (Aim 1.1–1.3), generalized
-REST serving + discovery (Aim 2.1–2.2), and one remote backend (Aim 3.1–3.2).
+step: Aim 4.2 FEBio mesh bridge (stretch) → Aim 3 advanced features (Flywheel search,
+remote workspaces) → Aim 2.4 multi-user queueing → Aim 1.4 4D propagation polish. The
+**MVP core that must ship**: headless API + Python wrapper + agent endpoint +
+human-in-the-loop primitives (Aim 1.1–1.3), generalized REST serving + discovery
+(Aim 2.1–2.2), one remote backend (Aim 3.1–3.2), and Slicer/DICOM-SEG interchange
+(Aim 4.1).
 
 ---
 
@@ -184,6 +206,9 @@ REST serving + discovery (Aim 2.1–2.2), and one remote backend (Aim 3.1–3.2)
 - **No new models / no benchmark study.** Aim 2 ships serving + adaptation *software*.
 - **No novel registration-method research.** greedy/FireANTs are integrated as engines.
 - **No data hosting / repository infrastructure** (RFA out-of-scope).
+- **No pairwise connector zoo.** Interop (Aim 4) ships **open formats** (DICOM-SEG, FE
+  mesh export) + **reference integrations** (Slicer; FEBio as stretch); other tools
+  integrate against the open formats. No commitment to maintain bespoke per-tool bridges.
 - **FireANTs as a dependency only** — used as an optional GPU backend, not a funded
   project (it carries a custom license; using it as a dependency avoids that issue).
 
@@ -194,10 +219,12 @@ REST serving + discovery (Aim 2.1–2.2), and one remote backend (Aim 3.1–3.2)
 | Aim 1 — API + Python wrapper + agent endpoint + human-in-the-loop primitives + registration/4D surface | ~1.5 FTE-yr | ~0.9 FTE-yr |
 | Aim 2 — generalize DLE + discovery + contributor toolkit + remote GPU | ~1.25 FTE-yr | ~0.75 FTE-yr |
 | Aim 3 — remote data access (backends, BIDS, workspaces) | ~1.0 FTE-yr | ~0.6 FTE-yr |
+| Aim 4 — interop: Slicer/DICOM-SEG (core) + FEBio mesh bridge (stretch) | ~0.6 FTE-yr | ~0.4 FTE-yr |
 | PI design/review/validation, docs/tutorials, community | — | ~0.25 FTE-yr |
 
-≈ 3.75 FTE-yr traditional → ~2.5 FTE-yr with the multiplier, deliverable by a focused
-~1.5 FTE team over 2 years given the relief valve. (≤10% indirects; detailed budget at
+≈ 4.35 FTE-yr traditional → ~2.9 FTE-yr with the multiplier. The Aim 4.2 FEBio stretch is
+the first thing to shed (relief valve) if effort runs tight; the core remains deliverable
+by a focused ~1.5 FTE team over 2 years. (≤10% indirects; detailed budget at
 full-application stage.)
 
 ## How it scores against the RFA criteria
@@ -214,9 +241,11 @@ full-application stage.)
   which unlocks human-in-the-loop active learning + auditable training-data generation.
   Supported by the agentic API (priority #1), model serving + discovery + contributor
   toolkit (composable, self-sustaining AI library), remote data access (data-intensive
-  workflows), and registration/4D propagation (real longitudinal reuse). A
-  previously-unavailable capability that plays to ITK-SNAP's irreplaceable strength rather
-  than competing where the ecosystem is already strong.
+  workflows), registration/4D propagation (real longitudinal reuse), and interoperability
+  bridges (Aim 4) that make ITK-SNAP the human checkpoint in Slicer pipelines and unlock
+  downstream biomechanics (FEBio/OpenSim). A previously-unavailable capability that plays
+  to ITK-SNAP's irreplaceable strength rather than competing where the ecosystem is
+  already strong.
 
 ---
 
@@ -228,3 +257,5 @@ full-application stage.)
   (could drop to the #3+#2 two-aim spine if reviewers are likely to discount it).
 - Confirm the Flywheel access path (official SDK vs. direct REST) and a target user.
 - Confirm SegFlow4D/FireANTs integration depth that fits Aim 1.4 without scope creep.
+- Confirm DICOM-SEG round-trip scope with a 3D Slicer user; validate FEBio/OpenSim mesh
+  requirements (incl. 4D meshes) with a target biomechanics user (gates Aim 4.2 stretch).
