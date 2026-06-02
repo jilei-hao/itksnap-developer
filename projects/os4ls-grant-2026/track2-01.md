@@ -13,6 +13,13 @@ biomedical image segmentation and longitudinal/4D analysis — driven by agents 
 GPU-accelerated, serving AI models to multiple frontends, and interoperating cleanly with
 the tools researchers use downstream (3D Slicer, FEBio/OpenSim, napari/MONAI).
 
+> **Core thesis.** MONAI and Hugging Face already make *models* programmable; agentic
+> medical-imaging pipelines lack a way to bring *expert human judgment* in. The ecosystem's
+> irreplaceable asset is the expert at the screen making spatial judgments — so the goal is
+> **not** "let agents run segmentation" (the ecosystem does that headlessly) but to make
+> **expert verification, correction, and interaction-capture a first-class, orchestrable
+> step.** *Model proposes, human disposes.*
+
 ## Why Track 2 (not Track 1)
 
 - The RFA explicitly invites Track 2 proposals "developing shared interoperability,
@@ -53,8 +60,11 @@ registration/4D members):
 
 ## Aims
 
-### Aim 1 — AI-native composable core (the connective tissue)
-*Builds directly on the Track 1 spine; here it's the foundation the rest stands on.*
+### Aim 1 — Composable human-in-the-loop core (the connective tissue)
+*Builds directly on the Track 1 spine; here it's the foundation the rest stands on. The
+distinctive value is not headless inference (MONAI/HF do that) but making **expert
+verification, correction, and interaction-capture** an orchestrable pipeline step —
+"model proposes, human disposes."*
 - **1.1 Headless, scriptable core API** over ITK-SNAP's toolkit-independent layer
   (workspace I/O, image/label ops, segmentation) — no GUI dependency.
 - **1.2 Python wrapper** (pip-installable) + **agent-facing endpoint** (MCP/tool-style)
@@ -63,7 +73,20 @@ registration/4D members):
   as a **distributable local (stdio) MCP server** (client-launched, **no indefinite
   hosting obligation**); optional remote (HTTP) mode for cloud/multi-user use. Software,
   not hosted infrastructure.
-- **1.3 Scripted behavioral-regression harness** (`--test`) pinning API/GUI behavior —
+- **1.3 Human-in-the-loop primitives** *(the differentiator).* Expose the human checkpoint
+  as callable operations: review/correction as a step (`request_review(image, seg) →
+  {corrected seg, decision, provenance}`), escalation/triage of uncertain cases, and
+  capture of expert interactions (clicks/scribbles/edits/decisions) as machine-consumable
+  labels, prompts, and preference signals (no MONAI/HF equivalent) with audit logging.
+  Enables a human-in-the-loop **data engine** feeding active learning + the adaptation
+  work (Aim 5) and curating SegFlow4D-propagated candidates (Aim 3).
+- **1.4 Human-interaction surfaces** *(reference clients; see ideas #7/#8).* A web
+  viewer/QC panel with a **URL-handoff** model (deep-linked local session + inline triage
+  thumbnail + submit→callback), shippable standalone and as a **VS Code/Cursor webview**;
+  and an in-app **"bring your own agent"** panel (MCP server + shared GUI-context, *not* a
+  rebuilt agent harness) so the human checkpoint is reachable from browser, IDE, and
+  in-app alike.
+- **1.5 Scripted behavioral-regression harness** (`--test`) pinning API/GUI behavior —
   the progress-tracking/validation mechanism.
 
 ### Aim 2 — Shared AI model serving (one backend, many frontends)
@@ -140,15 +163,16 @@ registration/4D members):
 
 | Area | Rough effort |
 |------|--------------|
-| Aim 1 — API + Python wrapper + agent endpoint | ~1.0 FTE-yr |
+| Aim 1 — API + Python wrapper + agent endpoint + human-in-the-loop primitives + interaction surfaces (web viewer/webview, in-app agent panel) | ~1.5 FTE-yr |
 | Aim 2 — serving + discovery + contributor toolkit + remote GPU | ~1.25 FTE-yr |
 | Aim 3 — unified registration surface (greedy+FireANTs) + SegFlow4D 4D propagation | ~1.0 FTE-yr |
 | Aim 4 — Slicer interchange + FEBio mesh bridge + pipeline recipes | ~1.0 FTE-yr |
 | Aim 5 — LoRA pipeline (stretch) | ~0.5 FTE-yr |
 | Cloud/GPU/storage, coordination, docs/tutorials | operational |
 
-≈ 4.5–5 FTE-years total, near the top of what $1M/2yr can staff — Aim 5 is the relief
-valve if effort runs over. (≤10% indirects; detailed budget only at full-application stage.)
+≈ 5–5.5 FTE-years total, near the top of what $1M/2yr can staff — Aim 5 (LoRA) and Aim
+1.4's fuller interaction surfaces are the relief valves if effort runs over. (≤10%
+indirects; detailed budget only at full-application stage.)
 
 ## How it scores against the RFA criteria
 
@@ -158,11 +182,14 @@ valve if effort runs over. (≤10% indirects; detailed budget only at full-appli
 - **Quality:** shared maintainer team across ITK-SNAP/greedy/c3d/SegFlow4D; public GitHub
   issues/PRs; existing CI and test harness; SegFlow4D's pluggable-backend factory as
   evidence of composable design; roadmap alignment.
-- **Feasibility:** ~4.5–5 FTE-yr work for ~$1M/2yr; each aim has a discrete, testable
-  deliverable; Aim 5 labeled as stretch / relief valve.
-- **Value / AI-native:** agentic API (priority #1) + GPU-accelerated registration
-  (hardware-acceleration priority, via FireANTs) + shared serving (composable AI) +
-  longitudinal/4D propagation (real same-domain reuse) + interop bridges (downstream
+- **Feasibility:** ~5–5.5 FTE-yr work for ~$1M/2yr; each aim has a discrete, testable
+  deliverable; Aim 5 and Aim 1.4's fuller surfaces labeled as stretch / relief valves.
+- **Value / AI-native:** the differentiator is **programmable expert judgment** — making
+  verification/correction/interaction-capture orchestrable ("model proposes, human
+  disposes"), reachable from browser/IDE-webview/in-app, which the MONAI/HF inference stack
+  has no equivalent for. Supported by the agentic API (priority #1) + GPU-accelerated
+  registration (hardware-acceleration priority, via FireANTs) + shared serving (composable
+  AI) + longitudinal/4D propagation (real same-domain reuse) + interop bridges (downstream
   biomechanics/bioimaging). Contributor toolkit answers sustainability.
 
 ---
