@@ -362,12 +362,54 @@ the IDE. A web viewer embedded in the IDE closes the loop: **agent acts → huma
   reusable seed for any future web GUI — de-risking the larger modernization without
   committing to it.
 
+**How the agent hands off to the human (URL vs. direct render):**
+The fast-interaction question is *not* URL-vs-render — it's how to minimize round-trip and
+context-switch cost. Use **both**, for different jobs:
+
+- **Primary = a URL to a local interactive session.** Editing needs real interactivity
+  (paint, scribble, nnInteractive prompts, multi-plane, 3D), which a static inline render
+  can't provide and chat-embedded widgets are too sandboxed to host. A URL:
+  - **decouples the heavy viewer from the agent transport** — the agent passes a URL +
+    session token; the viewer talks to the **headless API/DLE** directly for image data
+    and posts results back (no volumes through the chat channel);
+  - points at a **local session (`127.0.0.1`)** that reuses the already-loaded server-side
+    session (the `itksnap-dls` session pattern) → **no re-upload, no hosting obligation,
+    PHI stays on the machine** (privacy win for medical data);
+  - is **one artifact, many surfaces** — the same URL opens as a browser tab, a VS
+    Code/Cursor **webview** (a webview just loads a URL), or a remote session.
+- **Accelerator = an inline static render (server-rendered thumbnail).** Returned
+  *alongside* the URL so the human (and the agent, multimodally) can **glance and triage**
+  first, and often skip opening the full editor. This is where "direct render" earns its
+  place — as a fast-path glance, not the editor.
+
+**What makes it fast (the real lever):**
+1. **Stateful, blocking handoff.** `request_review(session) → URL`; the call **blocks**
+   until the human submits, then returns `{corrected_segmentation, decision, provenance}`
+   — the human-in-the-loop primitive (idea #3 / Aim 1.3) made concrete.
+2. **Auto-open + deep-link.** The MCP tool launches the browser/webview automatically and
+   the URL **deep-links to the exact slice / ROI / label** needing attention (e.g. the
+   low-confidence region) so the human lands on the spot — no hunting.
+3. **Inline thumbnail for triage** (above) lets the human skip the editor when a glance
+   suffices.
+4. **Submit → callback, not copy-paste.** Accept/Reject/Submit POSTs straight back to the
+   API, unblocking the agent.
+5. **Defer live sync.** WebSocket/SSE streaming only when a feature needs push (consistent
+   with the REST-baseline decision).
+
+**Mental model:** the agent doesn't *use* the viewer — the human does. The agent's job is
+to **summon** the right view (URL + auto-open + deep-link), **block** on a decision, and
+**consume** a structured result. "URL" really means "hand off to a human surface and await
+a structured callback."
+
 **Deliverables:**
 - A web viewer component (2D slices + 3D, niivue/VTK.js) that loads images +
   segmentations + confidence maps from the headless API.
-- A **VS Code / Cursor webview extension** wrapping it (Cursor is a VS Code fork → same
-  extension/webview model).
-- Basic QC/edit affordances (toggle labels, scrub slices, accept/reject, trigger a
+- A **session/URL handoff** for the agent: `request_review`-style blocking call returning
+  a deep-linked local URL + an inline triage thumbnail, and a submit→callback path that
+  returns the corrected segmentation + decision + provenance.
+- A **VS Code / Cursor webview extension** wrapping the same viewer URL (Cursor is a VS
+  Code fork → same extension/webview model).
+- QC/edit affordances (toggle labels, scrub slices, paint/prompt, accept/reject, trigger a
   re-run via the API/DLE) so the agent→inspect→correct loop is real.
 
 **Scope / caveats:**
@@ -376,6 +418,57 @@ the IDE. A web viewer embedded in the IDE closes the loop: **agent acts → huma
 - **Track fit:** keep it **out of the Track 1 core** (the three aims are already full);
   mention as a future direction at most. Better as a **Track 2 deliverable** or a
   fast-follow once the headless API (idea #3) exists.
+
+---
+
+## 8. In-app agent panel ("bring your own agent", not a Claude Code clone)
+
+**Pitch:** Bring agentic coding *into* ITK-SNAP — a panel where a researcher types intent
+in natural language ("segment the liver in all open images", "measure label 3's volume
+across these timepoints", "run nnInteractive here, then propagate to the other frames")
+and an agent translates it into ITK-SNAP API calls, executes, and shows results in the
+GUI. This is the **inverse of idea #3**: #3 makes ITK-SNAP a *tool an external agent
+calls*; #8 makes ITK-SNAP an *agent host*, bringing the agent to the researcher in the
+visual context where the data already is. Pairs with the human-in-the-loop thesis — the
+expert is already at the screen; the agent absorbs the tedious/programmatic parts ("now do
+that to all 40").
+
+**The trap to avoid — don't rebuild Claude Code.** Building/maintaining a full agentic
+harness (context management, tool orchestration, model integration, sandboxing, chat UI)
+inside a Qt app is a huge, fast-moving effort, *not* ITK-SNAP's core competency, and the
+weakest OS4LS framing ("an AI app" vs. "enabling software"). You would permanently lag the
+ecosystem. **Build the tools; let the ecosystem bring the brain.**
+
+**The smart version (mostly free once idea #3 exists):**
+1. **Make ITK-SNAP a first-class MCP server any agent can attach to**, plus a *"connect
+   your agent"* affordance (one-click launch/registration + connection status) so Claude
+   Code / Cursor / Claude Desktop can drive ITK-SNAP immediately. The mature external
+   harness does the heavy lifting.
+2. **Shared GUI/visual context is the unique value** (the one thing an external agent
+   can't easily have): expose current image, cursor position, active label, selected ROI
+   over the MCP surface so *"segment **this**"* resolves to what's on screen.
+3. **Optional thin reference chat panel** — an MCP client + a *configurable* model backend
+   (Claude as one option), explicitly a convenience/reference, **not** a harness rebuild.
+
+**Not a separate aim — it's the consumer-facing front-end of idea #3.** It shares the tool
+layer entirely; the only incremental work is GUI-context exposure + the "connect your
+agent" affordance + (optionally) the thin chat panel. Could also live inside the web
+viewer (idea #7), so in-app / IDE-webview / browser all share one agent surface.
+
+**Things to get right (flag in the proposal):**
+- **Vendor neutrality:** "agent panel, Claude as one backend", not "a Claude window".
+- **Keys / cost / privacy:** BYO API key; **PHI caution** — sending image-derived context
+  to a cloud LLM has medical-privacy implications; offer a local-model path and make data
+  flow explicit.
+- **Safety/auditability:** route agent actions through ITK-SNAP's **undo**; make
+  destructive ops previewable/gated; reuse the provenance logging from idea #3 / Aim 1.3.
+
+**Track fit:**
+- **Track 1:** include only the cheap, defensible slice — MCP server + GUI-context
+  exposure + "connect your agent" — riding on Aim 1. Strengthens the agentic story at
+  near-zero marginal cost.
+- **Track 2 / fast-follow:** a more built-out embedded agent panel as a *reference client*
+  (still not a harness rebuild).
 
 ---
 
