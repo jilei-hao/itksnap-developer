@@ -87,6 +87,20 @@ The agent discovers the files, calls `create_workspace` per case, verifies with
 | `list_layers` / `inspect_workspace` | verify a workspace |
 | `itksnap_wt_info` | report the binary in use |
 
+## A/B experiment (manual-context-free agent vs. MCP-scaffolded agent)
+
+`data/` holds a 10-subject demo cohort; `experiment/` holds a controlled A/B that
+runs the **same agent** twice — once with **no** itksnap-wt context (it must discover
+the CLI cold), once **with** the MCP server + skill — to isolate what the scaffolding
+buys. See `experiment/EXPERIMENT.md` for the protocol, `task-no-mcp.md` /
+`task-with-mcp.md` for the two prompts, and:
+
+```bash
+export ITKSNAP_WT=$PWD/../../../build-release/Utilities/Workspace/itksnap-wt
+python experiment/verify.py output/no-mcp     # objective score 0–10
+python experiment/verify.py output/with-mcp
+```
+
 ## How this maps to the grant
 
 - The MCP server is a stand-in for one node of the **constellation** (`track1-01.md`
