@@ -3,21 +3,22 @@
 You have access to a command-line program (a compiled binary) that builds
 **ITK-SNAP workspace files** (`.itksnap`). Its absolute path is:
 
-    <PASTE ABSOLUTE PATH TO itksnap-wt HERE>
+    /Users/jileihao/dev/itksnap-dev/itksnap-developer/build-release/Utilities/Workspace/itksnap-wt
 
 I have a cohort of imaging studies under `data/` — one folder per subject:
 
 - every subject has `T1.nii.gz` (the main anatomical image);
-- some subjects also have `FLAIR.nii.gz` (a second image) and/or `seg.nii.gz`
-  (a segmentation);
+- some subjects also have additional anatomical images (`FLAIR`, `T2`, `PET`, `CT`)
+  and/or a `seg.nii.gz` (a segmentation);
 - there is a shared label-description file at `data/labels.label`.
 
 **Goal:** produce one workspace per subject in `output/no-mcp/`, named
 `<subject>.itksnap`, where each workspace contains:
 
-- the **T1** as the main image, with display name (nickname) **`T1`**;
-- the **FLAIR** as an additional image with nickname **`FLAIR`** — *only if that
-  subject has a FLAIR*;
+- the **T1** as the main image (always — even if another image sorts first
+  alphabetically), with display name (nickname) **`T1`**;
+- every **other anatomical image** as an additional overlay, nicknamed by its
+  modality (e.g. `FLAIR`, `T2`, `PET`, `CT`);
 - the **segmentation** — *only if that subject has a seg*;
 - the labels from `data/labels.label` loaded;
 - two tags on the main image: `cohort:demo` and `status:needs-review`.

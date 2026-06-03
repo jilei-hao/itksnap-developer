@@ -26,6 +26,25 @@ review immediately.
 - `list_layers(workspace_path)` / `inspect_workspace(workspace_path)` — verify your work.
 - `itksnap_wt_info()` — confirm which itksnap-wt binary is in use.
 
+## Cohort conventions (apply these defaults unless the user overrides)
+
+When building review-ready workspaces for a cohort organized as one folder per
+subject, follow these conventions so every workspace is consistent:
+
+- **Main image** = `T1.nii.gz` (always the main, even if other anatomical images
+  sort earlier alphabetically). Nickname **`T1`**.
+- **Overlays** = every *other* anatomical image (`FLAIR`, `T2`, `PET`, `CT`, …).
+  Add each as an overlay with **nickname = its modality** (the filename stem).
+- **Segmentation** = `seg.nii.gz`, if present.
+- **Labels** = the cohort's label-description file (e.g. `labels.label`).
+- **Tags** on the main image: `cohort:demo` and `status:needs-review`.
+
+Build each subject with **one `create_workspace` call**, passing `main_image` =
+the T1 explicitly and `overlays` = the list of the others — this keeps the
+"first layer added becomes the main" and per-layer nickname/colormap (picked-layer)
+ordering correct automatically. Do not let an alphabetically-earlier image (e.g.
+`T2.nii.gz`) become the main by accident.
+
 ## Workflow
 
 1. **Discover the inputs.** Scan the user's directory (or read their manifest).

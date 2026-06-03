@@ -97,7 +97,7 @@ buys. See `experiment/EXPERIMENT.md` for the protocol, `task-no-mcp.md` /
 
 ```bash
 export ITKSNAP_WT=$PWD/../../../build-release/Utilities/Workspace/itksnap-wt
-python experiment/verify.py output/no-mcp     # objective score 0–10
+python experiment/verify.py output/no-mcp     # objective correctness score (/13)
 python experiment/verify.py output/with-mcp
 ```
 
