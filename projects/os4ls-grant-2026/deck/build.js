@@ -56,11 +56,13 @@ async function main() {
   const PW = 13.33, PH = 7.5, M = 0.6;
 
   // ---------- helpers ----------
-  function footer(s, n) {
+  let __page = 1; // title is page 1; each footer() call is the next page in creation order
+  function footer(s) {
+    __page++;
     s.addText("OS4LS 2026  ·  ITK-SNAP AI-Native, Human-in-the-Loop Segmentation", {
       x: M, y: 7.05, w: 9, h: 0.3, fontSize: 9, color: MUTED, fontFace: BODY, margin: 0,
     });
-    s.addText(String(n), { x: PW - 1.0, y: 7.05, w: 0.4, h: 0.3, fontSize: 9, color: MUTED, align: "right", fontFace: BODY, margin: 0 });
+    s.addText(String(__page), { x: PW - 1.0, y: 7.05, w: 0.4, h: 0.3, fontSize: 9, color: MUTED, align: "right", fontFace: BODY, margin: 0 });
   }
   function head(s, kicker, title, sub) {
     s.addShape(pres.shapes.RECTANGLE, { x: M, y: 0.46, w: 0.16, h: 0.5, fill: { color: TEAL } });
@@ -269,30 +271,114 @@ async function main() {
     ],
     "Agent summons the right view (deep-linked) → human disposes → structured result flows back.");
 
-  // =========================================================== SLIDE 11 — in practice (use cases)
-  s = pres.addSlide(); s.background = { color: LIGHT };
-  head(s, "Use cases", "What it looks like in practice",
-    "Automation does the rote work; the expert is pulled in only where judgment matters.");
-  const ucs = [
-    { ic: I.grid, h: "Cohort segmentation at scale", d: "Agent segments 200 scans; the expert reviews only the ~12 flagged. Every decision logged.", tag: "Aims 1 + 2", a: TEAL },
-    { ic: I.cube, h: "Valve → biomechanics", d: "Segment the mitral valve, export a FEBio-ready mesh — 4D over the cardiac cycle.", tag: "Aims 1.3 + 4.2", a: AMBER },
-    { ic: I.users, h: "Reader study & auditable QC", d: "Route cases to multiple readers; capture decisions + provenance for reliability/audit.", tag: "Aim 1.3", a: MINT },
-    { ic: I.code, h: "Reproducible pipeline / notebook", d: "Drive ITK-SNAP from Python or an agent in a versioned, reproducible pipeline.", tag: "Aims 1.1–1.2", a: TEAL_D },
-  ];
-  const ucw = (PW - 2 * M - 0.4) / 2;
-  ucs.forEach((c, i) => {
-    const col = i % 2, row = Math.floor(i / 2);
-    const x = M + col * (ucw + 0.4), y = 2.0 + row * 2.05;
-    s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x, y, w: ucw, h: 1.85, fill: { color: CARD }, line: { color: LINE, width: 1 }, rectRadius: 0.08, shadow: shadow() });
-    s.addShape(pres.shapes.OVAL, { x: x + 0.32, y: y + 0.34, w: 0.74, h: 0.74, fill: { color: c.a } });
-    s.addImage({ data: c.ic, x: x + 0.32 + 0.21, y: y + 0.34 + 0.21, w: 0.32, h: 0.32 });
-    s.addText(c.h, { x: x + 1.3, y: y + 0.3, w: ucw - 1.55, h: 0.4, fontSize: 16, bold: true, color: NAVY, fontFace: HEAD, margin: 0 });
-    s.addText(c.d, { x: x + 1.3, y: y + 0.72, w: ucw - 1.55, h: 0.85, fontSize: 12, color: SLATE, fontFace: BODY, margin: 0, valign: "top" });
-    s.addText(c.tag, { x: x + 1.3, y: y + 1.45, w: ucw - 1.55, h: 0.3, fontSize: 10.5, bold: true, color: c.a, fontFace: HEAD, margin: 0 });
-  });
-  footer(s, 11);
+  // =========================================================== USE CASES — section divider
+  s = pres.addSlide(); s.background = { color: NAVY };
+  s.addShape(pres.shapes.RECTANGLE, { x: 0, y: 0, w: 0.28, h: PH, fill: { color: TEAL } });
+  s.addShape(pres.shapes.RECTANGLE, { x: 0.28, y: 0, w: 0.08, h: PH, fill: { color: AMBER } });
+  s.addText("USE CASES", { x: 1.0, y: 2.55, w: 11, h: 0.4, fontSize: 15, bold: true, color: MINT, charSpacing: 3, fontFace: HEAD, margin: 0 });
+  s.addText("What success looks like", { x: 1.0, y: 2.95, w: 11.5, h: 1.0, fontSize: 40, bold: true, color: "FFFFFF", fontFace: HEAD, margin: 0 });
+  s.addText("9 cross-cutting workflows + 8 Aim 1 deep-dives — automation does the rote work; the expert is pulled in where judgment matters.", { x: 1.02, y: 4.0, w: 10.8, h: 0.7, fontSize: 15, italic: true, color: "CADCFC", fontFace: BODY, margin: 0 });
+  footer(s);
 
-  // =========================================================== SLIDE 12 — technical feasibility (codebase)
+  // ---- per-case slide helper ----
+  function caseSlide(kicker, title, ic, narrative, success, uses, accent) {
+    const sl = pres.addSlide(); sl.background = { color: LIGHT };
+    head(sl, kicker, title);
+    // icon disc top-right
+    sl.addShape(pres.shapes.OVAL, { x: PW - M - 1.15, y: 0.5, w: 1.05, h: 1.05, fill: { color: accent } });
+    sl.addImage({ data: ic, x: PW - M - 1.15 + 0.31, y: 0.5 + 0.31, w: 0.43, h: 0.43 });
+    // narrative
+    sl.addText(narrative, { x: M, y: 1.95, w: PW - 2 * M - 1.4, h: 1.7, fontSize: 16, color: SLATE, fontFace: BODY, margin: 0, valign: "top", lineSpacingMultiple: 1.05 });
+    // success callout
+    sl.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: M, y: 4.0, w: PW - 2 * M, h: 1.25, fill: { color: "E8F1F4" }, line: { color: "C9DEE4", width: 1 }, rectRadius: 0.07 });
+    sl.addShape(pres.shapes.RECTANGLE, { x: M, y: 4.0, w: 0.12, h: 1.25, fill: { color: accent } });
+    sl.addText("SUCCESS", { x: M + 0.35, y: 4.18, w: 3, h: 0.3, fontSize: 12, bold: true, color: TEAL_D, charSpacing: 2, fontFace: HEAD, margin: 0 });
+    sl.addText(success, { x: M + 0.35, y: 4.46, w: PW - 2 * M - 0.7, h: 0.72, fontSize: 14.5, color: NAVY, fontFace: BODY, margin: 0, valign: "top" });
+    // uses
+    sl.addText([
+      { text: "Uses:  ", options: { bold: true, color: TEAL_D } },
+      { text: uses, options: { color: MUTED } },
+    ], { x: M, y: 5.5, w: PW - 2 * M, h: 0.9, fontSize: 12, fontFace: BODY, margin: 0, valign: "top" });
+    footer(sl);
+    return sl;
+  }
+
+  const T = TEAL, A = AMBER, M2 = MINT, TD = TEAL_D;
+  const CASES = [
+    // ---- general use cases (UC-1..9) ----
+    ["USE CASE 1 · cohort + human QC", "Cohort segmentation at scale", I.grid,
+      "A neuroimaging postdoc tells an agent: “segment the hippocampus in these 200 T1 MRIs and flag any that look wrong.” The agent runs an automatic model via the DLE and routes only the low-confidence cases to a human via request_review.",
+      "200 scans triaged; the human touches ~12 instead of 200, and every decision is logged. Model proposes, human disposes — at cohort scale.",
+      "agent/MCP endpoint (1.2) · DLE automatic-model serving (2.1) · dynamic discovery (2.2) · request_review + provenance (1.3) · web viewer handoff (#7).", T],
+    ["USE CASE 2 · longitudinal", "Longitudinal monitoring via 4D propagation", I.layers,
+      "An analyst segments a structure (or an ARIA lesion) at baseline, then propagates it across all follow-up timepoints with SegFlow4D, reviewing only the frames where propagation drifted.",
+      "Serial timepoints segmented consistently without re-drawing each one — within-subject reuse with no model retraining.",
+      "SegFlow4D 4D propagation (1.4) · greedy/FireANTs backend (1.4) · request_review on drifted frames (1.3) · Python/agent API (1.1–1.2).", TD],
+    ["USE CASE 3 · biomechanics", "Valve modeling → simulation-ready mesh", I.cube,
+      "A cardiac-imaging researcher segments the mitral valve from 3D echo, refines it interactively, and exports a material-tagged tetrahedral mesh to FEBio — optionally a 4D mesh across the cardiac cycle.",
+      "Segmentation → simulation-ready mesh in one workflow: a previously-unavailable bridge for the biomechanics audience.",
+      "interactive/automatic models via DLE (2.1) · ITK-SNAP GUI editing · segmentation→tet-mesh + FEBio/OpenSim export (4.2) · SegFlow4D 4D meshes (1.4).", A],
+    ["USE CASE 4 · remote data", "Cloud cohort without local download", I.cloud,
+      "A researcher browses a Flywheel project, opens a scan, and segments it with an AI model running on a remote GPU — never downloading the full dataset locally — then writes the result back to the archive.",
+      "“Remote data + remote inference” feels like working locally; PHI stays in the archive.",
+      "Flywheel backend plugin (3.2) · DICOM/BIDS + partial reads (3.3) · remote-aware workspaces + keychain creds (3.4) · remote-GPU DLE execution (2.4).", T],
+    ["USE CASE 5 · data engine", "Ground-truth / training-data generation", I.database,
+      "A lab building a labeled dataset runs an automatic model as a first pass, corrects in ITK-SNAP, and the corrections are captured as structured training data with provenance.",
+      "Faster, auditable ground-truth creation — exactly the data-preparation work that underpins downstream model training and evaluation.",
+      "DLE automatic serving (2.1) · request_review + interaction capture + provenance (1.3) · Python API batch mode (1.1).", M2],
+    ["USE CASE 6 · democratization", "AI segmentation for users without a GPU", I.bolt,
+      "A clinician-researcher on a laptop uses interactive (nnInteractive) and automatic models served from a lab GPU server or Google Colab.",
+      "Near-real-time AI segmentation with no local GPU and no environment setup — democratized access. Builds on the shipped itksnap-dls.",
+      "DLE serving local/remote/Colab (2.1, 2.4) · interactive + automatic models · model explorer + discovery (2.2).", TD],
+    ["USE CASE 7 · agentic pipeline", "ITK-SNAP as a tool in an agentic pipeline", I.plug,
+      "A computational researcher drives ITK-SNAP from Python in a reproducible pipeline, or an agent in Cursor/Claude Code calls it as an MCP tool: “segment structure X across cohort Y, pause for my review on outliers.”",
+      "ITK-SNAP is scriptable and composable, with the human checkpoint built into the automation.",
+      "headless API (1.1) · Python wrapper + local stdio MCP server (1.2) · request_review (1.3) · --test reproducibility (1.5) · in-app/IDE agent (#8).", T],
+    ["USE CASE 8 · interop", "Cross-tool handoff with 3D Slicer", I.share,
+      "A lab standardized on 3D Slicer hands segmentations to ITK-SNAP for fast expert editing and back, via DICOM-SEG, with label names/colors/hierarchy preserved.",
+      "ITK-SNAP becomes the human-correction step in a Slicer-based pipeline — without lossy conversions.",
+      "DICOM-SEG segmentation interchange + label-semantics preservation (4.1) · headless API (1.1).", A],
+    ["USE CASE 9 · sustainability", "Community model contribution", I.users,
+      "A graduate student wraps a new MONAI model using the agent-assisted contributor toolkit, passes CI conformance, and PRs it; via dynamic discovery it appears for all ITK-SNAP users without a new release.",
+      "The model library grows from the community, not the core team — the self-sustaining engine.",
+      "agent-assisted contributor toolkit — wrapper contract + scaffolding + CI conformance (2.3) · dynamic discovery (2.2).", M2],
+    // ---- Aim 1 deep-dives (UC-A1..A8) ----
+    ["AIM 1 · UC-A1 · scriptable core", "Reproducible cohort pipeline on the cluster", I.server,
+      "A lab runs ITK-SNAP segmentation + volumetry across an ADNI-scale cohort, fully headless on HPC, as a version-controlled pipeline step (Snakemake/Nextflow) reproducible from the paper’s repo. Today this means hand-gluing c3d/ITK scripts.",
+      "The API exposes ITK-SNAP’s own operations directly — a reproducible, headless cohort pipeline with no GUI.",
+      "headless API (1.1) · batch mode · regression-tested reproducibility (1.5).", TD],
+    ["AIM 1 · UC-A2 · scriptable core", "Programmatic workspace assembly", I.window,
+      "A study coordinator generates hundreds of pre-configured workspaces (image + overlays + label set + display preferences) so every reader opens a ready-to-go session — instead of hand-setting each case. (This is the working prototype demo.)",
+      "Encodes ITK-SNAP session semantics, not just pixels — ready-to-review sessions at cohort scale.",
+      "headless API for workspace I/O + label/display config (1.1); builds on Logic/WorkspaceAPI.", T],
+    ["AIM 1 · UC-A3 · Python wrapper", "Notebook-native analysis", I.code,
+      "A researcher in Jupyter loads a workspace, queries per-label volumes, thresholds, runs a model, and saves — all in Python, with results as numpy/SimpleITK. ITK-SNAP’s labels and display logic become first-class in code.",
+      "ITK-SNAP becomes an importable library, next to the rest of the scientific Python stack.",
+      "Python wrapper (1.2) over the headless API (1.1).", T],
+    ["AIM 1 · UC-A4 · agent endpoint", "Conversational multi-step task via an agent", I.comments,
+      "In Claude Code / Cursor: “open these 30 echo studies, run the valve model, compute annular dimensions, and show me the 5 with the largest change since last visit.” The agent chains MCP tool calls; the researcher reviews the shortlist.",
+      "Natural-language orchestration of a real, multi-step study task — no coding required by the user.",
+      "local stdio MCP server (1.2) · DLE serving (2.1).", TD],
+    ["AIM 1 · UC-A5 · human-in-the-loop", "Active-learning labeling loop", I.brain,
+      "While building a training set, an automatic model proposes with a confidence signal surfaced by the DLE; the agent/pipeline ranks and routes the lowest-confidence cases to an expert via request_review; corrections feed the next round.",
+      "Expert effort goes where it moves the needle. (ITK-SNAP provides the confidence pass-through + human checkpoint; the acquisition policy lives in the pipeline.)",
+      "confidence map from DLE (2.1) · acquisition policy in the agent/pipeline (1.1–1.2) · request_review + interaction capture (1.3).", A],
+    ["AIM 1 · UC-A6 · human-in-the-loop", "Auditable two-pass study QC", I.checkDouble,
+      "A multi-site study needs adjudicated segmentations: an automated first pass → structured human review → every edit, decision, and reviewer logged with provenance for audit/regulatory traceability.",
+      "Replaces ad-hoc spreadsheets and screenshots with a structured, resumable review step.",
+      "request_review + provenance/audit logging (1.3) · headless API batch (1.1).", A],
+    ["AIM 1 · UC-A7 · human-in-the-loop", "Reader-reliability study as a workflow", I.users,
+      "Route the same cases to multiple expert readers (or one reader over time) through request_review, capturing decisions and edits uniformly to compute inter-/intra-rater reliability — e.g. for valve or hippocampal-subfield segmentation.",
+      "ITK-SNAP becomes the instrument for a reader study, not just a viewer.",
+      "request_review + standardized interaction capture (1.3) · scripted orchestration via the API (1.1–1.2).", A],
+    ["AIM 1 · UC-A8 · human-in-the-loop", "Human escalation in an overnight batch", I.clock,
+      "An agent processes a large cohort overnight; uncertain cases are parked as pending review tasks; in the morning the expert clears the queue and the pipeline resumes.",
+      "Mixed-initiative automation that respects expert time — the loop survives the human being asleep.",
+      "request_review as a resumable/queued step (1.3) · agent/MCP orchestration (1.2).", A],
+  ];
+  CASES.forEach(c => caseSlide(c[0], c[1], c[2], c[3], c[4], c[5], c[6]));
+
+  // =========================================================== technical feasibility (codebase)
   s = pres.addSlide(); s.background = { color: LIGHT };
   head(s, "Technical feasibility", "Built on what already ships",
     "Most of Aims 1–4 extends existing, working components — not new subsystems.");
