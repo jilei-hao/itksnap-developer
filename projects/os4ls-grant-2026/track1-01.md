@@ -262,9 +262,13 @@ reviews the shortlist. *Natural-language orchestration of a real multi-step stud
 #### Aim 1.3 — Human-in-the-loop primitives *(the differentiator — no equivalent exists today)*
 
 **UC-A5 — Active-learning labeling loop.** While building a training set, an automatic
-model proposes; `request_review` routes the *most informative / lowest-confidence* cases to
-an expert; corrections feed the next round. Expert effort goes where it moves the needle.
-**Uses:** `request_review` + interaction capture (1.3) · DLE serving (2.1).
+model proposes *with a confidence signal surfaced by the DLE*; the **agent/pipeline** ranks
+and routes the lowest-confidence cases to an expert via `request_review`; corrections feed
+the next round. Expert effort goes where it moves the needle. *(ITK-SNAP provides the
+confidence pass-through + the human checkpoint; the acquisition policy lives in the
+pipeline, not in ITK-SNAP core.)*
+**Uses:** confidence map from DLE (2.1) · acquisition policy in the agent/pipeline (1.1–1.2)
+· `request_review` + interaction capture (1.3).
 
 **UC-A6 — Auditable two-pass study QC.** A multi-site study needs adjudicated
 segmentations: automated first pass → structured human review → **every edit, decision, and
@@ -345,6 +349,96 @@ remote workspaces) → Aim 2.4 multi-user queueing → Aim 1.4 4D propagation po
 human-in-the-loop primitives (Aim 1.1–1.3), generalized REST serving + discovery
 (Aim 2.1–2.2), one remote backend (Aim 3.1–3.2), and Slicer/DICOM-SEG interchange
 (Aim 4.1).
+
+---
+
+## Technical feasibility — grounded in the current codebase
+
+The strongest feasibility argument is architectural: **most of Aims 1–4 extend shipped,
+working components rather than building new subsystems.** ITK-SNAP's strict three-layer
+design (a Qt-free Logic layer, a toolkit-independent GUI-Model layer, a thin Qt layer)
+means the pieces a programmable/agentic interface needs already exist and are already used
+in production paths. Below: what exists, the technology, and what is genuinely net-new.
+
+### Foundations already in the tree
+
+| Capability we need | Already in the codebase |
+|---|---|
+| Programmatic workspace ops (I/O, layers, labels, tags, display/contrast, export) | `Logic/WorkspaceAPI/WorkspaceAPI.{h,cxx}` — GUI-independent |
+| Proof that headless operation works today | `Utilities/Workspace/WorkspaceTool.cxx` (the shipped `itksnap-wt` CLI over WorkspaceAPI) |
+| REST + SSH transport | `Logic/WorkspaceAPI/RESTClient.cxx`, `SSHTunnel.cxx` (libcurl + libssh, in production) |
+| DL-server client (start local subprocess, connect local/remote/SSH-tunnel, REST) | `GUI/Model/DeepLearningSegmentationModel.{h,cxx}` |
+| Async "submit work → poll status → return result" workflow | `GUI/Model/DistributedSegmentationModel.{h,cxx}` (the DSS ticket system: auth, `TicketStatus`, logs) |
+| Shipped model-serving server | `itksnap-dls` (FastAPI REST, session-based, nnInteractive) |
+| Undo/redo for segmentation edits | `Logic/Framework/UndoDataManager.{h,txx}` + `IRISApplication` |
+| Typed, observable property/event system (no Qt) | `Common/PropertyModel.h`, `SNAPEvents.h` (ITK-event based) |
+| Python-binding toolchain & expertise | `greedy_python` / `picsl-greedy` (pybind11), SegFlow4D |
+| Scripted regression harness | `Testing/GUI/Qt/SNAPTestQt.{h,cxx}` + `--test/--testdir` in `GUI/Qt/main.cxx` |
+
+### Aim 1.1 — Headless API
+- **Technology:** a C++ library target exposing `IRISApplication` (Logic/Framework) + the
+  toolkit-independent `GUI/Model` layer + `WorkspaceAPI`.
+- **Why feasible now:** the Logic layer has no Qt dependency; the GUI-Model layer is
+  essentially Qt-free (**only `DeepLearningSegmentationModel.h` currently `#include`s Qt out
+  of ~50 model headers**); the property/event system is ITK-based, not Qt, so models work
+  without a GUI event loop; and `itksnap-wt` already drives WorkspaceAPI headlessly.
+- **Net-new:** a documented, stable API *facade* + a headless application context (no
+  Qt/OpenGL) + decoupling the one Qt-bound model. Mostly facade + build-path work, not new
+  algorithms → **moderate effort, low novelty.**
+
+### Aim 1.2 — Python wrapper + MCP endpoint
+- **Technology:** pybind11 (identical to `greedy_python`) over the 1.1 facade, shipped as a
+  wheel; ITK images ↔ numpy/SimpleITK via ITK's existing Python interop; MCP via the
+  official MCP Python SDK over **stdio** (local subprocess).
+- **Why feasible now:** the team already builds pybind11 bindings over its C++; the
+  local-subprocess-launch + REST pattern is already implemented in
+  `DeepLearningSegmentationModel`; the MCP server is a thin adapter over the wrapper.
+- **Net-new:** binding coverage + the MCP tool/resource schema. **Low risk.**
+
+### Aim 1.3 — Human-in-the-loop primitives *(the novel one)*
+- **Technology:** a review-task + provenance abstraction layered on the workspace/registry;
+  the existing REST/session + **DSS-style async ticket workflow** for the request/await/
+  callback; interaction capture from the existing edit/undo stack and annotations; handoff
+  to a live GUI / web viewer (idea #7).
+- **Why feasible now — the key point:** `request_review`'s "submit work → await → return a
+  structured result" is *architecturally the same async pattern already shipped in*
+  `DistributedSegmentationModel` (submit ticket → poll status → return result) — repurposed
+  so the "worker" is a **human** instead of a compute provider. `UndoDataManager` +
+  workspace provenance supply the auditable edit trail.
+- **Net-new:** the review-task abstraction, structured interaction logging, and the bridge
+  from headless orchestration to a live editing surface. **Highest novelty — but it rests on
+  proven async + edit + provenance machinery, not a green field.**
+
+### Aims 2–4 reuse the same foundations
+- **Aim 2 (DLS → DLE):** `itksnap-dls` + `DeepLearningSegmentationModel` already provide
+  transport, sessions, and local/remote/SSH execution over REST. *Net-new:* a model-class
+  abstraction (interactive/automatic/LVM), a discovery endpoint, and the contributor toolkit.
+- **Aim 3 (remote data):** `RESTClient` + `SSHTunnel` + `WorkspaceAPI::UploadWorkspace` +
+  the DSS ticket system already implement remote workspaces, SSH, and async jobs. *Net-new:*
+  a Flywheel plugin (libcurl — already a dependency), BIDS/DICOM scanning, and the pluggable
+  backend interface.
+- **Aim 4 (interop):** ITK handles format I/O; DICOM-SEG via dcmqi/ITK; `Logic/Mesh` + VTK +
+  the in-house cm-rep/ConvertMesh work supply the meshing path to FEBio/OpenSim.
+- **Aim 1.5 (tests):** extend `SNAPTestQt`/`--test` to cover the API and headless paths.
+
+### Cross-cutting risks & mitigations
+- **Headless rendering.** The 2D/3D views use OpenGL2 (`Logic/Slicing`), but the *API*
+  surface (I/O, segmentation, measurement, registration, propagation) needs **no GL**.
+  Rendering for the viewer is client-side (niivue/WebAssembly) or offscreen — off the
+  headless API's critical path. *Mitigation:* scope the headless build to non-GL compute.
+- **One Qt-bound model.** `DeepLearningSegmentationModel` pulls Qt only for *threading*
+  (`QtConcurrent`/`QFutureWatcher`), not core logic. For a clean headless build, swap that
+  for a toolkit-neutral async mechanism (e.g. std::async / ITK threading) — small, known scope.
+- **Live-GUI vs. headless for `request_review`.** The human step needs a live editing
+  surface; the MCP server bridges headless orchestration to it. *Mitigation:* reuse the
+  proven DLS "launch/attach a local server/session on demand" pattern for the viewer.
+- **Python packaging of ITK/VTK.** Bundling a heavy native stack into a wheel is non-trivial
+  — but `greedy_python`/`picsl-greedy` already solved this for the team.
+
+**Net:** roughly **70–80% of Aims 1–3 is extension of shipped components**; the genuinely
+new surface (the 1.3 human-in-the-loop layer, the DLE model-class abstraction, the Flywheel
+plugin, the mesh bridge) is bounded and built on existing async/REST/edit/provenance
+machinery — which is exactly why it fits a focused two-year effort.
 
 ---
 
