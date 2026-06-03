@@ -143,6 +143,155 @@ surface is itself the primary, toolkit-agnostic connector.*
 
 ---
 
+## Illustrative use cases (what success looks like)
+
+Concrete scenarios that exercise the aims and double as use-case-driven success criteria.
+Each names a realistic researcher, the goal, and the capability that delivers it.
+
+### UC-1 — Cohort segmentation with human QC *(the flagship loop; Aims 1 + 2)*
+A neuroimaging postdoc tells an agent: *"segment the hippocampus in these 200 T1 MRIs and
+flag any that look wrong."* The agent runs a fully-automatic model via the DLE, routes the
+low-confidence cases to `request_review`, and the expert corrects only those in the viewer.
+**Success:** 200 scans triaged; the human touches ~12 instead of 200; every decision logged.
+*Model proposes, human disposes — at cohort scale.*
+**Uses:** agent/MCP endpoint (1.2) · DLE automatic-model serving (2.1) · dynamic discovery
+(2.2) · `request_review` HITL primitive + provenance (1.3) · web viewer/QC handoff (idea #7).
+
+### UC-2 — Longitudinal monitoring via 4D propagation *(Aims 1.4 + 1.3)*
+A dementia-study analyst segments a structure (or an ARIA lesion) at baseline, then
+propagates it across all follow-up timepoints with SegFlow4D; the expert reviews only the
+frames where propagation drifted. **Success:** serial timepoints segmented consistently
+without re-drawing each one; within-subject reuse with no model retraining.
+**Uses:** SegFlow4D 4D propagation (1.4) · greedy/FireANTs registration backend (1.4) ·
+`request_review` on drifted frames (1.3) · Python/agent API (1.1–1.2).
+
+### UC-3 — Valve modeling → biomechanics *(Aims 1.3 + 4.2; cardiac focus)*
+A cardiac-imaging researcher segments the mitral valve from 3D echo, refines it
+interactively, and exports a material-tagged tetrahedral mesh to FEBio — optionally a 4D
+mesh across the cardiac cycle. **Success:** segmentation → simulation-ready mesh in one
+workflow, a previously-unavailable bridge for the biomechanics audience.
+**Uses:** interactive/automatic models via DLE (2.1) · ITK-SNAP GUI editing · segmentation→
+tet-mesh + FEBio/OpenSim export (4.2) · SegFlow4D 4D meshes (1.4).
+
+### UC-4 — Cloud cohort without local download *(Aim 3 + remote GPU, Aim 2.4)*
+A researcher browses a Flywheel project, opens a scan, and segments it with an AI model
+running on a remote GPU — never downloading the full dataset locally — then writes the
+segmentation back to the archive. **Success:** "remote data + remote inference" feels like
+working locally; PHI stays in the archive.
+**Uses:** Flywheel backend plugin (3.2) · DICOM/BIDS + partial reads (3.3) · remote-aware
+workspaces + keychain creds (3.4) · remote-GPU DLE execution (2.4).
+
+### UC-5 — Ground-truth / training-data generation *(Aims 1 + 2; the data engine)*
+A lab building a labeled dataset runs an automatic model as a first pass, corrects in
+ITK-SNAP, and the corrections are captured as structured training data with provenance.
+**Success:** faster, auditable ground-truth creation — exactly the data-preparation work
+that underpins downstream model training and evaluation.
+**Uses:** DLE automatic serving (2.1) · `request_review` + interaction capture + provenance
+(1.3) · Python API batch mode (1.1).
+
+### UC-6 — AI segmentation for users without a GPU *(Aim 2; builds on shipped itksnap-dls)*
+A clinician-researcher on a laptop uses interactive (nnInteractive) and automatic models
+served from a lab GPU server or Colab. **Success:** near-real-time AI segmentation with no
+local GPU and no environment setup — democratized access.
+**Uses:** DLE serving local/remote/Colab (2.1, 2.4) · interactive nnInteractive + automatic
+models · model explorer + discovery (2.2). Builds on shipped itksnap-dls.
+
+### UC-7 — ITK-SNAP as a tool in an agentic pipeline / notebook *(Aim 1)*
+A computational researcher drives ITK-SNAP from Python in a reproducible pipeline, or an
+agent in Cursor/Claude Code calls it as an MCP tool ("segment structure X across cohort Y,
+pause for my review on outliers"). **Success:** ITK-SNAP is scriptable and composable, with
+the human checkpoint built into the automation.
+**Uses:** headless API (1.1) · Python wrapper + local stdio MCP server (1.2) ·
+`request_review` (1.3) · `--test` for reproducibility (1.5) · in-app/IDE agent (idea #8).
+
+### UC-8 — Cross-tool handoff with 3D Slicer *(Aim 4.1)*
+A lab standardized on 3D Slicer hands segmentations to ITK-SNAP for fast expert editing and
+back, via DICOM-SEG, with label names/colors/hierarchy preserved. **Success:** ITK-SNAP
+becomes the human-correction step in a Slicer-based pipeline without lossy conversions.
+**Uses:** DICOM-SEG segmentation interchange + label-semantics preservation (4.1) ·
+headless API (1.1).
+
+### UC-9 — Community model contribution *(Aim 2.3; sustainability)*
+A graduate student wraps a new MONAI model using the agent-assisted contributor toolkit,
+passes CI conformance, and PRs it; via dynamic discovery it appears for all ITK-SNAP users
+without a new release. **Success:** the model library grows from the community, not the
+core team — the self-sustaining engine.
+**Uses:** agent-assisted contributor toolkit — wrapper contract + scaffolding + CI
+conformance (2.3) · dynamic discovery (2.2).
+
+---
+
+### Aim 1 spotlight — the new, harder-to-picture capabilities
+
+Aim 1 (headless API **1.1**, Python wrapper + MCP endpoint **1.2**, human-in-the-loop
+primitives **1.3**) is the most novel part, so it's worth making concrete. **Today**
+ITK-SNAP is GUI-first with only limited scripting (the `itksnap-wt` workspace CLI, `c3d`);
+there is no clean, callable library of ITK-SNAP's *semantics* (workspaces, labels, display
+policies, tools), and **no way at all to make a human expert a structured, resumable step
+in an automated pipeline.** These use cases show what that unlocks.
+
+#### Aim 1.1 — a scriptable core (no GUI)
+
+**UC-A1 — Reproducible cohort pipeline on the cluster.** A lab runs ITK-SNAP segmentation
++ volumetry across an ADNI-scale cohort, fully headless on HPC, as a version-controlled
+pipeline step (e.g. Snakemake/Nextflow) reproducible from the paper's repo. *Today this
+means hand-gluing `c3d`/ITK scripts; the API exposes ITK-SNAP's own operations directly.*
+**Uses:** headless API (1.1) · batch mode · regression-tested reproducibility (1.5).
+
+**UC-A2 — Programmatic workspace assembly.** A study coordinator generates hundreds of
+pre-configured workspaces (image + overlays + label set + display preferences) so every
+reader opens a ready-to-go session — instead of hand-setting each case. *Encodes ITK-SNAP
+session semantics, not just pixels.*
+**Uses:** headless API for workspace I/O + label/display config (1.1); builds on
+`Logic/WorkspaceAPI`.
+
+#### Aim 1.2 — Python wrapper + agent endpoint
+
+**UC-A3 — Notebook-native analysis.** A researcher in Jupyter loads a workspace, queries
+per-label volumes, thresholds, runs a model, and saves — all in Python, with results as
+numpy/SimpleITK. ITK-SNAP's labels and display logic become first-class in code, next to
+the rest of the scientific Python stack. *Like having ITK-SNAP as an importable library.*
+**Uses:** Python wrapper (1.2) over the headless API (1.1).
+
+**UC-A4 — Conversational multi-step task via an agent.** In Claude Code / Cursor: *"open
+these 30 echo studies, run the valve model, compute annular dimensions, and show me the 5
+with the largest change since last visit."* The agent chains MCP tool calls; the researcher
+reviews the shortlist. *Natural-language orchestration of a real multi-step study task.*
+**Uses:** local stdio MCP server (1.2) · DLE serving (2.1) · no coding required by the user.
+
+#### Aim 1.3 — Human-in-the-loop primitives *(the differentiator — no equivalent exists today)*
+
+**UC-A5 — Active-learning labeling loop.** While building a training set, an automatic
+model proposes; `request_review` routes the *most informative / lowest-confidence* cases to
+an expert; corrections feed the next round. Expert effort goes where it moves the needle.
+**Uses:** `request_review` + interaction capture (1.3) · DLE serving (2.1).
+
+**UC-A6 — Auditable two-pass study QC.** A multi-site study needs adjudicated
+segmentations: automated first pass → structured human review → **every edit, decision, and
+reviewer logged with provenance** for audit/regulatory traceability. *Replaces ad-hoc
+spreadsheets and screenshots with a structured, resumable review step.*
+**Uses:** `request_review` + provenance/audit logging (1.3) · headless API batch (1.1).
+
+**UC-A7 — Reader-reliability study as a first-class workflow.** Route the same cases to
+multiple expert readers (or one reader over time) through `request_review`, capturing
+decisions and edits uniformly to compute inter-/intra-rater reliability — turning ITK-SNAP
+into the *instrument* for a reader study (e.g. valve or hippocampal-subfield segmentation).
+**Uses:** `request_review` + standardized interaction capture (1.3) · scripted orchestration
+via the API (1.1–1.2).
+
+**UC-A8 — Human escalation in an unattended overnight batch.** An agent processes a large
+cohort overnight; uncertain cases are parked as pending review tasks; in the morning the
+expert clears the queue and the pipeline resumes. *Mixed-initiative automation that respects
+expert time — the loop survives the human being asleep.*
+**Uses:** `request_review` as a resumable/queued step (1.3) · agent/MCP orchestration (1.2).
+
+> **Why this matters to convince a skeptic:** 1.1/1.2 turn ITK-SNAP from a GUI app into a
+> *library and a tool agents can call*; 1.3 is genuinely new — it makes **expert judgment a
+> callable, auditable, resumable pipeline step**, which neither the GUI, the workspace CLI,
+> nor the MONAI/HF stack provides. That capability is the proposal's core differentiator.
+
+---
+
 ## Why this scope is achievable in Track 1 — the coding-agent multiplier
 
 A ~$250K / 2-year budget funds roughly **1–1.5 FTE of engineering**. Three aims would be
