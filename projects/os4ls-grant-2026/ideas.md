@@ -146,6 +146,16 @@ value, and ~80% reachable by exposing the existing `Logic/WorkspaceAPI/` + the D
   *software*, not hosted infrastructure (RFA scope + sustainability).
 - Batch/headless mode for large-scale processing and reproducible scripted workflows.
 - Examples: scripted dataset curation, agent-driven "segment structure X across cohort Y."
+- **A constellation of MCP endpoints, not one.** ITK-SNAP is *not* a pass-through to
+  itksnap-dls: DLS is the inference engine (call it directly for raw inference); ITK-SNAP
+  is the domain/workflow/human-in-the-loop layer that *uses* DLS. Expose MCP at both
+  layers — and apply the **same wrapper pattern** (one contract + the agent-assisted
+  toolkit, idea #2) to expose the wider ecosystem as composable endpoints: **greedy**
+  (registration), **SegFlow4D** (4D propagation) — both already Python, near-free — plus
+  **Convert3D/c3d**, **ConvertMesh**, and **cmrep** (shape modeling) as the ecosystem
+  roadmap. ITK-SNAP is the **human-in-the-loop hub** that composes them; agents chain
+  GUI-free specialized tools into pipelines. (Ecosystem-wide = Track 2; Track 1 commits to
+  ITK-SNAP + DLS + the pattern, with greedy/SegFlow4D as low-cost demos.)
 
 **Notes / open questions:**
 - Reuse the existing scriptable surface (WorkspaceAPI, c3d) rather than inventing new.

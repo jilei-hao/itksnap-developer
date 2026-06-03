@@ -143,6 +143,45 @@ surface is itself the primary, toolkit-agnostic connector.*
 
 ---
 
+## Architecture — a constellation of composable MCP endpoints
+
+Two design clarifications that a reviewer (or PI) will ask about:
+
+**1. ITK-SNAP is not a pass-through to itksnap-dls.** `itksnap-dls` is a model-*inference*
+engine (image + prompts → mask); for *pure inference* an agent can call it directly — and
+should. The ITK-SNAP API sits a layer above: workspaces, label semantics, editing,
+registration, 4D propagation, mesh/DICOM-SEG, and the human-in-the-loop primitives. It
+*uses* DLS for the inference step and orchestrates everything around it. So we expose MCP
+at **both layers**: a thin inference MCP over DLS (reusable by any tool), and the
+domain/human MCP over ITK-SNAP that calls it. Raw inference skips ITK-SNAP; workflow,
+meaning, and the human checkpoint go through it.
+
+**2. We intend more than one MCP — a constellation over the ecosystem.** The same
+lightweight wrapping pattern (one wrapper contract + the agent-assisted toolkit, Aim 2.3)
+is designed to expose each mature PICSL/ecosystem tool as its own composable MCP endpoint,
+with **ITK-SNAP as the human-in-the-loop hub** that composes them into pipelines:
+
+| Endpoint | MCP exposes | Track 1 status |
+|---|---|---|
+| **ITK-SNAP** | workspaces, labels, editing, `request_review` (human hub) | committed |
+| **itksnap-dls / DLE** | model inference | committed |
+| **greedy** | affine / deformable registration | low-cost demo (picsl-greedy already Python) |
+| **SegFlow4D** | 4D segmentation + mesh propagation | low-cost demo (already Python); supports UC-2 |
+| **Convert3D / c3d** | image processing, label algebra, format conversion | ecosystem roadmap / Track 2 |
+| **ConvertMesh** | mesh conversion / processing | ecosystem roadmap / Track 2 |
+| **cmrep** | continuous medial representation / shape modeling | ecosystem roadmap / Track 2 |
+
+**Scope discipline:** Track 1 commits only to the **ITK-SNAP + DLS endpoints and the shared
+wrapping pattern**; greedy and SegFlow4D are near-free demonstrations of that pattern
+(they already ship Python interfaces); c3d / ConvertMesh / cmrep are the explicit
+*ecosystem roadmap* — the Track 2 story, or community contributions via the toolkit. We do
+**not** promise wrapping the whole constellation in Track 1. The point is the architecture:
+specialized, GUI-free tools become composable MCP endpoints that agents chain into
+pipelines, with ITK-SNAP supplying the human checkpoint — squarely the RFA's "composable in
+AI-driven pipelines" priority.
+
+---
+
 ## Illustrative use cases (what success looks like)
 
 Concrete scenarios that exercise the aims and double as use-case-driven success criteria.

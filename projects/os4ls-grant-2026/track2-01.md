@@ -73,6 +73,14 @@ verification, correction, and interaction-capture** an orchestrable pipeline ste
   as a **distributable local (stdio) MCP server** (client-launched, **no indefinite
   hosting obligation**); optional remote (HTTP) mode for cloud/multi-user use. Software,
   not hosted infrastructure.
+- **1.2b A constellation of MCP endpoints across the ecosystem** *(the Track 2 payoff).*
+  Apply one shared wrapper pattern (+ the Aim 2.3 contributor toolkit) to expose each tool
+  as a composable MCP endpoint — **ITK-SNAP** (domain + human hub), **itksnap-dls/DLE**
+  (inference), **greedy** (registration), **SegFlow4D** (4D propagation), **Convert3D/c3d**
+  (image/label algebra), **ConvertMesh** (mesh ops), **cmrep** (shape modeling). Agents
+  chain these GUI-free tools into pipelines; ITK-SNAP supplies the human-in-the-loop
+  checkpoint. ITK-SNAP is *not* a pass-through to DLS — DLS is the inference engine the
+  domain layer calls; MCP lives at both layers.
 - **1.3 Human-in-the-loop primitives** *(the differentiator).* Expose the human checkpoint
   as callable operations: review/correction as a step (`request_review(image, seg) →
   {corrected seg, decision, provenance}`), escalation/triage of uncertain cases, and

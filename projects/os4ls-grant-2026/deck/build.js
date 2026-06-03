@@ -269,9 +269,65 @@ async function main() {
     ],
     "Agent summons the right view (deep-linked) → human disposes → structured result flows back.");
 
-  // =========================================================== SLIDE 11 — feasibility
+  // =========================================================== SLIDE 11 — in practice (use cases)
   s = pres.addSlide(); s.background = { color: LIGHT };
-  head(s, "Feasibility", "Why this is achievable in a 2-year scope");
+  head(s, "Use cases", "What it looks like in practice",
+    "Automation does the rote work; the expert is pulled in only where judgment matters.");
+  const ucs = [
+    { ic: I.grid, h: "Cohort segmentation at scale", d: "Agent segments 200 scans; the expert reviews only the ~12 flagged. Every decision logged.", tag: "Aims 1 + 2", a: TEAL },
+    { ic: I.cube, h: "Valve → biomechanics", d: "Segment the mitral valve, export a FEBio-ready mesh — 4D over the cardiac cycle.", tag: "Aims 1.3 + 4.2", a: AMBER },
+    { ic: I.users, h: "Reader study & auditable QC", d: "Route cases to multiple readers; capture decisions + provenance for reliability/audit.", tag: "Aim 1.3", a: MINT },
+    { ic: I.code, h: "Reproducible pipeline / notebook", d: "Drive ITK-SNAP from Python or an agent in a versioned, reproducible pipeline.", tag: "Aims 1.1–1.2", a: TEAL_D },
+  ];
+  const ucw = (PW - 2 * M - 0.4) / 2;
+  ucs.forEach((c, i) => {
+    const col = i % 2, row = Math.floor(i / 2);
+    const x = M + col * (ucw + 0.4), y = 2.0 + row * 2.05;
+    s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x, y, w: ucw, h: 1.85, fill: { color: CARD }, line: { color: LINE, width: 1 }, rectRadius: 0.08, shadow: shadow() });
+    s.addShape(pres.shapes.OVAL, { x: x + 0.32, y: y + 0.34, w: 0.74, h: 0.74, fill: { color: c.a } });
+    s.addImage({ data: c.ic, x: x + 0.32 + 0.21, y: y + 0.34 + 0.21, w: 0.32, h: 0.32 });
+    s.addText(c.h, { x: x + 1.3, y: y + 0.3, w: ucw - 1.55, h: 0.4, fontSize: 16, bold: true, color: NAVY, fontFace: HEAD, margin: 0 });
+    s.addText(c.d, { x: x + 1.3, y: y + 0.72, w: ucw - 1.55, h: 0.85, fontSize: 12, color: SLATE, fontFace: BODY, margin: 0, valign: "top" });
+    s.addText(c.tag, { x: x + 1.3, y: y + 1.45, w: ucw - 1.55, h: 0.3, fontSize: 10.5, bold: true, color: c.a, fontFace: HEAD, margin: 0 });
+  });
+  footer(s, 11);
+
+  // =========================================================== SLIDE 12 — technical feasibility (codebase)
+  s = pres.addSlide(); s.background = { color: LIGHT };
+  head(s, "Technical feasibility", "Built on what already ships",
+    "Most of Aims 1–4 extends existing, working components — not new subsystems.");
+  const chips = [
+    ["Programmable workspaces, labels, display", "Logic/WorkspaceAPI"],
+    ["Headless operation today", "itksnap-wt CLI"],
+    ["REST + SSH transport", "RESTClient · SSHTunnel"],
+    ["DL-server client (local / remote / SSH)", "DeepLearningSegmentationModel"],
+    ["Async submit → await → return", "DistributedSegmentationModel"],
+    ["Python bindings toolchain", "pybind11 · greedy_python"],
+  ];
+  const chw = (PW - 2 * M - 0.4) / 2, chh = 0.82;
+  chips.forEach((c, i) => {
+    const col = i % 2, row = Math.floor(i / 2);
+    const x = M + col * (chw + 0.4), y = 2.0 + row * 0.98;
+    s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x, y, w: chw, h: chh, fill: { color: CARD }, line: { color: LINE, width: 1 }, rectRadius: 0.06, shadow: shadow() });
+    s.addShape(pres.shapes.RECTANGLE, { x, y, w: 0.1, h: chh, fill: { color: TEAL } });
+    s.addImage({ data: I.check, x: x + 0.28, y: y + chh / 2 - 0.16, w: 0.32, h: 0.32 });
+    s.addText([
+      { text: c[0] + "  ", options: { color: NAVY, bold: true } },
+      { text: "→ " + c[1], options: { color: TEAL_D, fontFace: BODY } },
+    ], { x: x + 0.72, y, w: chw - 0.9, h: chh, fontSize: 12, fontFace: HEAD, margin: 0, valign: "middle" });
+  });
+  s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: M, y: 5.15, w: PW - 2 * M, h: 1.05, fill: { color: NAVY }, rectRadius: 0.07, shadow: shadow() });
+  s.addText([
+    { text: "~70–80% extends shipped components.  ", options: { color: AMBER, bold: true } },
+    { text: "Even ", options: { color: "CADCFC" } },
+    { text: "request_review", options: { color: "FFFFFF", bold: true } },
+    { text: " reuses the async ticket workflow already shipped in DistributedSegmentationModel — with a human as the “worker.”", options: { color: "CADCFC" } },
+  ], { x: M + 0.35, y: 5.15, w: PW - 2 * M - 0.7, h: 1.05, fontSize: 13.5, fontFace: BODY, margin: 0, valign: "middle" });
+  footer(s, 12);
+
+  // =========================================================== SLIDE 13 — delivery capacity (coding-agent multiplier)
+  s = pres.addSlide(); s.background = { color: LIGHT };
+  head(s, "Delivery capacity", "Why we can build it in two years");
   const fcards = [
     { ic: I.rocket, h: "Coding-agent multiplier", d: "Modern AI coding agents turn a ~3–4 FTE-year scope into something a focused team can deliver — and it dogfoods the very thing we're building.", a: TEAL },
     { ic: I.checkDouble, h: "Integration, not invention", d: "Most work wires together mature components: itksnap-dls, greedy, SegFlow4D, FireANTs, WorkspaceAPI, MONAI, Hugging Face.", a: AMBER },
@@ -289,9 +345,36 @@ async function main() {
     s.addText(c.d, { x: x + 1.35, y: y + 0.78, w: cw - 1.6, h: 1.05, fontSize: 12.5, color: SLATE, fontFace: BODY, margin: 0, valign: "top" });
   });
   bottomStrip(s, "Anchored on shipped, adopted code — a mature project, not a prototype or a rewrite.");
-  footer(s, 11);
+  footer(s, 13);
 
-  // =========================================================== SLIDE 12 — two tracks
+  // =========================================================== SLIDE 14 — deployment model
+  s = pres.addSlide(); s.background = { color: LIGHT };
+  head(s, "Deployment", "One core — install what your role needs",
+    "Not two ITK-SNAPs: one codebase, the face(s) each user needs.");
+  const rows = [
+    { ic: I.server, who: "Automation / HPC / CI", inst: "pip headless library (no GUI)", a: TEAL },
+    { ic: I.userMd, who: "Interactive expert", inst: "Desktop app (also agent-ready via MCP)", a: AMBER },
+    { ic: I.eye, who: "Notebook + occasional human", inst: "pip library + web viewer (browser — no extra install)", a: MINT },
+  ];
+  const dpw = PW - 2 * M, dph = 0.92;
+  rows.forEach((r, i) => {
+    const y = 1.95 + i * 1.05;
+    s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: M, y, w: dpw, h: dph, fill: { color: CARD }, line: { color: LINE, width: 1 }, rectRadius: 0.07, shadow: shadow() });
+    s.addShape(pres.shapes.OVAL, { x: M + 0.28, y: y + dph / 2 - 0.3, w: 0.6, h: 0.6, fill: { color: r.a } });
+    s.addImage({ data: r.ic, x: M + 0.28 + 0.16, y: y + dph / 2 - 0.3 + 0.16, w: 0.28, h: 0.28 });
+    s.addText(r.who, { x: M + 1.05, y, w: 4.0, h: dph, fontSize: 15, bold: true, color: NAVY, fontFace: HEAD, margin: 0, valign: "middle" });
+    s.addImage({ data: arrowTeal, x: M + 5.0, y: y + dph / 2 - 0.16, w: 0.34, h: 0.34 });
+    s.addText(r.inst, { x: M + 5.55, y, w: dpw - 5.8, h: dph, fontSize: 14, color: SLATE, fontFace: BODY, margin: 0, valign: "middle" });
+  });
+  s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: M, y: 5.2, w: dpw, h: 1.1, fill: { color: NAVY }, rectRadius: 0.07, shadow: shadow() });
+  s.addText("Principles", { x: M + 0.32, y: 5.3, w: dpw - 0.6, h: 0.3, fontSize: 12, bold: true, color: MINT, charSpacing: 1, fontFace: HEAD, margin: 0 });
+  s.addText([
+    { text: "Headless core makes human-in-the-loop callable & scalable — not optional.", options: { breakLine: true } },
+    { text: "Web viewer = zero-install human surface  ·  MCP can be C++ or Python (not Python-locked)  ·  pip = the engine, not the GUI app.", options: {} },
+  ], { x: M + 0.32, y: 5.6, w: dpw - 0.64, h: 0.65, fontSize: 12.5, color: "E6EEF7", fontFace: BODY, margin: 0, valign: "top" });
+  footer(s, 14);
+
+  // =========================================================== SLIDE 15 — two tracks
   s = pres.addSlide(); s.background = { color: LIGHT };
   head(s, "Strategy", "Two routes — pick the ambition");
   function trackCard(x, w, color, tag, price, title, items, rec) {
@@ -321,9 +404,9 @@ async function main() {
     "LoRA domain-adaptation (stretch)",
   ], false);
   bottomStrip(s, "Recommendation: lead with a tight Track 1; Track 2 if we can staff ~4+ FTE-years across the ecosystem.", 6.05);
-  footer(s, 12);
+  footer(s, 15);
 
-  // =========================================================== SLIDE 13 — next steps (dark)
+  // =========================================================== SLIDE 16 — next steps (dark)
   s = pres.addSlide(); s.background = { color: NAVY };
   s.addShape(pres.shapes.RECTANGLE, { x: 0, y: 0, w: 0.28, h: PH, fill: { color: TEAL } });
   s.addText("DECISIONS & NEXT STEPS", { x: M, y: 0.6, w: 11, h: 0.35, fontSize: 14, bold: true, color: MINT, charSpacing: 3, fontFace: HEAD, margin: 0 });
@@ -346,7 +429,7 @@ async function main() {
     s.addText(c.t, { x: x + 1.12, y: y + 0.2, w: nw - 1.3, h: 0.4, fontSize: 14.5, bold: true, color: "FFFFFF", fontFace: HEAD, margin: 0 });
     s.addText(c.d, { x: x + 1.12, y: y + 0.58, w: nw - 1.3, h: 0.55, fontSize: 11.5, color: "B9C9DC", fontFace: BODY, margin: 0, valign: "top" });
   });
-  footer(s, 13);
+  footer(s, 16);
 
   await pres.writeFile({ fileName: "ideas.pptx" });
   console.log("wrote ideas.pptx");
