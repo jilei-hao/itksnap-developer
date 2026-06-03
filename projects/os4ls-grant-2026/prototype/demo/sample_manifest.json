@@ -1,0 +1,25 @@
+{
+  "_comment": "Demo cohort manifest. Image paths are resolved against --testdata. This is the kind of input an agent would consume (or generate by scanning a folder) to batch-create review-ready ITK-SNAP workspaces.",
+  "cases": [
+    {
+      "id": "subj001",
+      "main": "t1_chunk.nii.gz",
+      "main_nickname": "T1",
+      "labels": "MRIcrop-seg.label",
+      "tags": ["cohort:demo", "status:needs-review"]
+    },
+    {
+      "id": "subj002",
+      "main": "X39.nii.gz",
+      "main_nickname": "T1",
+      "overlays": [{ "image": "Z32.nii.gz", "nickname": "overlay", "colormap": "jet" }],
+      "tags": ["cohort:demo", "status:needs-review"]
+    },
+    {
+      "id": "subj003",
+      "main": "Z32.nii.gz",
+      "main_nickname": "T1",
+      "tags": ["cohort:demo", "status:needs-review"]
+    }
+  ]
+}
