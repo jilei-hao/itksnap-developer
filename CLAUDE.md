@@ -57,6 +57,90 @@ cmake -G Ninja \
 ninja
 ```
 
+### Building on Linux (Ubuntu 24.04)
+
+ITK-SNAP builds and runs on Linux; the notes below capture the first successful build
+on Ubuntu 24.04 (GCC 13, CMake 3.28, Ninja). A machine-local `config.local.sh`
+(gitignored) records the dependency paths and is sourced by `scripts/build-release.sh`.
+
+**1. System packages (Qt6 toolchain via apt).** The project's CMake uses the `Qt6Qml`
+and `Qt6LinguistTools` modules, which are absent from a qtbase-only Qt build:
+```bash
+sudo apt-get install -y qt6-base-dev qt6-base-dev-tools \
+  qt6-declarative-dev qt6-tools-dev qt6-l10n-tools
+# build tooling, usually already present: cmake ninja-build g++ libcurl4-openssl-dev libssh-dev
+```
+Ubuntu 24.04 ships Qt 6.4.2. The project's CMake assumes Qt ≥ 6.7 for two macros (see
+gotchas); these are version-guarded so 6.4.2 configures cleanly, losing only bundled UI
+translations and the install-time deploy script (neither needed to build or run locally).
+
+**2. Dependency locations on this machine** (recorded in `config.local.sh`):
+
+| Dep | Path | Notes |
+|---|---|---|
+| ITK 5.4.4 | `itk-dev/installed/lib/cmake/ITK-5.4` | Use the **installed** tree, **not** `build-release-dynamic-540rc02` (stale — see gotchas) |
+| VTK 9.3.0 | `vtk-dev/build-release-dynamic-930` | Built with `RenderingExternal` and `cmake --install`-ed to `vtk-dev/installed` |
+| Qt 6.4.2 | `/usr` (apt) | passed as `CMAKE_PREFIX_PATH=/usr` |
+
+**3. Configure & build:**
+```bash
+scripts/build-release.sh          # sources config.local.sh; or run cmake directly:
+cmake -G Ninja -S itksnap -B build-release -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_PREFIX_PATH=/usr \
+  -DITK_DIR=/home/jileihao/dev/itk-dev/installed/lib/cmake/ITK-5.4 \
+  -DVTK_DIR=/home/jileihao/dev/vtk-dev/build-release-dynamic-930
+ninja -C build-release ITK-SNAP   # binary: build-release/ITK-SNAP
+```
+
+**4. Run (headless / over SSH).** ITK-SNAP is a Qt GUI app; with no display use Xvfb:
+```bash
+xvfb-run -a build-release/ITK-SNAP                                   # launch GUI
+xvfb-run -a build-release/ITK-SNAP --test VolumeRendering \
+  --testdir itksnap/Testing/TestData                                 # smoke test, exit 0 = OK
+```
+
+**Linux gotchas (and the fixes applied):**
+
+- **Stale ITK build → link failure.** `itk-dev/build-release-dynamic-540rc02` had its
+  source updated (Oct 2025: `itk::TransformBase` gained `Input/OutputSpaceName`) without
+  recompiling, so its `libITKTransform` lacks those symbols and linking ITK-SNAP fails
+  (`undefined reference to itk::TransformBaseTemplate<double>::GetOutputSpaceName`). ITK
+  uses `extern template`, so consumers rely entirely on the lib. Fix: build against the
+  consistent installed **ITK 5.4.4**. (To use the rc02 tree instead, rebuild ITK first.)
+
+- **VTK missing `RenderingExternal`.** `QtFrameBufferOpenGLWidget` (the 3D render widget)
+  uses `vtkExternalOpenGLRenderWindow`, so VTK must be built with
+  `-DVTK_MODULE_ENABLE_VTK_RenderingExternal=YES`. The machine's VTK was also built against
+  a since-deleted Qt 6.2.4; it was reconfigured against apt Qt 6.4.2, rebuilt, and
+  `cmake --install`-ed to `vtk-dev/installed`. Because the shell's `LD_LIBRARY_PATH` points
+  at `vtk-dev/installed`, the install step is **required** so the runtime VTK matches the
+  build (it also refreshes VTK for the other projects that consume `vtk-dev/installed`).
+
+- **Qt version-API guards.** `qt_add_translations(TARGETS …)` needs Qt ≥ 6.7 and
+  `qt_generate_deploy_script` needs Qt ≥ 6.5; both are guarded by `QTVERSION` in
+  `itksnap/CMakeLists.txt`. The `VTK 9.3.1` hard requirement in
+  `itksnap/CMake/standalone.cmake` was relaxed to `9.3` (CI's 9.3.1 still satisfies it).
+
+- **Stricter compiler than macOS.** GCC/libstdc++ rejected code Clang accepted: streaming
+  `std::string` into `qDebug()`/`qInfo()` is ambiguous (wrap with `QString::fromStdString`),
+  and `<QTimeZone>` / `<QDialogButtonBox>` must be included explicitly rather than relied on
+  transitively.
+
+**Source patches applied to the `itksnap` submodule** (branch `test/dls_sam2`; commit
+inside the submodule if keeping them):
+
+| File | Change |
+|---|---|
+| `CMake/standalone.cmake` | `VTK 9.3.1` → `9.3` |
+| `CMakeLists.txt` | version-guard `qt_add_translations` (≥6.7) and `qt_generate_deploy_script` (≥6.5) |
+| `GUI/Qt/Components/SSHTunnelWorkerThread.cxx` | `QString::fromStdString(…)` around 3 qDebug streams |
+| `GUI/Qt/Components/SNAPQtCommon.cxx` | add `#include <QTimeZone>` |
+| `GUI/Qt/Windows/DeepLearningServerPanel.cxx` | add `#include <QDialogButtonBox>`, wrap one qDebug stream |
+| `Testing/GUI/Qt/SSHTunnelTest/main.cxx` | `QString::fromStdString(…)` around 3 qDebug streams (built only by the `all` target, not `ITK-SNAP` alone) |
+
+> Note: `ninja ITK-SNAP` builds just the app, but `scripts/build-release.sh` / `ninja`
+> build the `all` target (CLI tools + test executables). Build `all` to catch everything.
+
 **Build a specific target:**
 ```bash
 ninja ITK-SNAP          # main application
