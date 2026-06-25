@@ -6,6 +6,35 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ITK-SNAP (v4.4.0) is a C++17 medical image segmentation application built on ITK, VTK, and Qt6. It provides interactive 3D segmentation tools including level-set methods, AI-assisted segmentation (nnInteractive), and mesh visualization.
 
+## Repository Layout (wrapper repo)
+
+This directory (`itksnap-developer`) is a **wrapper/meta-repository** that aggregates ITK-SNAP and its sibling projects as git submodules. Most build/test commands below run from this root and operate inside `itksnap/`.
+
+Top-level submodules (all under `github.com/jilei-hao/`), each tracking the branch noted in `.gitmodules`:
+
+| Path | Branch | Purpose |
+|---|---|---|
+| `itksnap/` | `test/dls_sam2` | Main ITK-SNAP application (architecture documented below) |
+| `greedy_python/` | `test/integration` | Python bindings for Greedy (see below) |
+| `convert-mesh/` | `main` | ConvertMesh CLI/library |
+| `cmrep/` | `local` | cm-rep; ground-truth parity reference for ConvertMesh |
+| `FireANTs/` | `main` | Registration project |
+| `itksnap-dls/` | `main` | Deep-learning segmentation service |
+| `segflow4d/` | `main` | 4D segmentation flow |
+
+Note: `itksnap/` has its own nested submodules (`Submodules/{c3d,greedy,digestible}`), so clones must be recursive.
+
+```bash
+# Fresh clone (pulls every submodule, including itksnap's nested ones):
+git clone --recursive git@github.com:jilei-hao/itksnap-developer.git
+# After a plain clone, or to fill in new submodules:
+git submodule update --init --recursive
+```
+
+**Updating submodules:**
+- Bump all to the latest commit of their tracked branch: `git submodule update --remote`, then commit the resulting pointer changes in this wrapper.
+- After editing inside a submodule: commit & push **inside the submodule first**, then `git add <path>` and commit in this wrapper to record the new pointer.
+
 ## Build System
 
 **Dependencies:** ITK ≥ 5.4, VTK ≥ 9.3.1, Qt6 (Widgets, OpenGL, Concurrent, Qml, LinguistTools), libcurl, libssh. The CI uses ITK v5.4.0, VTK 9.3.1, Qt 6.8.1.
@@ -131,7 +160,7 @@ MallocStackLogging=1 leaks --atExit -- build-leaks/ITK-SNAP \
 
 ## greedy_python Project
 
-Python bindings for the [Greedy](https://github.com/pyushkevich/greedy) diffeomorphic registration library. Source lives at `greedy_python/` (branch `test/integration` of https://github.com/jilei-hao/greedy_python). Listed in `.gitignore` — tracked separately.
+Python bindings for the [Greedy](https://github.com/pyushkevich/greedy) diffeomorphic registration library. Source lives at `greedy_python/`, a submodule of this wrapper tracking branch `test/integration` of https://github.com/jilei-hao/greedy_python.
 
 ### Build order
 
