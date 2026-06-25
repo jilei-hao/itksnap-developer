@@ -1,0 +1,28 @@
+[submodule "FireANTs"]
+	path = FireANTs
+	url = https://github.com/jilei-hao/FireANTs.git
+	branch = main
+[submodule "cmrep"]
+	path = cmrep
+	url = https://github.com/jilei-hao/cmrep.git
+	branch = local
+[submodule "convert-mesh"]
+	path = convert-mesh
+	url = https://github.com/jilei-hao/convert-mesh.git
+	branch = main
+[submodule "greedy_python"]
+	path = greedy_python
+	url = https://github.com/jilei-hao/greedy_python.git
+	branch = test/integration
+[submodule "itksnap"]
+	path = itksnap
+	url = https://github.com/jilei-hao/itksnap.git
+	branch = test/dls_sam2
+[submodule "itksnap-dls"]
+	path = itksnap-dls
+	url = https://github.com/jilei-hao/itksnap-dls.git
+	branch = main
+[submodule "segflow4d"]
+	path = segflow4d
+	url = https://github.com/jilei-hao/segflow4d.git
+	branch = main
