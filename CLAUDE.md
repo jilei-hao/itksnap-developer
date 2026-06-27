@@ -14,7 +14,7 @@ Top-level submodules (all under `github.com/jilei-hao/`), each tracking the bran
 
 | Path | Branch | Purpose |
 |---|---|---|
-| `itksnap/` | `test/dls_sam2` | Main ITK-SNAP application (architecture documented below) |
+| `itksnap/` | `feature/cardiac-io` | Main ITK-SNAP application (architecture documented below) |
 | `greedy_python/` | `test/integration` | Python bindings for Greedy (see below) |
 | `convert-mesh/` | `main` | ConvertMesh CLI/library |
 | `cmrep/` | `local` | cm-rep; ground-truth parity reference for ConvertMesh |
@@ -126,8 +126,9 @@ xvfb-run -a build-release/ITK-SNAP --test VolumeRendering \
   and `<QTimeZone>` / `<QDialogButtonBox>` must be included explicitly rather than relied on
   transitively.
 
-**Source patches applied to the `itksnap` submodule** (branch `test/dls_sam2`; commit
-inside the submodule if keeping them):
+**Source patches** (historically applied on `test/dls_sam2` for Linux/GCC CI). The submodule now
+tracks **`feature/cardiac-io`**, branched from upstream `master` (which has since moved VTK to
+9.5.2) — **re-verify which of these are still needed** on this branch before relying on them:
 
 | File | Change |
 |---|---|
