@@ -4,18 +4,24 @@ Improve how ITK-SNAP reads, holds, and writes **4D cardiac CTA** so that it pres
 **cardiac phase axis** and **important non-PHI metadata**, in a representation that can be re-written
 to multiple formats (`.nii.gz`, `.nrrd`, Slicer `.seq.nrrd`).
 
-> **Status (2026-06-28): MVP implemented + verified.** Phases **P0 + P1 + P3.3** are done on itksnap
-> branch **`feature/cardiac-io`** (commit `0e5168ad`, pushed; wrapper `main` tracks it). 4D CTA reads
-> now derive the cardiac `%R-R` axis from the `SeriesDescription` and carry it via the image
-> `MetaDataDictionary`; the `.seq.nrrd` writer emits it as the (non-uniform-capable) `axis 0 index
-> values`. Verified end-to-end on AVRP `bavcta005` (clean 20-phase → `0 5 … 95`) and `bavcta007`
-> (ambiguous 10-phase → non-uniform `0 10.56 … 95`). All MVP code is in
-> `Logic/ImageWrapper/GuidedNativeImageIO.cxx`.
+> **Status (2026-06-28): cardiac `%R-R` axis implemented + verified across all three formats.** On
+> itksnap branch **`feature/cardiac-io`** (HEAD `7b51378a`, pushed; wrapper `main` tracks it). 4D CTA
+> reads derive the `%R-R` axis from the `SeriesDescription` and carry it via the image
+> `MetaDataDictionary`. Writers:
+> - **`.seq.nrrd`** (P3.3) — `%R-R` as the non-uniform `axis 0 index values` + units + keys.
+> - **`.nii.gz`** (P3.1) — `pixdim[4]` = cardiac-cycle fraction step + a `<name>.json` sidecar with
+>   the authoritative `%R-R` array. (`toffset`/`xyzt_units` are ITK defaults; sidecar is canonical.)
+> - **`.nrrd`** (P3.2) — the `ITKSNAP_Cardiac_*` keys ride the dictionary automatically (no code).
 >
-> **Remaining:** P3.1 (NIfTI fraction header + JSON sidecar), P3.2 (plain `.nrrd` keys — likely free
-> via the dictionary), P2 (typed `TimePointProperties` cardiac fields + UI surfacing). The float
-> (non-identity-mapping) write path still bypasses `SaveNrrdSequence`, and the `.seq.nrrd` read-side
-> doesn't yet repopulate the cardiac key. See [improvement_plan.md](improvement_plan.md).
+> Verified end-to-end on AVRP `bavcta005` (clean 20-phase → `0 5 … 95`) and `bavcta007` (ambiguous
+> 10-phase → non-uniform `0 10.56 … 95`). All code is in `Logic/ImageWrapper/GuidedNativeImageIO.cxx`.
+>
+> **⚠️ Next priority — requirement 2 (non-PHI curation):** plain `.nrrd` export dumps the **entire**
+> DICOM dictionary, incl. patient tags (`0010|*`) and dates — a PHI leak on non-de-identified data
+> (pre-existing ITK behavior; `.seq.nrrd` and NIfTI+sidecar are already clean). The writer should emit
+> only the curated keep-list. **Other remaining:** P2 (typed `TimePointProperties` fields + UI); the
+> float (non-identity-mapping) write path still bypasses `SaveNrrdSequence`; the `.seq.nrrd` read-side
+> doesn't repopulate the cardiac key. See [improvement_plan.md](improvement_plan.md).
 >
 > *History:* analysis was done on `test/dls_sam2 @ 8539d63c` (where `.seq.nrrd` was read-only), then
 > reassessed against `master @ 28f4ee45` (which added the seq.nrrd writer + unified `SaveImage()`).
