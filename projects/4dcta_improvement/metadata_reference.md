@@ -103,7 +103,7 @@ Plus study-level: `heart_rate_bpm`, `n_phases`, `rr_source ∈ {dicom_tag, serie
 | Intensity calibration | `RescaleSlope (0028,1053)`, `RescaleIntercept (0028,1052)`, `RescaleType (0028,1054)` (=`HU`), `WindowCenter/Width (0028,1050/1051)` |
 | Pixel | `Rows/Columns (0028,0010/0011)`, `BitsStored (0028,0101)`, `PixelRepresentation (0028,0103)` |
 | Hierarchy (de-identified) | remapped `StudyInstanceUID`, `SeriesInstanceUID`, `FrameOfReferenceUID` (consistent pseudonymous UIDs) |
-| Research covariates (borderline — keep unless IRB says otherwise) | `PatientAge (0010,1010)`, `PatientSex (0010,0040)`, `PatientSize (0010,1020)`, `PatientWeight (0010,1030)`, `PatientBodyMassIndex` |
+| Research covariates (kept; HIPAA basis in §3.3 — age top-coded at 90) | `PatientAge (0010,1010)`, `PatientSex (0010,0040)`, `PatientSize (0010,1020)`, `PatientWeight (0010,1030)`, `PatientBodyMassIndex (0010,1022)` |
 
 ### 3.2 Drop-list (PHI — never persist into exported research files)
 From `anonymize_4dcta.py` `TAGS_TO_BLANK` — names, IDs, dates (beyond a shifted study date),
@@ -117,6 +117,36 @@ phase content and is dropped). UIDs are kept but **remapped** consistently.
 > dictionary into a NIfTI/NRRD sidecar — it should emit only the curated keep-list, so we never
 > launder PHI from a not-fully-cleaned source into a derived file. Treat §3.2 as an explicit
 > exclusion filter on export.
+
+### 3.3 HIPAA basis for keeping research covariates (and how it's implemented)
+
+*Not legal advice — the IRB/privacy office has final say.* HIPAA de-identification
+(45 CFR §164.514(b)) offers **Safe Harbor** (remove 18 enumerated identifiers) or **Expert
+Determination** (statistician certifies low re-identification risk); a **Limited Data Set**
+(§164.514(e), needs a Data Use Agreement) may additionally retain dates and full ages.
+
+Per covariate, under Safe Harbor:
+
+| Covariate | One of the 18 Safe Harbor identifiers? | Decision |
+|---|---|---|
+| `PatientSex (0010,0040)` | No | keep |
+| `PatientSize`/height `(0010,1020)` | No | keep |
+| `PatientWeight (0010,1030)` | No | keep |
+| `PatientBodyMassIndex (0010,1022)` | No | keep |
+| `PatientAge (0010,1010)` | **Only if > 89** (ages over 89 are identifiers) | keep, **top-code ≥90 → `090Y`** |
+
+Notes: `PatientBirthDate (0010,0030)` is a date identifier and is dropped (age alone is fine).
+De-identification is holistic — keeping covariates is compliant only because the other identifier
+categories (names, IDs, full dates, institution, device serials, private tags) are dropped by §3.2.
+The AVRP pipeline's `anonymize_4dcta.py` retains *shifted* dates, which is an Expert-Determination /
+Limited-Data-Set technique (not Safe Harbor); top-coding age at 90 is the safe move under any route.
+
+**Implemented (itksnap `feature/cardiac-io`, commit `7a1c2489`):** export curation in
+`GuidedNativeImageIO::SaveImage` swaps in an **allow-list** dictionary (the §3.1 tags +
+`ITKSNAP_Cardiac_*` keys, with `0010|1010` top-coded at 90) before the NRRD/MetaImage writer, then
+restores the in-memory dict (curation is **export-only** — the Image Info inspector keeps full
+fidelity). Allow-list (not deny-list) so unenumerated/private/free-text tags can never slip through.
+No-op for non-DICOM dictionaries, so custom keys on `.nrrd`/`.nii` inputs are preserved.
 
 ---
 

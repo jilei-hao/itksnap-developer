@@ -16,12 +16,17 @@ to multiple formats (`.nii.gz`, `.nrrd`, Slicer `.seq.nrrd`).
 > Verified end-to-end on AVRP `bavcta005` (clean 20-phase → `0 5 … 95`) and `bavcta007` (ambiguous
 > 10-phase → non-uniform `0 10.56 … 95`). All code is in `Logic/ImageWrapper/GuidedNativeImageIO.cxx`.
 >
-> **⚠️ Next priority — requirement 2 (non-PHI curation):** plain `.nrrd` export dumps the **entire**
-> DICOM dictionary, incl. patient tags (`0010|*`) and dates — a PHI leak on non-de-identified data
-> (pre-existing ITK behavior; `.seq.nrrd` and NIfTI+sidecar are already clean). The writer should emit
-> only the curated keep-list. **Other remaining:** P2 (typed `TimePointProperties` fields + UI); the
-> float (non-identity-mapping) write path still bypasses `SaveNrrdSequence`; the `.seq.nrrd` read-side
-> doesn't repopulate the cardiac key. See [improvement_plan.md](improvement_plan.md).
+> **✅ Requirement 2 (non-PHI curation) done** (commit `7a1c2489`): export now swaps in a curated
+> non-PHI **allow-list** (scanner/protocol/technique/cardiac/geometry/calibration/covariates + the
+> `ITKSNAP_Cardiac_*` keys, age top-coded at 90 per HIPAA Safe Harbor) before the NRRD/MetaImage
+> writer, then restores the in-memory dict (export-only; inspector keeps full fidelity). Verified on
+> `bavcta005`: exported `.nrrd` drops name/ID/dates/institution/accession/private-CSA, keeps the
+> research metadata. HIPAA rationale in [metadata_reference.md §3.3](metadata_reference.md).
+>
+> **Remaining:** P2 (typed `TimePointProperties` fields + UI); the float (non-identity-mapping) write
+> path still bypasses `SaveNrrdSequence`; the `.seq.nrrd` read-side doesn't repopulate the cardiac
+> key; the same export curation could be extended to the general (non-4DCTA) DICOM load path. See
+> [improvement_plan.md](improvement_plan.md).
 >
 > *History:* analysis was done on `test/dls_sam2 @ 8539d63c` (where `.seq.nrrd` was read-only), then
 > reassessed against `master @ 28f4ee45` (which added the seq.nrrd writer + unified `SaveImage()`).

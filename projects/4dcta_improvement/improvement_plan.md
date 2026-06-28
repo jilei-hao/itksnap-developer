@@ -15,12 +15,14 @@ Reads on: [analysis of existing logic](analysis_existing_logic.md) ·
 > - ✅ **P3.3** seq.nrrd writer emits `%R-R` (non-uniform) — `0e5168ad`
 > - ✅ **P3.1** NIfTI `pixdim[4]` + JSON sidecar — `7b51378a`
 > - ✅ **P3.2** plain `.nrrd` keys — free via the dictionary (verified, no code)
+> - ✅ **non-PHI curation (req. 2)** — `7a1c2489`: export swaps in a curated non-PHI allow-list
+>   (+ `ITKSNAP_*`, age top-coded at 90) before the NRRD/MetaImage writer, restores in-memory dict
+>   after (export-only). Verified on bavcta005. HIPAA rationale in metadata_reference.md §3.3.
 > - All verified end-to-end on AVRP bavcta005 (clean 20-phase) + bavcta007 (ambiguous 10-phase).
-> - 🔴 **non-PHI curation (req. 2)** — plain `.nrrd` dumps the **entire** DICOM dict incl. `0010|*`
->   patient tags + dates (PHI leak on raw data; pre-existing ITK behavior). Emit only the keep-list.
 > - ⬜ **P2** typed `TimePointProperties` cardiac fields + UI/workspace surfacing
 > - ⬜ **P4** grid validation/quarantine, detection tightening; **float-mapping write path** still
->   bypasses `SaveNrrdSequence`; `.seq.nrrd` read-side doesn't repopulate the cardiac key
+>   bypasses `SaveNrrdSequence`; `.seq.nrrd` read-side doesn't repopulate the cardiac key; extend
+>   export curation to the general (non-4DCTA) DICOM load path
 
 ---
 
