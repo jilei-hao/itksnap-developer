@@ -8,6 +8,17 @@
 Reads on: [analysis of existing logic](analysis_existing_logic.md) ·
 [metadata reference](metadata_reference.md).
 
+> **Implementation status (2026-06-28)** — itksnap branch `feature/cardiac-io`, all in
+> `Logic/ImageWrapper/GuidedNativeImageIO.cxx`:
+> - ✅ **P0** carrier (dictionary keys `ITKSNAP_Cardiac_*` + helpers) — commit `0e5168ad`
+> - ✅ **P1** read extraction (`%R-R` from `SeriesDescription`; temporal axis derived) — `0e5168ad`
+> - ✅ **P3.3** seq.nrrd writer emits `%R-R` — `0e5168ad`; verified on AVRP bavcta005 + bavcta007
+> - ⏳ **P3.1** NIfTI fraction header + JSON sidecar — *next*
+> - ⏳ **P3.2** plain `.nrrd` keys (likely free via the dictionary) — to confirm
+> - ⬜ **P2** typed `TimePointProperties` cardiac fields + UI/workspace surfacing
+> - ⬜ **P4** grid validation/quarantine, detection tightening; **float-mapping write path** still
+>   bypasses `SaveNrrdSequence`; `.seq.nrrd` read-side doesn't repopulate the cardiac key
+
 ---
 
 ## 1. Design spine

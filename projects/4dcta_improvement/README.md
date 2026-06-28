@@ -4,16 +4,21 @@ Improve how ITK-SNAP reads, holds, and writes **4D cardiac CTA** so that it pres
 **cardiac phase axis** and **important non-PHI metadata**, in a representation that can be re-written
 to multiple formats (`.nii.gz`, `.nrrd`, Slicer `.seq.nrrd`).
 
-> **Status (2026-06-27):** Analysis + plan complete and **reassessed against `itksnap master @
-> 28f4ee45`**. No code changes yet — awaiting decisions in
-> [improvement_plan.md §5](improvement_plan.md#5-open-decisions-for-the-user-before-implementation).
+> **Status (2026-06-28): MVP implemented + verified.** Phases **P0 + P1 + P3.3** are done on itksnap
+> branch **`feature/cardiac-io`** (commit `0e5168ad`, pushed; wrapper `main` tracks it). 4D CTA reads
+> now derive the cardiac `%R-R` axis from the `SeriesDescription` and carry it via the image
+> `MetaDataDictionary`; the `.seq.nrrd` writer emits it as the (non-uniform-capable) `axis 0 index
+> values`. Verified end-to-end on AVRP `bavcta005` (clean 20-phase → `0 5 … 95`) and `bavcta007`
+> (ambiguous 10-phase → non-uniform `0 10.56 … 95`). All MVP code is in
+> `Logic/ImageWrapper/GuidedNativeImageIO.cxx`.
 >
-> **Reassessment headline:** `master` already has a `.seq.nrrd` **export writer** (commit `01e02abd`)
-> and a **unified `SaveImage()` write path**, but the writer emits ordinal frame indices `0…T-1` (not
-> cardiac `%R-R`) and no metadata — so the user's two requirements are still unmet, and the read path
-> still discards the phase axis. Net: the writer **container** is solved; the work shrinks to
-> populating it. Earlier docs were written against `test/dls_sam2 @ 8539d63c` (where `.seq.nrrd` was
-> read-only).
+> **Remaining:** P3.1 (NIfTI fraction header + JSON sidecar), P3.2 (plain `.nrrd` keys — likely free
+> via the dictionary), P2 (typed `TimePointProperties` cardiac fields + UI surfacing). The float
+> (non-identity-mapping) write path still bypasses `SaveNrrdSequence`, and the `.seq.nrrd` read-side
+> doesn't yet repopulate the cardiac key. See [improvement_plan.md](improvement_plan.md).
+>
+> *History:* analysis was done on `test/dls_sam2 @ 8539d63c` (where `.seq.nrrd` was read-only), then
+> reassessed against `master @ 28f4ee45` (which added the seq.nrrd writer + unified `SaveImage()`).
 
 ## The three requirements
 1. Keep **cardiac phase information**.
