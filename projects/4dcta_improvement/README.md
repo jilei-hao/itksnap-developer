@@ -23,10 +23,18 @@ to multiple formats (`.nii.gz`, `.nrrd`, Slicer `.seq.nrrd`).
 > `bavcta005`: exported `.nrrd` drops name/ID/dates/institution/accession/private-CSA, keeps the
 > research metadata. HIPAA rationale in [metadata_reference.md §3.3](metadata_reference.md).
 >
-> **Remaining:** P2 (typed `TimePointProperties` fields + UI); the float (non-identity-mapping) write
-> path still bypasses `SaveNrrdSequence`; the `.seq.nrrd` read-side doesn't repopulate the cardiac
-> key; the same export curation could be extended to the general (non-4DCTA) DICOM load path. See
-> [improvement_plan.md](improvement_plan.md).
+> **Update (2026-06-28, HEAD `a0f9d6f0`) — optional follow-ups landed:**
+> - ✅ **Float write path** routed through `SaveImage` (`c1346b9d`) — non-identity-mapped + general
+>   DICOM exports now get curation + sidecar. (4D CTA is identity-mapped, so it already used the 4D
+>   path; `FloatImageType` is 3D so that path stays current-TP-only — moot for short CT.)
+> - ✅ **P2** typed `TimePointProperties` cardiac fields + read-only "Cardiac phase" field in the
+>   General Layer Inspector (`a0f9d6f0`); workspace FormatVersion bumped to 2.
+> - ✅ **`.seq.nrrd` read round-trip** verified — `%R-R` keys survive write→read (free via the
+>   `key:=value` lines + dict-preserving fold).
+> - ✅ **General DICOM curation** — covered by the shared `SaveImage` curation + the float-path routing.
+> - The full app was rebuilt (binary at `build-release/ITK-SNAP`). **Pending:** interactive GUI check
+>   of the cardiac-phase field; 4D non-identity float export stays 3D (pre-existing); `NumberOfPhases`
+>   omitted from the seq header (redundant with frame count). See [improvement_plan.md](improvement_plan.md).
 >
 > *History:* analysis was done on `test/dls_sam2 @ 8539d63c` (where `.seq.nrrd` was read-only), then
 > reassessed against `master @ 28f4ee45` (which added the seq.nrrd writer + unified `SaveImage()`).

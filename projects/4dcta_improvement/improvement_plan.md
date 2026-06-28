@@ -19,10 +19,13 @@ Reads on: [analysis of existing logic](analysis_existing_logic.md) ·
 >   (+ `ITKSNAP_*`, age top-coded at 90) before the NRRD/MetaImage writer, restores in-memory dict
 >   after (export-only). Verified on bavcta005. HIPAA rationale in metadata_reference.md §3.3.
 > - All verified end-to-end on AVRP bavcta005 (clean 20-phase) + bavcta007 (ambiguous 10-phase).
-> - ⬜ **P2** typed `TimePointProperties` cardiac fields + UI/workspace surfacing
-> - ⬜ **P4** grid validation/quarantine, detection tightening; **float-mapping write path** still
->   bypasses `SaveNrrdSequence`; `.seq.nrrd` read-side doesn't repopulate the cardiac key; extend
->   export curation to the general (non-4DCTA) DICOM load path
+> - ✅ **P2** typed `TimePointProperties` cardiac fields (workspace v2) + read-only "Cardiac phase"
+>   field in the General Layer Inspector — `a0f9d6f0`. *(GUI compiles + links; interactive check pending.)*
+> - ✅ **float write path** routed through `SaveImage` — `c1346b9d`; non-identity + general DICOM
+>   exports now curate + sidecar. `.seq.nrrd` read round-trip verified (free). General-DICOM curation
+>   covered by the shared `SaveImage` path.
+> - ⬜ **P4** grid validation/quarantine, detection tightening; 4D non-identity float export stays 3D
+>   (pre-existing; moot for short CT); `NumberOfPhases` omitted from the seq header (redundant)
 
 ---
 
