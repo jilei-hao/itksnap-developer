@@ -47,9 +47,11 @@ to multiple formats (`.nii.gz`, `.nrrd`, Slicer `.seq.nrrd`).
 ## Documents
 | Doc | What |
 |---|---|
-| [analysis_existing_logic.md](analysis_existing_logic.md) | How ITK-SNAP reads/holds/writes 4DCTA today, with file:line refs and the gap list (G1–G8). |
-| [metadata_reference.md](metadata_reference.md) | Concrete tag keep-list / PHI drop-list / per-format write recipes (distilled from AVRP `phase_detection`). |
+| [progress_summary.md](progress_summary.md) | **What was built** — capability/verification table, commit stack, what's left. Start here. |
+| [analysis_existing_logic.md](analysis_existing_logic.md) | How ITK-SNAP read/held/wrote 4DCTA before the change, with file:line refs and the gap list (G1–G8). |
+| [metadata_reference.md](metadata_reference.md) | Concrete tag keep-list / PHI drop-list / per-format write recipes + HIPAA rationale (§3.3). |
 | [improvement_plan.md](improvement_plan.md) | Phased plan (P0–P5), file-by-file change map, tests, open decisions. |
+| `itksnap/Documentation/Developer/Cardiac4DCTA_IO.md` | **Developer description of the shipped behavior** (lives in the itksnap repo, travels with the code). |
 
 ## TL;DR of the findings
 ITK-SNAP has a real 4D-CTA path, and the slice/phase **ordering is already correct** (group by Z →
