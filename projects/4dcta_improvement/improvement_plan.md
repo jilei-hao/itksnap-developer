@@ -24,8 +24,12 @@ Reads on: [analysis of existing logic](analysis_existing_logic.md) ·
 > - ✅ **float write path** routed through `SaveImage` — `c1346b9d`; non-identity + general DICOM
 >   exports now curate + sidecar. `.seq.nrrd` read round-trip verified (free). General-DICOM curation
 >   covered by the shared `SaveImage` path.
-> - ⬜ **P4** grid validation/quarantine, detection tightening; 4D non-identity float export stays 3D
->   (pre-existing; moot for short CT); `NumberOfPhases` omitted from the seq header (redundant)
+> - ✅ **P4 (partial)** — `a359b7bd`: grid validation/quarantine (ragged DICOM grid → clear
+>   `IRISException` instead of silent phase misalignment; verified) + `NumberOfPhases` emitted in the
+>   seq header (all four cardiac keys now round-trip).
+> - ⬜ **P4 (remaining)** detection tightening (currently "any Siemens/GE CT dir" — benign, loads as
+>   1-TP); 4D non-identity float export stays 3D (pre-existing; moot for short CT); interactive GUI
+>   confirmation of the Cardiac phase field (blocked by this env's screenshot layer)
 
 ---
 

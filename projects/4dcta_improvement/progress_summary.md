@@ -27,6 +27,8 @@ see the feature doc in the itksnap repo: `itksnap/Documentation/Developer/Cardia
 | `.nrrd` export | ✅ | `ITKSNAP_Cardiac_*` keys via the dictionary (free) |
 | Non-PHI curation on export | ✅ | export-only allow-list; age top-coded ≥90 (HIPAA Safe Harbor) |
 | Float (non-identity) write path | ✅ | routed through `SaveImage` so it also curates + sidecars |
+| Grid validation / quarantine | ✅ | ragged DICOM grid → clear `IRISException` (verified: −1 file → "19 frames but 20 expected") |
+| `NumberOfPhases` in seq header | ✅ | all four cardiac keys now round-trip through `.seq.nrrd` |
 | GUI "Cardiac phase" field | ⏳ | implemented + compiles + couples; **interactive visual check pending** |
 
 ## Verification
@@ -55,7 +57,8 @@ see the feature doc in the itksnap repo: `itksnap/Documentation/Developer/Cardia
 - `7a1c2489` — non-PHI export curation / allow-list (requirement 2)
 - `c1346b9d` — route the float write path through `SaveImage`
 - `a0f9d6f0` — per-time-point typed cardiac fields + GUI field (P2)
-- (+ this doc batch: `Documentation/Developer/Cardiac4DCTA_IO.md`)
+- `dec2a2f2` — developer doc `Documentation/Developer/Cardiac4DCTA_IO.md`
+- `a359b7bd` — P4: grid validation/quarantine + `NumberOfPhases` in seq header
 
 **wrapper (`main`):** `223a7c1` (track branch + add project docs) → `cc04988` → `5481c29` →
 `dd14216` → `0a36975` → `b9118c3` (pointer bumps + project-doc updates), + this summary.
@@ -70,10 +73,13 @@ that path baked in, breaking CMake reconfigure. Fixed by replacing `MacOSX26.2.s
 permanent fix (needs sudo, also repairs the greedy/cmrep builds):
 `sudo ln -s MacOSX.sdk "<Xcode>/.../SDKs/MacOSX26.2.sdk"`. A VTK/ITK rebuild reverts the patched files.
 
-## What's left (optional / P4)
+## What's left
 
-- Interactive GUI confirmation of the "Cardiac phase" field.
-- Grid validation/quarantine for non-rectangular DICOM grids.
-- Tighten 4DCTA detection (currently "any Siemens/GE CT directory").
+- **Interactive GUI confirmation** of the "Cardiac phase" field — the only functional item left;
+  blocked by this environment's screenshot layer (needs eyes on the running app).
+- Tighten 4DCTA detection (currently "any Siemens/GE CT directory") — benign today: a single-phase
+  series simply loads as a 1‑time‑point image.
 - 4D non-identity float export is current-time-point only (`FloatImageType` is 3D); moot for short CT.
-- `ITKSNAP_Cardiac_NumberOfPhases` omitted from the `.seq.nrrd` header (redundant with frame count).
+
+Done since the first summary: grid validation/quarantine for non-rectangular grids and
+`ITKSNAP_Cardiac_NumberOfPhases` in the seq header (both `a359b7bd`, verified).
