@@ -29,7 +29,9 @@ see the feature doc in the itksnap repo: `itksnap/Documentation/Developer/Cardia
 | Float (non-identity) write path | ✅ | routed through `SaveImage` so it also curates + sidecars |
 | Grid validation / quarantine | ✅ | ragged DICOM grid → clear `IRISException` (verified: −1 file → "19 frames but 20 expected") |
 | `NumberOfPhases` in seq header | ✅ | all four cardiac keys now round-trip through `.seq.nrrd` |
-| GUI "Cardiac phase" field | ⏳ | implemented + compiles + couples; **interactive visual check pending** |
+| GUI "Phase / time:" field | ✅ | per-time-point `%R-R` (CT) / `ms` (echo); confirmed working in the GUI |
+| NIfTI JSON sidecar (write **+ read**) | ✅ | 4D NIfTI reload recovers the frame axis + slice thickness |
+| Slice thickness across formats | ✅ | `.nrrd` dict key, `.seq.nrrd` native `thicknesses:`, NIfTI sidecar |
 
 ## Verification
 
@@ -37,17 +39,14 @@ see the feature doc in the itksnap repo: `itksnap/Documentation/Developer/Cardia
   throwaway driver against the AVRP cohort:
   - `bavcta005` (clean 20-phase): `%R-R = 0 5 … 95`, `exact=1`, `spacing(t)=0.05`.
   - `bavcta007` (ambiguous 10-phase): non-uniform `%R-R = 0 10.56 … 95`, `exact=0`, `spacing(t)=0.1056`.
-  - `.seq.nrrd` write→read round-trip preserves the cardiac keys.
-  - `.nii.gz` writes `pixdim[4]=0.05` + a correct JSON sidecar.
+  - `.seq.nrrd` write→read round-trip preserves the cardiac keys (+ `thicknesses:`).
+  - `.nii.gz` writes `pixdim[4]` + JSON sidecar, and a **reload recovers** the frame axis +
+    `SliceThickness` from the sidecar (CT `%R-R` and echo `ms`).
   - `.nrrd` export **drops** name/ID/dates/institution/accession/private-CSA and **keeps** the
-    research metadata + covariates + `%R-R`.
-- **Build:** full `ITK-SNAP` target builds clean (Release, arm64) and runs; it loaded `bavcta005`
-  (20 phases) with no errors.
-- **Pending:** a visual confirmation of the GUI "Cardiac phase" field. The screenshot path was
-  blocked in this environment (computer-use access grant timed out; the `screencapture` CLI lacked
-  Screen Recording permission), so the field — which compiles and is correctly coupled — still needs
-  eyes on it: Layer Inspector → General → 4D time-point section, scrub the slider, expect
-  `0 → 5 → … → 95% R-R`.
+    research metadata + covariates + frame axis + slice thickness.
+  - 4D echo (`bav25`): `176×176×224×19`, frame axis `0 109.2 … 1965.6` ms.
+- **Build:** full `ITK-SNAP` target builds clean (Release, arm64) and runs.
+- **GUI:** the "Phase / time:" field is **confirmed working** in the GUI (CT `%R-R`, echo `ms`).
 
 ## Commit stack
 
@@ -82,11 +81,11 @@ permanent fix (needs sudo, also repairs the greedy/cmrep builds):
 
 ## What's left
 
-- **Interactive GUI confirmation** of the "Cardiac phase" field — the only functional item left;
-  blocked by this environment's screenshot layer (needs eyes on the running app).
+All planned work (CT + echo read/write/curation, multi-format frame axis, slice thickness, NIfTI
+sidecar read/write, GUI field) is **done and verified**. Remaining items are minor/optional:
+
 - Tighten 4DCTA detection (currently "any Siemens/GE CT directory") — benign today: a single-phase
   series simply loads as a 1‑time‑point image.
 - 4D non-identity float export is current-time-point only (`FloatImageType` is 3D); moot for short CT.
-
-Done since the first summary: grid validation/quarantine for non-rectangular grids and
-`ITKSNAP_Cardiac_NumberOfPhases` in the seq header (both `a359b7bd`, verified).
+- NIfTI carries the frame axis / slice thickness only via the sidecar (no native field), so a stray
+  `.nii.gz` without its `.json` loses them; `.nrrd`/`.seq.nrrd` keep everything in-file.

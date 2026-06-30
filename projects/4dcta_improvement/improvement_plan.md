@@ -8,28 +8,25 @@
 Reads on: [analysis of existing logic](analysis_existing_logic.md) ·
 [metadata reference](metadata_reference.md).
 
-> **Implementation status (2026-06-28)** — itksnap branch `feature/cardiac-io` (HEAD `7b51378a`),
-> all in `Logic/ImageWrapper/GuidedNativeImageIO.cxx`:
-> - ✅ **P0** carrier (dictionary keys `ITKSNAP_Cardiac_*` + helpers) — `0e5168ad`
-> - ✅ **P1** read extraction (`%R-R` from `SeriesDescription`; temporal axis derived) — `0e5168ad`
-> - ✅ **P3.3** seq.nrrd writer emits `%R-R` (non-uniform) — `0e5168ad`
-> - ✅ **P3.1** NIfTI `pixdim[4]` + JSON sidecar — `7b51378a`
-> - ✅ **P3.2** plain `.nrrd` keys — free via the dictionary (verified, no code)
-> - ✅ **non-PHI curation (req. 2)** — `7a1c2489`: export swaps in a curated non-PHI allow-list
->   (+ `ITKSNAP_*`, age top-coded at 90) before the NRRD/MetaImage writer, restores in-memory dict
->   after (export-only). Verified on bavcta005. HIPAA rationale in metadata_reference.md §3.3.
-> - All verified end-to-end on AVRP bavcta005 (clean 20-phase) + bavcta007 (ambiguous 10-phase).
-> - ✅ **P2** typed `TimePointProperties` cardiac fields (workspace v2) + read-only "Cardiac phase"
->   field in the General Layer Inspector — `a0f9d6f0`. *(GUI compiles + links; interactive check pending.)*
-> - ✅ **float write path** routed through `SaveImage` — `c1346b9d`; non-identity + general DICOM
->   exports now curate + sidecar. `.seq.nrrd` read round-trip verified (free). General-DICOM curation
->   covered by the shared `SaveImage` path.
-> - ✅ **P4 (partial)** — `a359b7bd`: grid validation/quarantine (ragged DICOM grid → clear
->   `IRISException` instead of silent phase misalignment; verified) + `NumberOfPhases` emitted in the
->   seq header (all four cardiac keys now round-trip).
-> - ⬜ **P4 (remaining)** detection tightening (currently "any Siemens/GE CT dir" — benign, loads as
->   1-TP); 4D non-identity float export stays 3D (pre-existing; moot for short CT); interactive GUI
->   confirmation of the Cardiac phase field (blocked by this env's screenshot layer)
+> **Implementation status (2026-06-30) — complete & verified.** itksnap branch `feature/cardiac-io`
+> (HEAD `9b5d9eb4`). Most code in `Logic/ImageWrapper/GuidedNativeImageIO.cxx`.
+> - ✅ **P0/P1** carrier + read extraction — generalized to a modality-agnostic `ITKSNAP_FrameAxis_*`
+>   (CT `%R-R` from `SeriesDescription`; echo `ms` from `FrameTime`); temporal axis derived. `0e5168ad`+
+> - ✅ **P3.3 / P3.1 / P3.2** writers — `.seq.nrrd` (non-uniform index values + `thicknesses:`),
+>   `.nii.gz` (`pixdim[4]` + JSON sidecar, **read back**), `.nrrd` (dict `key:=value`).
+> - ✅ **non-PHI curation (req. 2)** — `7a1c2489`: export allow-list (incl. US/echo tags) + age
+>   top-coding (HIPAA Safe Harbor). HIPAA rationale in metadata_reference.md §3.3.
+> - ✅ **float write path** routed through `SaveImage` — `c1346b9d`.
+> - ✅ **P2 GUI** — `TimePointProperties` frame value+unit (workspace v3) + read-only "Phase / time:"
+>   inspector field (`a0f9d6f0`, `c3db9f65`); **confirmed working in the GUI**.
+> - ✅ **P4** — grid validation/quarantine + `NumberOfPhases` in seq header (`a359b7bd`).
+> - ✅ **4D echo (Philips Cartesian)** — `2dc3d470`: frame-time axis, US/echo keep-list, read guards.
+> - ✅ **NIfTI sidecar reader + slice thickness everywhere** — `3033e9e1`: bidirectional sidecar
+>   (jsoncpp), `thicknesses:` in seq.nrrd, thickness in the sidecar.
+> - Verified end-to-end (driver + GUI) on `bavcta005`, `bavcta007`, and echo `bav25`.
+> - ⬜ **Remaining (minor):** coarse "Siemens/GE CT dir" detection (benign, 1-TP); 4D non-identity
+>   float export stays 3D (pre-existing; moot for short CT); a `.nii.gz` separated from its `.json`
+>   loses the axis/thickness (NRRD/`.seq.nrrd` keep all in-file).
 
 ---
 

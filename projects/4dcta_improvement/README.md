@@ -4,40 +4,36 @@ Improve how ITK-SNAP reads, holds, and writes **4D cardiac CTA** so that it pres
 **cardiac phase axis** and **important non-PHI metadata**, in a representation that can be re-written
 to multiple formats (`.nii.gz`, `.nrrd`, Slicer `.seq.nrrd`).
 
-> **Status (2026-06-28): cardiac `%R-R` axis implemented + verified across all three formats.** On
-> itksnap branch **`feature/cardiac-io`** (HEAD `7b51378a`, pushed; wrapper `main` tracks it). 4D CTA
-> reads derive the `%R-R` axis from the `SeriesDescription` and carry it via the image
-> `MetaDataDictionary`. Writers:
-> - **`.seq.nrrd`** (P3.3) — `%R-R` as the non-uniform `axis 0 index values` + units + keys.
-> - **`.nii.gz`** (P3.1) — `pixdim[4]` = cardiac-cycle fraction step + a `<name>.json` sidecar with
->   the authoritative `%R-R` array. (`toffset`/`xyzt_units` are ITK defaults; sidecar is canonical.)
-> - **`.nrrd`** (P3.2) — the `ITKSNAP_Cardiac_*` keys ride the dictionary automatically (no code).
+> **Status (2026-06-30): complete & verified** — itksnap branch **`feature/cardiac-io`** (HEAD
+> `9b5d9eb4`, pushed; wrapper `main` tracks it). Both **4D cardiac CTA** and **4D Philips Cartesian
+> echo** now preserve their per-time-point axis and non-PHI metadata across every supported format,
+> with a unified GUI field. See [progress_summary.md](progress_summary.md) for the capability table
+> and commit stack.
 >
-> Verified end-to-end on AVRP `bavcta005` (clean 20-phase → `0 5 … 95`) and `bavcta007` (ambiguous
-> 10-phase → non-uniform `0 10.56 … 95`). All code is in `Logic/ImageWrapper/GuidedNativeImageIO.cxx`.
+> **What works:**
+> - **Read** — a modality-agnostic frame axis is recovered on load: CT `%R-R` (parsed from
+>   `SeriesDescription`) / echo elapsed time (from `FrameTime`), carried via `ITKSNAP_FrameAxis_*`
+>   metadata; echo's hidden 3rd dim + spacing decoded from Philips private tags. Read guards added.
+> - **Write** — `.seq.nrrd` (non-uniform `axis 0 index values` + units + `thicknesses:`), `.nii.gz`
+>   (`pixdim[4]` + a JSON sidecar carrying the axis + `SliceThickness`), `.nrrd` (dict `key:=value`).
+> - **NIfTI sidecar is bidirectional** — a 4D NIfTI write→reload recovers the frame axis + slice
+>   thickness (jsoncpp `Write`/`ReadCardiacJsonSidecar`).
+> - **Non-PHI curation** on export — allow-list (incl. US/echo tags), age top-coded at 90 (HIPAA
+>   Safe Harbor); PHI dropped, research metadata + covariates kept.
+> - **GUI** — a read-only **"Phase / time:"** field shows the current time point's `%R-R` (CT) or
+>   `ms` (echo); **confirmed working in the GUI**.
 >
-> **✅ Requirement 2 (non-PHI curation) done** (commit `7a1c2489`): export now swaps in a curated
-> non-PHI **allow-list** (scanner/protocol/technique/cardiac/geometry/calibration/covariates + the
-> `ITKSNAP_Cardiac_*` keys, age top-coded at 90 per HIPAA Safe Harbor) before the NRRD/MetaImage
-> writer, then restores the in-memory dict (export-only; inspector keeps full fidelity). Verified on
-> `bavcta005`: exported `.nrrd` drops name/ID/dates/institution/accession/private-CSA, keeps the
-> research metadata. HIPAA rationale in [metadata_reference.md §3.3](metadata_reference.md).
+> Verified end-to-end (driver + GUI) on AVRP `bavcta005` (clean 20-phase), `bavcta007` (ambiguous
+> 10-phase), and `bav25` (echo, 19 frames @ 109.2 ms). Most code is in
+> `Logic/ImageWrapper/GuidedNativeImageIO.cxx`; per-TP model in `TimePointProperties` (workspace v3);
+> GUI in `LayerGeneralPropertiesModel` + `GeneralLayerInspector`.
 >
-> **Update (2026-06-28, HEAD `a0f9d6f0`) — optional follow-ups landed:**
-> - ✅ **Float write path** routed through `SaveImage` (`c1346b9d`) — non-identity-mapped + general
->   DICOM exports now get curation + sidecar. (4D CTA is identity-mapped, so it already used the 4D
->   path; `FloatImageType` is 3D so that path stays current-TP-only — moot for short CT.)
-> - ✅ **P2** typed `TimePointProperties` cardiac fields + read-only "Cardiac phase" field in the
->   General Layer Inspector (`a0f9d6f0`); workspace FormatVersion bumped to 2.
-> - ✅ **`.seq.nrrd` read round-trip** verified — `%R-R` keys survive write→read (free via the
->   `key:=value` lines + dict-preserving fold).
-> - ✅ **General DICOM curation** — covered by the shared `SaveImage` curation + the float-path routing.
-> - The full app was rebuilt (binary at `build-release/ITK-SNAP`). **Pending:** interactive GUI check
->   of the cardiac-phase field; 4D non-identity float export stays 3D (pre-existing); `NumberOfPhases`
->   omitted from the seq header (redundant with frame count). See [improvement_plan.md](improvement_plan.md).
+> **Remaining (minor/optional):** coarse "Siemens/GE CT dir = 4DCTA" detection (benign); 4D
+> non-identity float export is current-TP-only (`FloatImageType` is 3D; moot for short CT); a stray
+> `.nii.gz` separated from its `.json` loses the axis/thickness (NRRD/`.seq.nrrd` keep all in-file).
 >
-> *History:* analysis was done on `test/dls_sam2 @ 8539d63c` (where `.seq.nrrd` was read-only), then
-> reassessed against `master @ 28f4ee45` (which added the seq.nrrd writer + unified `SaveImage()`).
+> *History:* analysis began on `test/dls_sam2 @ 8539d63c` (where `.seq.nrrd` was read-only), then
+> rebased to `master @ 28f4ee45` (which added the seq.nrrd writer + unified `SaveImage()`).
 
 ## The three requirements
 1. Keep **cardiac phase information**.
