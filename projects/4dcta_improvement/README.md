@@ -51,6 +51,7 @@ to multiple formats (`.nii.gz`, `.nrrd`, Slicer `.seq.nrrd`).
 | [analysis_existing_logic.md](analysis_existing_logic.md) | How ITK-SNAP read/held/wrote 4DCTA before the change, with file:line refs and the gap list (G1–G8). |
 | [metadata_reference.md](metadata_reference.md) | Concrete tag keep-list / PHI drop-list / per-format write recipes + HIPAA rationale (§3.3). |
 | [improvement_plan.md](improvement_plan.md) | Phased plan (P0–P5), file-by-file change map, tests, open decisions. |
+| [echo_cartesian_assessment.md](echo_cartesian_assessment.md) | Philips Cartesian **4D echo (TEE)** analysis + which CT improvements transfer (the axis is real time/ms, not %R-R). |
 | `itksnap/Documentation/Developer/Cardiac4DCTA_IO.md` | **Developer description of the shipped behavior** (lives in the itksnap repo, travels with the code). |
 
 ## TL;DR of the findings
