@@ -61,6 +61,8 @@ see the feature doc in the itksnap repo: `itksnap/Documentation/Developer/Cardia
 - `a359b7bd` — P4: grid validation/quarantine + `NumberOfPhases` in seq header
 - `2dc3d470` — **4D echo (Philips Cartesian):** modality-agnostic frame axis (CT %R-R / echo ms) +
   US/echo non-PHI keep-list + echo read guards (see [echo_cartesian_assessment.md](echo_cartesian_assessment.md))
+- `c3db9f65` — GUI: generalize the inspector field to "Phase / time:" (`35% R-R` / `873 ms`);
+  `TimePointProperty` FrameValue/FrameUnit; workspace v3
 
 **wrapper (`main`):** `223a7c1` (track branch + add project docs) → `cc04988` → `5481c29` →
 `dd14216` → `0a36975` → `b9118c3` (pointer bumps + project-doc updates), + this summary.

@@ -11,13 +11,16 @@ axis explicitly to the export formats, (2) extending the non-PHI curation keep-l
 and (3) a small read-robustness guard. The `%R-R` phase axis itself does **not** apply — echo is a
 time cine, not an ECG-gated reconstruction.
 
-> **Status (2026-06-30): implemented** on itksnap `feature/cardiac-io` (commit `2dc3d470`).
-> Items #1, #2, #3, #5 below are done and verified; #4 (GUI) is deferred (the unverifiable piece).
-> A modality-agnostic frame axis (`ITKSNAP_FrameAxis_Values/Unit/Label`) is now filled on read for
-> both modalities (CT: %R-R/"%"; echo: elapsed time/"ms") and emitted by the writers. **Verified:**
-> `bav25` → `.seq.nrrd` carries `axis 0 index values:=0 109.2 … 1965.6`, `units:=ms`, `labels "time"`;
-> `.nrrd` export keeps `FrameTime` + covariates and drops `PatientName`; CT (`bavcta005`) output is
-> unchanged (still emits the legacy `%R-R` key). See [progress_summary.md](progress_summary.md).
+> **Status (2026-06-30): implemented** on itksnap `feature/cardiac-io` (commits `2dc3d470` +
+> `c3db9f65`). **All of #1–#5 below are done**; #4 (GUI) compiles + links but, like the CT field,
+> still awaits an interactive visual check (the environment's screenshot layer is unavailable).
+> A modality-agnostic frame axis (`ITKSNAP_FrameAxis_Values/Unit/Label`) is filled on read for both
+> modalities (CT: %R-R/"%"; echo: elapsed time/"ms"), emitted by the writers, carried per-time-point
+> in `TimePointProperty` (workspace v3), and shown in the inspector field "Phase / time:" (`873 ms`
+> for echo, `35% R-R` for CT). **Verified (driver):** `bav25` → `.seq.nrrd` carries
+> `axis 0 index values:=0 109.2 … 1965.6`, `units:=ms`, `labels "time"`; `.nrrd` export keeps
+> `FrameTime` + covariates and drops `PatientName`; CT (`bavcta005`) output unchanged (still emits the
+> legacy `%R-R` key). See [progress_summary.md](progress_summary.md).
 
 ---
 
