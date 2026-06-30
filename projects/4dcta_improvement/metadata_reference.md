@@ -165,8 +165,14 @@ strategy differs per format. Summary of how the phase_detection reference says t
   - **Header extension** (ecode 6, JSON) — proper mechanism but *silently dropped* by some
     FSL/ANTs ops. Write it too, but don't rely on it alone.
   - `descrip` (80 chars) / `intent_p1..3` — hacky; avoid.
-- **Recommended:** fraction header **+ JSON sidecar** with the full `%R-R` array + curated metadata.
+- **Recommended:** fraction header **+ JSON sidecar** with the full frame axis + slice thickness.
 - **Coordinate convention:** NIfTI affine is **RAS** (flip X/Y from DICOM LPS).
+
+> **Implemented (itksnap):** `WriteCardiacJsonSidecar`/`ReadCardiacJsonSidecar` (jsoncpp) make the
+> NIfTI sidecar **bidirectional** — a 4D NIfTI write→reload recovers the frame axis (CT `%R-R` or echo
+> `ms`) **and** `SliceThickness` by injecting the keys back into the dictionary. (`SliceThickness` has
+> no native NIfTI field either — it lives only in the sidecar there.) NRRD/`.seq.nrrd` carry both
+> in-file and need no sidecar; `.seq.nrrd` writes slice thickness as the native `thicknesses:` field.
 
 ### 4.2 NRRD (`.nrrd`)
 - Geometric axes are also uniform-only, **but** NRRD preserves arbitrary `key:=value` header fields

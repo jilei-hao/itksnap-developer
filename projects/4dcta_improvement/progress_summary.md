@@ -63,6 +63,9 @@ see the feature doc in the itksnap repo: `itksnap/Documentation/Developer/Cardia
   US/echo non-PHI keep-list + echo read guards (see [echo_cartesian_assessment.md](echo_cartesian_assessment.md))
 - `c3db9f65` — GUI: generalize the inspector field to "Phase / time:" (`35% R-R` / `873 ms`);
   `TimePointProperty` FrameValue/FrameUnit; workspace v3
+- `3033e9e1` — **NIfTI JSON sidecar reader** (jsoncpp) + slice thickness across formats: a 4D NIfTI
+  write→reload now recovers the frame axis + `SliceThickness`; seq.nrrd writes native `thicknesses:`
+- `54601b15` — docs: feature doc updated (sidecar bidirectional, refreshed limitations)
 
 **wrapper (`main`):** `223a7c1` (track branch + add project docs) → `cc04988` → `5481c29` →
 `dd14216` → `0a36975` → `b9118c3` (pointer bumps + project-doc updates), + this summary.
