@@ -59,6 +59,8 @@ see the feature doc in the itksnap repo: `itksnap/Documentation/Developer/Cardia
 - `a0f9d6f0` — per-time-point typed cardiac fields + GUI field (P2)
 - `dec2a2f2` — developer doc `Documentation/Developer/Cardiac4DCTA_IO.md`
 - `a359b7bd` — P4: grid validation/quarantine + `NumberOfPhases` in seq header
+- `2dc3d470` — **4D echo (Philips Cartesian):** modality-agnostic frame axis (CT %R-R / echo ms) +
+  US/echo non-PHI keep-list + echo read guards (see [echo_cartesian_assessment.md](echo_cartesian_assessment.md))
 
 **wrapper (`main`):** `223a7c1` (track branch + add project docs) → `cc04988` → `5481c29` →
 `dd14216` → `0a36975` → `b9118c3` (pointer bumps + project-doc updates), + this summary.
