@@ -1,0 +1,49 @@
+leaks(26682) MallocStackLogging: process is not in a debuggable environment; unsetting MallocStackLoggingDirectory environment variable
+leaks(26682) MallocStackLogging: could not tag MSL-related memory as no_footprint, so those pages will be included in process footprint - No such file or directory (2)
+leaks(26682) MallocStackLogging: recording malloc (and VM allocation) stacks using lite mode
+Reference quantile computation: 
+  0.9800-th quantile true value: 0.031050
+  Tolerance (5.00% of IQR): 0.036194
+  runtime: 0.002357
+Direct tdigest computation: 
+  0.9800-th quantile approximated as: 0.028231
+  error (% of IQR): 0.389362
+  within tolerance: yes
+  runtime: 0.007360
+Threaded tdigest computation (32 threads): 
+  0.9800-th quantile approximated as: 0.028231
+  error (% of IQR): 0.389362
+  within tolerance: yes
+  runtime: 0.010752
+TDigestImageFilter computation: 
+  0.9800-th quantile approximated as: 0.028231
+  error (% of IQR): 0.389362
+  within tolerance: yes
+  runtime: 0.011514
+Process 26683 is not debuggable. Due to security restrictions, leaks can only show or save contents of readonly memory of restricted processes.
+
+Process:         testTDigest [26683]
+Path:            /Users/USER/*/testTDigest
+Load Address:    0x1042e0000
+Identifier:      testTDigest
+Version:         0
+Code Type:       ARM64
+Platform:        macOS
+Parent Process:  leaks [26682]
+Target Type:     live task
+
+Date/Time:       2026-03-04 23:46:00.480 -0500
+Launch Time:     2026-03-04 23:46:00.142 -0500
+OS Version:      macOS 26.3 (25D125)
+Report Version:  7
+Analysis Tool:   /usr/bin/leaks
+
+Physical footprint:         12.4M
+Physical footprint (peak):  12.6M
+Idle exit:                  untracked
+----
+
+leaks Report Version: 4.0, multi-line stacks
+Process 26683: 871 nodes malloced for 95 KB
+Process 26683: 0 leaks for 0 total leaked bytes.
+

@@ -1,0 +1,31 @@
+leaks(26693) MallocStackLogging: process is not in a debuggable environment; unsetting MallocStackLoggingDirectory environment variable
+leaks(26693) MallocStackLogging: could not tag MSL-related memory as no_footprint, so those pages will be included in process footprint - No such file or directory (2)
+leaks(26693) MallocStackLogging: recording malloc (and VM allocation) stacks using lite mode
+irisRLE slicing took: 0.09799 ms 
+Process 26694 is not debuggable. Due to security restrictions, leaks can only show or save contents of readonly memory of restricted processes.
+
+Process:         SlicingPerformanceTest [26694]
+Path:            /Users/USER/*/SlicingPerformanceTest
+Load Address:    0x104218000
+Identifier:      SlicingPerformanceTest
+Version:         0
+Code Type:       ARM64
+Platform:        macOS
+Parent Process:  leaks [26693]
+Target Type:     live task
+
+Date/Time:       2026-03-04 23:46:04.195 -0500
+Launch Time:     2026-03-04 23:46:03.900 -0500
+OS Version:      macOS 26.3 (25D125)
+Report Version:  7
+Analysis Tool:   /usr/bin/leaks
+
+Physical footprint:         12.2M
+Physical footprint (peak):  12.5M
+Idle exit:                  untracked
+----
+
+leaks Report Version: 4.0, multi-line stacks
+Process 26694: 872 nodes malloced for 95 KB
+Process 26694: 0 leaks for 0 total leaked bytes.
+
