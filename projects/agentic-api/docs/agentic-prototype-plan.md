@@ -17,7 +17,28 @@ The single most important finding: **the headless data plane already exists in C
 
 The recommended flagship (**P1: "Uncertain case routed to the human"**) is an *integration* of those three atoms plus existing code. The recommended build order front-loads the two cheapest atoms (audit record, live channel) so the flagship becomes an assembly job rather than a leap.
 
-**The biggest unresolved architectural decision** (needs your input, see §7): does the agent drive edits *into the human's one running GUI process* (favored), or do a headless agent process and a separate GUI process exchange images through a hook? This choice shapes the entire session-lifecycle design.
+**The biggest unresolved architectural decision** (now decided — see §0.1): does the agent drive edits *into the human's one running GUI process*, or do a headless agent process and a separate GUI process exchange images through a hook? This choice shapes the entire session-lifecycle design.
+
+---
+
+## 0.1 Decisions locked + new findings (update, this session)
+
+**Four decisions from the project owner:**
+1. **Handoff architecture: (A) drive the human's ONE live GUI process.** The agent's `live.*` tools operate the same running ITK-SNAP the human sees; edits and reads share that process. Model (B) (headless + ingest hook) is dropped. This makes the live command channel (§6.2) the spine of Layer-2 and rules out relying on cross-process image hand-off.
+2. **Flagship scope: build P2 first, then grow into P1.** Ship the "audited callable correction" as the first filmed clip; it de-risks the audit-record format the flagship depends on.
+3. **DLS server version: the fork was synced from upstream.** See the correction below — the version that matters for the demo is the **`features/segflow4d`** branch, not `main`.
+4. **Audit record: start from the minimum viable set** — `{op name, timestamp, agent-vs-human, changed-voxel count, bbox, before/after label counts}` — and extend later.
+
+**Major new finding — the `features/segflow4d` branch of `itksnap-dls` is the real foundation to build on (not `main`).** It is a modular refactor, already merged-worthy, that changes several §2 claims:
+
+- **Pluggable model registry EXISTS.** `itksnap_dls/modules/segmentation/models.py` defines a `ModelWrapper` base (descriptor: `ID`, `DIMENSIONS`, `CHANNELS`, `INTERACTIONS` + `set_image`/`add_*_interaction`/`get_result`), with `get_model_listing()` and `instantiate_model_wrapper(model_id)`. Registered today: **`nnInteractive`** (3D; point/box/scribble/lasso) and **`SAM2`** (`facebook/sam2.1-hiera-large`, 2D, point). Adding a model = subclass + register in two functions.
+- **The `v2/` API mismatch RESOLVES on this branch.** `modules/segmentation/router.py` serves both the new `v2/` routes (`/v2/start_session/{model_id}`, `/v2/process_point_interaction/{id}?point=…`, `/v2/models` via `server.py`) **and** the legacy `/…?x&y&z` routes (backward-compatible). So the shipped GUI client (`DeepLearningSegmentationModel.cxx`, which calls `v2/…?point=`) matches **this branch**. **Action:** run the `features/segflow4d` server for the demo, and pin it in the manifest. (The §2.5 mismatch table applies to `main` only.)
+- **A better "resumable" analog than DSS EXISTS in-process.** `modules/propagation/{router,jobs}.py` implement a submit→poll→result async job: `POST /v2/segflow4d/start_job` → `{job_id,"pending"}`, `upload_image_4d` / `upload_seg_ref`, `POST /{job_id}/run` (background `ThreadPoolExecutor`), `GET /{job_id}/status` (`pending|running|completed|failed`), `GET /{job_id}/result/{timepoint}`, `DELETE /{job_id}`. It wraps the `segflow4d` Python package's `PropagationPipeline`. **This in-process job manager — not the DSS ticket subsystem — is the right pattern to model a resumable `request_review` / long-running automatic-segmentation job.** It re-weights P3 (§4) upward and gives P1's "park the case" step a real home.
+- **Consequence for the model-serving thesis:** an agent's "propose" step can now be interactive (nnInteractive/SAM2 point), automatic (a new auto model — see §8), or 4D-propagation (existing job). The plan's `snap.propose()` becomes a thin client over `/v2/…`.
+
+Package facts: `itksnap-dls` is **MIT**, `version 0.1.0` on this branch, deps now include `transformers` (SAM2); models pulled from HuggingFace. Branches present: `main`, `features/segflow4d`, `test/dls_sam2`.
+
+The two owner questions (which automatic models to add; whether/how to pip-ship the GUI + track downloads) are answered in **§8** and **§9**, added after external research.
 
 ---
 
@@ -355,14 +376,68 @@ Clips A→B→C are the core narrative and also stand alone on slides. D and E a
 
 ---
 
-## 7. Decisions I need from you (before building)
+## 7. Decisions — RESOLVED (record)
 
-These are the consequential forks the plan deliberately leaves open rather than assume:
+All four forks are now decided (see §0.1); kept here for the record:
 
-1. **Handoff architecture (§6.3):** model **(A) drive the human's one live GUI process** (my recommendation) vs **(B) headless agent + GUI ingest hook**? This shapes the session-lifecycle design and the command channel.
-2. **Flagship scope for the first recordings:** ship **P2 (audited callable)** as the first filmed clip and grow into P1, or go straight for the full **P1** handoff? (I recommend P2-first; it de-risks the audit format P1 depends on.)
-3. **DLS server version to pin:** run the local `itksnap-dls` v0.0.10 (un-prefixed API) for the demo, or the newer `v2/` server the GUI expects? Whichever we pin, the thin client is written to match.
-4. **Audit record contents:** minimum viable set is {op name, timestamp, agent-vs-human, changed-voxel count, bbox, before/after label counts}. Anything else the grant reviewers will want to see (e.g. per-label Dice vs the proposal, reason string)?
+1. **Handoff architecture: (A) drive the human's one live GUI process.** ✅ (was: A vs B) → shapes session lifecycle + the live command channel (§6.2).
+2. **Flagship scope: P2 (audited callable) first, then P1.** ✅
+3. **DLS server version: run `features/segflow4d`** (v2 + legacy routes coexist; matches the GUI client; carries the pluggable model registry + async job module). ✅ (Not `main`, which is legacy-only.)
+4. **Audit record: minimum viable set** `{op name, timestamp, agent-vs-human, changed-voxel count, bbox, before/after label counts}`, extend later. ✅ Candidate later additions for reviewers: per-label Dice vs the proposal, a free-text reason string, model id + prompt provenance.
+
+---
+
+## 8. Foundation-model roadmap — adding fully-automatic segmentation (answer to Q1)
+
+**Yes — build on `features/segflow4d`, and add automatic segmentation as an async JOB, not as an interactive session.** Rationale grounded in the code + research:
+
+- The branch already models the two shapes we need: a pluggable *interactive* `ModelWrapper` (`set_image → add_*_interaction → get_result`) and a *long-running async job* (`start_job → run → poll status → result`). A whole-volume automatic model (TotalSegmentator full-res ≈ minutes/volume) does not fit the synchronous interactive request; it belongs in the **propagation-style job module** (rename/generalize it to a `jobs`/`inference` module). This also makes "propose" a first-class *resumable* step — the exact primitive P1/P3 want.
+- Minimal design: extend the model registry with an **automatic capability** — either an `INTERACTIONS = ["auto"]` marker + a `run()` method on `ModelWrapper`, or an `automatic: bool` flag — so `/v2/models` advertises it and the agent selects a model by id. Interactive models stay on the session path; automatic models route through the job manager.
+
+### Recommended models (tiered)
+
+| Tier | Model | Why | License reality |
+|---|---|---|---|
+| **Flagship (demo now)** | **TotalSegmentator v2** (CT `total` 117-class, MR `total_mr` 50-class) | Turnkey `pip install TotalSegmentator` → one Python call, weights auto-download; instantly recognizable whole-body anatomy = perfect "good-but-imperfect → human corrects" beat; fast (3 mm) mode ~30 s GPU / ~70 s CPU makes it demo-able; full-res fits the async-job path. Built on nnU-Net (already in the stack). | **Code Apache-2.0; core `total`/`total_mr` weights Apache-2.0 (ship OK).** ⚠ Whitelist those — several subtasks (`tissue_types`, `brain_structures`, `heartchambers_highres`, `coronary_arteries`, `brain_aneurysm`) are academic / CC BY-NC-4.0, some with no commercial option. |
+| **Strategic (product)** | **MONAI VISTA3D** via **NVIDIA NV-Segment-CT** weights | The *only* candidate that unifies **automatic segment-everything + 3D point-prompt editing in one model**, with a connected-component merge algorithm built so a point-click corrects the auto mask — the thesis realized in a single wrapper (one wrapper exposes both `run()` and `add_point_interaction()`). 127+ CT classes incl. tumors; faster than TotalSegmentator per the paper. | Code Apache-2.0. ⚠ **Public MONAI/HF VISTA3D weights are NCLS = non-commercial.** Use **NV-Segment-CT** weights (NVIDIA Open Model License, commercial) and confirm redistribution terms. CT-only (MR variant is non-commercial). |
+| **License-clean backup** | **SegVol** (MIT, code+weights) | Unified automatic+interactive with point/box/**text** prompts (agent-friendly "segment the liver"), 200+ CT classes, on HuggingFace. Cleanest license of the unified models. | **MIT (code + weights)** — fully commercial-clean. Weaker clinical name-recognition; latency needs benchmarking. |
+
+Not picks: **nnU-Net v2 task models** (it's the engine *under* TotalSegmentator — use directly only for a specific organ TS lacks); **STU-Net / SuPreM** (fine-tuning backbones, not turnkey); **SAM-Med3D / SAM2** (interactive-only, no automatic mode — though SAM-Med3D is Apache and could later replace a non-commercial interactive weight).
+
+**License hygiene flag (matters for the grant→product transition):** the server *already* ships **nnInteractive under CC BY-NC-SA (non-commercial) weights**. So a non-commercial weight is tolerable for the grant demo but is a **known liability to resolve before shipping** a commercial product. The clean-weight path to a shippable product is VISTA3D/NV-Segment-CT or SegVol (automatic) + SAM-Med3D (interactive). Verify the exact per-checkpoint LICENSE file at integration time — these repos re-license per task.
+
+**Demo consequence:** `snap.propose(case)` becomes a thin client over `POST /v2/segflow4d`-style `start_job` (automatic) or `/v2/…process_point_interaction` (interactive). For the flagship clip, TotalSegmentator's fast mode on a recognizable body CT gives a labeled map in ~30 s; the agent's confidence gate flags an organ with unstable boundaries; the human cleans it up on camera. Pin the model id, weights version, and fast-mode setting in `manifest.yaml`.
+
+---
+
+## 9. Distribution & metrics strategy (answer to Q2)
+
+**Do not pip-ship the compiled GUI. Split the artifact by audience.** The single most load-bearing precedent: **3D Slicer — the closest peer (C++/Qt/VTK medical GUI) — is deliberately NOT on PyPI**; it ships as a binary installer with an *embedded* Python interpreter. napari / PyMOL / mayavi *are* pip-installable, but their GUIs are **Python** and they take Qt as an **external** dependency (PySide6/PyQt6 wheels), never vendoring Qt in their own wheel. ITK / SimpleITK / VTK ship native wheels — but they are **GUI-less libraries**. ITK-SNAP's GUI is a compiled Qt/VTK/ITK binary, which is the hard case none of the pip precedents actually take on.
+
+### Why vendoring Qt6+VTK+ITK in ITK-SNAP's own wheel is the worst-value option
+- **PyPI file limit** is 100 MB/file (10 GB/project); a bundled Qt+VTK+ITK GUI wheel per platform exceeds it → manual limit-increase request (as Blender's `bpy`, `ortools`, `vLLM` had to).
+- **Qt platform plugins** (`libqxcb`/`cocoa`/`windows`, `offscreen`) are dlopened at runtime and are notoriously **not discovered when relocated** into a wheel — `auditwheel`/`delocate`/`delvewheel` bundle libraries but **do not fix plugin discovery** (needs `QT_QPA_PLATFORM_PLUGIN_PATH` shims).
+- **OpenGL/VTK context** still needs a real GPU/display; a wheel doesn't provide one (headless still needs Xvfb/EGL/offscreen).
+- **macOS**: a GUI launched from a wheel is still **unsigned/unnotarized** → Gatekeeper blocks. Being in a wheel confers nothing.
+- **Qt LGPL**: redistributing Qt triggers LGPLv3 duties (ship license, allow relinking) and forces **PySide6** (PyQt6 is GPL/commercial).
+
+### Recommended split
+1. **pip-ship only the Layer-1 Python API + the MCP server** as thin wheels (pybind11 + scikit-build-core + cibuildwheel) — exactly the `greedy_python` pattern already running in this workspace. Small, portable; **`pip install -U` genuinely works** for the developer/scientist audience. **This is the artifact whose downloads you count for the grant.**
+2. **Keep the GUI on a native-installer channel** (SourceForge today; add a **signed/notarized** installer and optionally a napari-style `constructor` bundle later). This is the 3D Slicer model, for the same reasons.
+
+### The version-drift fear is real but mis-diagnosed
+The drift that actually bites is **API/MCP-client vs GUI/DLS-server**, and it's fixed by a **protocol-version handshake** — semver + a `min_compatible_version` check on connect (probe `/status`, which already returns `version`) — **not** by forcing GUI and API into one wheel. Optionally, the GUI can `pip install` the *pinned* API into its own embedded interpreter (Slicer/Blender model) so versions travel together while the GUI stays a native installer.
+
+### Auto-update, honestly
+`pip install -U` is a credible updater **for the venv-native API/MCP audience** — advertise that; it directly solves the "hard to keep users updated" pain for the *programmatic* surface. It is **not** a credible auto-updater for the GUI end-user (napari ships a separate bundled installer precisely because its pip path is developer-only). For the GUI, pursue an in-app updater or a signed installer with an update check.
+
+### Download metrics for the grant (trustworthy)
+- **Headline (quick):** `pypistats` CLI / pypistats.org — last 180 days, already mirror-filtered; coarse (no country/version).
+- **Defensible (history + breakdowns):** BigQuery `bigquery-public-data.pypi.file_downloads` via **`pypinfo`** — by version / python / OS / country / installer; first **1 TB/month free** (date-partition queries to stay under it).
+- **Honesty filters (non-negotiable for a proposal):** `WHERE details.installer.name = 'pip'` (exclude mirrors/`bandersnatch` and CI), and **caption the figure literally as "downloads," never "users/installs"** — pip caching undercounts, CI/mirrors overcount. A de-duplicated, pip-only, CI-excluded series is what a reviewer trusts.
+- The pip-shipped API/MCP is the *only* surface that gets these clean numbers — another reason to pip-ship the API even though the GUI stays native. (The GUI's own metric remains SourceForge/installer download counts; report the two separately.)
+
+**Net:** pip-shipping the API/MCP is a clear win (small, auto-updatable, measurable — it's already how `greedy_python` works); pip-shipping the GUI is high-cost, low-value, and against the strongest peer precedent. Solve version drift with a handshake, not a mega-wheel.
 
 ---
 
@@ -379,3 +454,6 @@ These are the consequential forks the plan deliberately leaves open rather than 
 - Transport: `itksnap/Logic/WorkspaceAPI/{RESTClient.{h,cxx}, SSHTunnel.{h,cxx}}`
 - Python-binding template: `greedy_python/{CMakeLists.txt, src/GreedyPythonBindings.cxx, src/picsl_greedy/_greedy_api.py}`
 - Qt boundary / libs: `itksnap/CMakeLists.txt:1128-1163,1227-1243`
+- **DLS `features/segflow4d` branch** (run this for the demo): `itksnap-dls/itksnap_dls/modules/segmentation/{models.py (ModelWrapper registry: nnInteractive, SAM2), router.py (v2 + legacy routes), session.py}`, `itksnap-dls/itksnap_dls/modules/propagation/{router.py, jobs.py (async job manager)}`, `itksnap-dls/itksnap_dls/server.py` (`/v2/models`), `itksnap-dls/itksnap_dls/common/image_utils.py`
+- Model licenses/sources (§8): TotalSegmentator `github.com/wasserth/TotalSegmentator`; VISTA3D `github.com/Project-MONAI/VISTA` + `huggingface.co/nvidia/NV-Segment-CT`; SegVol `github.com/BAAI-DCAI/SegVol`
+- Distribution/metrics (§9): `napari.org/dev/developers/coredev/packaging.html`; `slicer.readthedocs.io` (embeds Python, not on PyPI); `cibuildwheel.pypa.io`; `docs.pypi.org/project-management/storage-limits/`; `github.com/ofek/pypinfo`; `packaging.python.org/guides/analyzing-pypi-package-downloads/`
