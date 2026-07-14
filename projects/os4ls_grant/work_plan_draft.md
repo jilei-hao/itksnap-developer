@@ -23,7 +23,7 @@ Beyond the requested funds, our institution contributes a portion of the lead ma
 
 We will pair development with sustained community engagement. Near the end of Year 2, once the new agent-callable and remote-data features have shipped, we will run a single hybrid (in-person and remote) event that combines hands-on training with a contributor hackathon, targeting ITK-SNAP's core audience of clinical and imaging researchers and developers of adjacent pipeline tools. Throughout the grant we will also publish a series of YouTube video tutorials, maintain a frequent social-media presence, and expand developer documentation for the new interfaces — to drive adoption, gather feedback, and onboard new contributors and maintainers.
 
-All code will be developed in the open under ITK-SNAP's existing open-source license, with releases published through our established channels and the Python wrapper published to PyPI.
+All code will be developed in the open under ITK-SNAP's existing open-source license (GPL-3.0), with releases published through our established channels and the Python wrapper published to PyPI.
 
 ---
 
