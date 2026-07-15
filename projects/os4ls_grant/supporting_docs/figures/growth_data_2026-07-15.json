@@ -1,0 +1,53 @@
+{
+  "pulled": "2026-07-15",
+  "downloads_source": "SourceForge public stats API, project itk-snap (2013-01..2025-12)",
+  "citations_source": "OpenAlex counts_by_year, doi:10.1016/j.neuroimage.2006.01.015 (ITK-SNAP methods paper)",
+  "years": [
+    2013,
+    2014,
+    2015,
+    2016,
+    2017,
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025
+  ],
+  "annual_downloads": [
+    23714,
+    32828,
+    35836,
+    42736,
+    39567,
+    47164,
+    65325,
+    83014,
+    90766,
+    110004,
+    118532,
+    155961,
+    167444
+  ],
+  "annual_citations_methods_paper": [
+    201,
+    239,
+    344,
+    350,
+    452,
+    493,
+    598,
+    766,
+    968,
+    911,
+    896,
+    956,
+    873
+  ],
+  "downloads_total_in_range": 1012891,
+  "citations_total_in_range": 8047,
+  "notes": "Citation counts vary by index: OpenAlex ~9.0K lifetime for the methods paper; Scopus >7,800 (papers referencing ITK-SNAP papers, per R01); Google Scholar >11K. Swap in the team's Scopus per-year series if exact consistency with the '>7,800 Scopus' wording is desired."
+}
