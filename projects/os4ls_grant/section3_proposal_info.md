@@ -41,6 +41,7 @@ ITK-SNAP is an open-source application for interactive segmentation of 3D and 4D
 - **License:** GPL-3.0 *(confirmed: `itksnap/COPYING` = GNU GPL v3)*
 - **Main programming language:** C++ (C++17)
 - **Canonical citation:** Yushkevich PA, Piven J, Hazlett HC, et al. *User-guided 3D active contour segmentation of anatomical structures.* NeuroImage. 2006;31(3):1116–1128. *[verify]*
+- **Recent citation (ITK-SNAP 4 / 4D cardiac):** Hao J, Yushkevich PA, Dong NJ, Amin S, Guo Z, Yushkevich N, Aggarwal A, Pouch AM. *Streamlining 4D Cardiac Image Workflows: Open-Source Tools for Segmentation, Registration, and Visualization.* FIMH 2025. *[verify volume/pages/DOI]* — evidence of recent, active development (supports the "recent growth / activity" criterion). Use alongside the canonical citation.
 - **Code of conduct (link):** *[none in repo — add if one exists, or create]*
 - **End-user documentation (link):** `https://www.itksnap.org` *[verify exact docs URL]*
 - **Contributor / developer guidelines (link):** *[none in repo — see governance gap; create a CONTRIBUTING before submission if possible]*

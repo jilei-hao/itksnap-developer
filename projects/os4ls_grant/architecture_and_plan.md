@@ -182,7 +182,7 @@ The audit records (2.2c) are the raw material. Year 2 (a) captures expert correc
 dls-served model on expert-corrected cases and report the change vs. the uncorrected baseline (overlap +
 boundary metrics, magnitude reported), and test whether routing *uncertain* cases to the expert beats
 random selection at equal effort — releasing the evaluation harness open source. Candidate benchmarks:
-cardiac (e.g., ACDC) and/or the MSD hippocampus task — both have strong public benchmarks and in-house/PI
+cardiac CT (e.g., MM-WHS — matches the team's CT/TEE data and the TotalSegmentator served model) and/or the MSD hippocampus task — both have strong public benchmarks and in-house/PI
 expertise. Architecturally this closes the loop: `request_review` emits structured deltas → a training set
 → an improved `ModelWrapper` served back through the same registry.
 
@@ -319,7 +319,7 @@ Mapping to grant milestones in brackets. Critical-path items in **bold**.
 - **DICOM-SEG read/write** subsystem (dcmqi/DCMTK; new `FileFormat` + delegate + `ColorLabelTable ↔ SEG`
   mapping); **round-trip validated against 3D Slicer** [→2.3].
 - **Benchmark the value of expert correction**: report improvement vs. baseline + routing-vs-random
-  efficiency on a public dataset (e.g., ACDC / MSD hippocampus); release the harness [→1.3].
+  efficiency on a public dataset (e.g., MM-WHS cardiac CT / MSD hippocampus); release the harness [→1.3].
 - **Release ITK-SNAP 4.10** with multi-workspace + validated DICOM-SEG interop.
 
 **Q4 — community + sustainability.**

@@ -8,20 +8,32 @@
 
 ---
 
-## 1. Key personnel
+## 1. PI and Co-PI biographies
 
-**Paul Yushkevich, PhD — Principal Investigator.** *[Title, institution: Professor, Penn Image Computing and
-Science Laboratory (PICSL), University of Pennsylvania.]* Creator and long-standing lead maintainer of
-ITK-SNAP; ~20 years leading its development. *[2–3 sentences: research focus (image analysis, segmentation,
-computational anatomy); leadership of prior open-source infrastructure funded by CZI EOSS and the NIH; key
-publications/roles. Keep to ~4 lines.]*
+*(The optional upload asks for PI/co-PI bios only. Other key personnel — e.g. lead developer Jilei Hao —
+are captured in Section 1 of the application form, not here.)*
 
-**Jilei Hao — Lead Developer.** *[Title/affiliation.]* Lead developer on the agentic-API and data-layer
-work; contributor to ITK-SNAP's 4.x releases, the itksnap-dls model server, and related components
-(greedy_python, SegFlow4D, ConvertMesh). *[2–3 sentences on relevant engineering background.]*
+**Paul A. Yushkevich, PhD — Principal Investigator.** Professor of Radiology at the University of
+Pennsylvania (Perelman School of Medicine), in the Penn Image Computing and Science Laboratory (PICSL), with
+a graduate-group appointment in Bioengineering; PhD in Computer Science, University of North Carolina at
+Chapel Hill (2003). He is the creator and long-standing lead maintainer of ITK-SNAP across its ~20-year
+history. His NIH-funded research develops statistical-shape and biomedical image-analysis methods —
+including automatic segmentation and morphometry of the hippocampal formation for Alzheimer's-disease
+imaging biomarkers, and machine-learning methods that improve general-purpose segmentation — with a
+sustained record of building open-source imaging software (NIH; CZI EOSS). *[Add "Director of PICSL" if
+accurate; the source page lists PICSL as affiliation but not a directorship.]*
 
-*[Add any co-PIs and key personnel — e.g. collaborators supporting the Year-2 training/hackathon event and
-the model-improvement evaluation — with a 2–3 sentence bio each. Do not exceed the page budget.]*
+**Alison M. Pouch, PhD — Co-Principal Investigator.** Assistant Professor of Radiology at the University of
+Pennsylvania (Perelman School of Medicine), with core-faculty appointments in the Penn Center for Biomedical
+Image Computing and Analysis (CBICA), the Penn Cardiovascular Institute, and the Penn Institute for
+Computational Sciences (PICS), and a graduate-group appointment in Bioengineering; PhD in Bioengineering,
+University of Pennsylvania (2013). Her research centers on cardiac image analysis — 3D/4D echocardiography,
+heart-valve modeling, and 3D-ultrasound and foundation-model segmentation — and she is a senior author on
+the ITK-SNAP 4 / 4D cardiac tools paper (Hao et al., FIMH 2025 — ref 2), collaborating directly with the
+project's lead developer. In this project she leads the cardiac use cases and the Year-2 evaluation of
+expert-in-the-loop model improvement.
+
+*[Add any additional co-PIs with a 2–3 sentence bio each; do not exceed the ≤4-page budget.]*
 
 ## 2. Project maturity, adoption, and ecosystem role
 
@@ -86,15 +98,40 @@ contributes a portion of the lead maintainer's time, existing CI/test infrastruc
 codebases the work builds on. Together with the contributor-growth activities, this maintains the project's
 trajectory after the funding period.
 
-## 5. Figures
+## 5. Figures and tables
 
-> *[Insert as images before export. A layered-architecture diagram exists in the team's internal
-> `architecture_and_plan.md` and can be rendered to a figure.]*
+**Table 1 — The landscape gap.** *Legend: ✓ available today · ◐ partial · ★ delivered by this proposal · ✗ not available.*
 
-- **Fig. 1 — System architecture.** The agent/MCP surface over ITK-SNAP's Qt-free logic tier and the
-  itksnap-dls model plane; the remote/cloud data plane; and where each new interface attaches. *[Insert.]*
-- **Fig. 2 — Adoption / contributor context.** Download or citation growth over recent years, and/or the
-  lifetime contributor distribution. *[Insert; supports §2.]*
+| Capability | ITK-SNAP | 3D Slicer | MITK | napari | MONAI Label |
+|---|---|---|---|---|---|
+| Established, widely adopted for its audience | ✓ | ✓ | ✓ | ✓ (microscopy) | ✓ (framework) |
+| Interactive foundation-model segmentation | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Remote / cloud data access | ✓ | ✓ | ◐ | ◐ | ✓ |
+| Lossless open-format interchange (DICOM-SEG) | ★ | ✓ | ✓ | ◐ | ✓ |
+| Agent-callable API for external pipelines | ★ | ◐ | ✗ | ◐ | ◐ |
+| **Expert review/correction as a callable, resumable, audited pipeline step** | **★** | ✗ | ✗ | ✗ | ✗ |
+
+*No existing tool exposes the bottom-row primitive — competitors keep the human inside their own UI or
+labeling loop rather than offering expert review as a step an external agent invokes. That gap is this
+proposal's core contribution. (Mirrors the LOI Landscape Analysis.)*
+
+**Fig. 1 — Human-in-the-loop workflow** *(created).* Model proposes (itksnap-dls) → the agent's confidence
+gate flags an uncertain case → control hands to a live ITK-SNAP session where the expert corrects on screen
+→ a structured, audited result returns to the agent.
+
+**Fig. 2 — System architecture** *(created).* The net-new agent/MCP surface over ITK-SNAP's existing
+Qt-free core, the itksnap-dls model plane, and the remote/cloud data plane; ★ marks net-new capabilities
+added within existing components (audit record, DICOM-SEG, explorer).
+
+**Fig. 3 — ITK-SNAP 4 on a 4D cardiac study** *(reuse, with attribution).* Reproduced from Fig. 1 of Hao
+et al., FIMH 2025 [ref 2]: 20 time points, with ventricle segmentations across tri-planar and 3D views;
+grounds ITK-SNAP as a mature, actively developed, natively-4D tool.
+
+> All three figures plus the table exceed the 4-page limit — trim before submission (drop or shrink a
+> figure, or lay figures out more compactly).
+
+> Export figures at ≥300 dpi; reused paper figures carry a citation to ref 2; keep the whole supporting
+> document to ≤4 pages.
 
 ## 6. References
 
@@ -102,13 +139,20 @@ trajectory after the funding period.
 
 1. Yushkevich PA, Piven J, Hazlett HC, Smith RG, Ho S, Gee JC, Gerig G. *User-guided 3D active contour
    segmentation of anatomical structures: significantly improved efficiency and reliability.* NeuroImage.
-   2006;31(3):1116–1128. — the ITK-SNAP methods paper.
-2. nnInteractive — *[interactive-segmentation foundation model; CVPR 2025 challenge winner; add full
-   citation.]*
-3. MONAI Label — *[Diaz-Pinto et al.; add full citation.]*
-4. Wasserthal J, et al. *TotalSegmentator: robust segmentation of anatomical structures in CT images.*
+   2006;31(3):1116–1128. — ITK-SNAP methods paper (canonical).
+2. Hao J, Yushkevich PA, Dong NJ, Amin S, Guo Z, Yushkevich N, Aggarwal A, Pouch AM. *Streamlining 4D
+   Cardiac Image Workflows: Open-Source Tools for Segmentation, Registration, and Visualization.* Functional
+   Imaging and Modeling of the Heart (FIMH) 2025. *[verify volume/pages/DOI]* — recent ITK-SNAP 4 paper;
+   source of Fig. 3.
+3. Isensee F, Rokuss M, Krämer L, Dinkelacker S, Ravindran A, Stritzke F, et al. *nnInteractive: Redefining
+   3D Promptable Segmentation.* arXiv:2503.08373. 2025. — interactive-segmentation foundation model
+   integrated in ITK-SNAP via itksnap-dls.
+4. Diaz-Pinto A, Alle S, Ihsani A, Asad M, Nath V, Pérez-García F, et al. *MONAI Label: A framework for
+   AI-assisted interactive labeling of 3D medical images.* Medical Image Analysis. 2024;95:103207.
+   doi:10.1016/j.media.2024.103207.
+5. Wasserthal J, et al. *TotalSegmentator: robust segmentation of anatomical structures in CT images.*
    Radiology: Artificial Intelligence. 2023. — *[verify.]*
-5. Antonelli M, et al. *The Medical Segmentation Decathlon.* Nature Communications. 2022. — *[verify;
+6. Antonelli M, et al. *The Medical Segmentation Decathlon.* Nature Communications. 2022. — *[verify;
    hippocampus benchmark, Task 04.]*
-6. Bernard O, et al. *Deep learning techniques for automatic MRI cardiac multi-structures segmentation …
-   (ACDC).* IEEE TMI. 2018. — *[verify; cardiac benchmark.]*
+7. Zhuang X, et al. *Evaluation of algorithms for Multi-Modality Whole Heart Segmentation: an open-access
+   grand challenge (MM-WHS).* Medical Image Analysis. 2019. — *[verify; cardiac CT benchmark.]*
