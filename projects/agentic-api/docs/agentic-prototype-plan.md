@@ -40,6 +40,8 @@ Package facts: `itksnap-dls` is **MIT**, `version 0.1.0` on this branch, deps no
 
 The two owner questions (which automatic models to add; whether/how to pip-ship the GUI + track downloads) are answered in **§8** and **§9**, added after external research.
 
+**Implementation status (2026-07-17):** the DLS branch `feature/agentic-api` is created (merge `4c92155`) and the **§8 flagship — `TotalSegmentatorWrapper`** — is implemented and pushed (commit `bbaac51`): an automatic (prompt-free) model in the `ModelWrapper` registry with `AUTOMATIC`+`run()`, a label-preserving encoder, and `/v2/run_automatic` + `/v2/models/{id}/labels` endpoints. Static-verified only (not yet run live). Next: live smoke-test on a GPU box, then move automatic inference to the async-job path, then start the P2 audit-record slice. See `../PROGRESS_LOG.md` and `../NEXT_SESSION_PROMPT.md`.
+
 ---
 
 ## 1. Workspace map

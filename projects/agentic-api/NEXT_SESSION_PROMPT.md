@@ -1,123 +1,74 @@
-# Session goal: PLAN (don't build) a UNIFIED two-layer "agentic API" prototype for
-# ITK-SNAP, optimized for a set of short pre-recorded demo videos.
-# PLANNING ONLY — no implementation, no scaffolding.
+# RESUME — ITK-SNAP Agentic API (implementation phase)
 
-## Context
-You're at the root of a WRAPPER workspace containing ITK-SNAP and its sibling projects
-(including itksnap-dls, and likely greedy/picsl-greedy, SegFlow4D, c3d, etc.), each in a
-subdirectory. ITK-SNAP is a mature C++/Qt app for interactive 3D/4D biomedical image
-segmentation. I'm writing a grant to make it the programmable, agent-callable
-"human-in-the-loop" surface for agentic medical-imaging pipelines.
+You are resuming the ITK-SNAP "agentic API" prototype after a machine switch.
+The PLANNING phase is complete; implementation has begun. Thesis unchanged:
+"model proposes, human disposes" — expose expert human judgment as a callable,
+resumable, audited pipeline step an external agent can invoke, shown on camera.
 
-Thesis: model proposes, human disposes. AI already segments (our shipped `itksnap-dls`
-server serves foundation models such as nnInteractive). What NO tool exposes is EXPERT
-HUMAN JUDGMENT as a callable, resumable, audited pipeline step an external agent can
-invoke. That primitive is the differentiator — NOT headless inference, which is table
-stakes. The prototype must make that differentiator tangible ON SCREEN to grant reviewers.
+## Read first (authoritative)
+- `projects/agentic-api/docs/agentic-prototype-plan.md`
+  - §0.1 = locked decisions + the `features/segflow4d` findings
+  - §5   = recommended MVP + video suite (P2 first, then flagship P1)
+  - §6   = risks / things to verify
+  - §8   = foundation-model roadmap (TotalSegmentator flagship, VISTA3D strategic)
+  - §9   = pip-distribution + download-metrics strategy
+- `projects/agentic-api/PROGRESS_LOG.md` — what happened, newest first.
+- Auto-memory `project_agentic_api` — condensed state + citations.
 
-## Target architecture — ONE UNIFIED surface (two layers, one tool namespace)
-- LAYER 1 (foundation) — Python API: ITK-SNAP and relevant sibling components callable
-  from plain Python (workspaces, labels, segmentation, registration, I/O) with no GUI.
-- LAYER 2 (wraps Layer 1) — a generic MCP server exposing ONE coherent tool namespace that
-  includes BOTH the headless Layer-1 operations AND "Chrome-MCP-like" operations that drive
-  an ACTIVE, RUNNING ITK-SNAP GUI (enumerate UI state, screenshot, select tool/label, act,
-  save). The agent sees a single surface; the Python API is the substrate the MCP wraps.
-- SESSION LIFECYCLE is explicit and must be designed: some tools need no GUI (pure headless);
-  GUI-driving tools require a live ITK-SNAP process the server LAUNCHES/ATTACHES on demand
-  (reuse the itksnap-dls "launch a local server/session on demand" pattern). The plan must
-  say how the unified surface represents and manages "headless vs. attached-to-live-session"
-  state, and how a human takes over the SAME live session for the review/correction step.
+## Machine-switch setup (do this first on the new machine)
+The DLS work lives on a NEW branch of the `itksnap-dls` submodule, pushed to origin
+(`github.com/jilei-hao/itksnap-dls`):
 
-## GUI-driving strategy — semantic-first HYBRID (resolve the details from the code)
-Primary: SEMANTIC element addressing — stable references via Qt objectName / findChild-style
-lookup (address widgets like a DOM), which survives layout changes far better than pixels.
-Secondary/fallback: screenshot + coordinate ("computer use") for anything not semantically
-addressable. Plan for BOTH and define how they compose.
-CRITICAL nuance to investigate, not assume: the actual segmentation editing (scribbles,
-seeds, clicks) happens on the OpenGL image canvas, which is NOT a semantically addressable
-widget — those are positions in IMAGE/VOXEL space, not screen pixels. So determine whether
-edits can be driven through the DATA/API layer in image coordinates (much more robust and
-reproducible) and reserve GUI-canvas coordinate interaction for when showing the live canvas
-IS the point. Recommend how semantic addressing, coordinate fallback, and image-space API
-editing divide the work.
+  `feature/agentic-api`  =  origin/main  +  origin/features/segflow4d (merged)  +  TotalSegmentator wrapper
 
-## Demo assets & reproducibility (this is for VIDEO)
-- Demo data and a runnable itksnap-dls / nnInteractive model ARE available; more images may
-  be added later, so the plan must parameterize over a small dataset (config/manifest), never
-  hardcode filenames. Document the EXACT itksnap-dls run/invocation the demo depends on so a
-  recording is reproducible.
-- Optimize for RE-RECORDABILITY. A pre-recorded, partly agent-driven, live-GUI demo is
-  fragile: agent phrasing varies run-to-run, model inference can vary, and live GUI timing is
-  flaky. The plan must address how to make each clip deterministic and repeatable for clean
-  retakes — e.g., canned/replayable agent scripts instead of free-form prompting where needed,
-  fixed seeds / pinned inputs, a scripted "demo driver," and idempotent setup/teardown. Call
-  out anywhere non-determinism threatens a take and how to contain it.
+From the wrapper repo root:
+```bash
+git pull                              # gets this handoff + plan on wrapper `main`
+cd itksnap-dls
+git fetch origin
+git switch feature/agentic-api        # branch is on origin; sets up tracking
+git pull
+```
+NOTE: the wrapper repo's `.gitmodules` still tracks itksnap-dls `main` (deliberate),
+and the submodule pointer was NOT committed — so check out the branch manually as above.
+(itksnap-dls is MIT; branch naming here is `feature/` singular, unlike the sibling
+`features/segflow4d` which is plural.)
 
-## Deliverables (write to docs/agentic-prototype-plan.md; you MAY sketch interface
-## signatures/pseudocode, but DO NOT implement or scaffold anything this session)
-1. WORKSPACE MAP. Discover the real layout: which sub-projects exist, where each lives,
-   language/build system, rough maturity/build status. Locate the ITK-SNAP and itksnap-dls
-   roots explicitly; all paths below are relative to those. Confirm how itksnap-dls is run.
-2. ORIENTATION REPORT. With REAL file paths + line references, explain how the code actually
-   supports (or doesn't): headless/scriptable operation; workspace/label semantics; the
-   itksnap-dls client AND the dls server's own API (read it — it's local); any async
-   "submit job → poll → return result" machinery (candidate analog for a resumable
-   request_review); undo/edit history (audit-trail material); the property/event system;
-   Python-binding infrastructure; and CRUCIALLY the scripted GUI test harness (most likely
-   existing foundation for Layer 2 — study HOW it finds widgets and injects events, and
-   whether it can address the image canvas / inject image-space edits). Correct my notes.
-3. CAPABILITY MAP. For every building block each layer needs, mark exists (cite it) /
-   thin-wrapper / net-new. Bias toward composing existing code with minimal new code.
-4. PROTOTYPE CONCEPTS. 3–5 distinct concepts that showcase the agentic + human-in-the-loop
-   value ON VIDEO, each mapping to ONE short clip. RANK them yourself on impact-per-effort;
-   don't assume any particular one is the flagship — justify your ranking. For each: what it
-   demonstrates, the single visible "wow" beat, Layer-1 vs Layer-2 usage, existing-vs-net-new,
-   rough effort, main risk, and how squarely it lands "expert judgment as a callable/
-   resumable/audited step." Penalize any concept whose on-screen payoff is just "a model ran."
-5. RECOMMENDED MVP + VIDEO SUITE. From your ranking, PICK the flagship and the thinnest
-   vertical slice that tells the whole story end to end (agent calls ITK-SNAP as a tool →
-   model proposes via itksnap-dls → uncertain cases routed to a human → expert corrects IN
-   THE LIVE ITK-SNAP GUI, on camera → structured, audited result flows back) and is visually
-   legible. Then design a SUITE OF SHORT CLIPS, ~30–60s each, one capability per clip, sharing
-   a through-line so they play as a set OR stand alone (for slides / the full application).
-   For each clip: a shot-by-shot storyboard (what's on screen each beat, the agent
-   prompt/action, where the human visibly takes over, the closing "callable + resumable +
-   audited" payoff) AND its reproducibility recipe (fixed inputs, scripted driver, retake steps).
-6. RISKS & OPEN QUESTIONS. Especially: headless operation without a GL/Qt event loop;
-   observing/driving a live Qt+OpenGL GUI (screenshotting GL views, addressing the canvas,
-   image-space vs pixel edits); the agent→human handoff on one live session; unified session
-   lifecycle; recording determinism; Python/native packaging. List what you'd verify before
-   committing to the MVP.
+## State at this handoff
+DONE and pushed:
+- `feature/agentic-api` created + `features/segflow4d` merged (merge `4c92155`).
+- `TotalSegmentatorWrapper` implemented (commit `bbaac51`):
+  - `itksnap_dls/modules/segmentation/models.py` — `ModelWrapper.AUTOMATIC` flag +
+    `run()` contract; `TotalSegmentatorWrapper` (set_image→run→multi-label result;
+    lazy TS import; cuda→"gpu" device map; NIfTI temp-file round-trip, `ml=True`;
+    fast/3mm default; `get_label_map()`); registered in `get_model_listing()` (+
+    `"automatic"` field) and `instantiate_model_wrapper()`.
+  - `itksnap_dls/common/image_utils.py` — `encode_label_result()` (label-preserving
+    int16; the existing `encode_seg_result` binarizes and would flatten TS's labels).
+  - `itksnap_dls/modules/segmentation/router.py` — `GET /v2/run_automatic/{session_id}`
+    and `GET /v2/models/{model_id}/labels`.
+  - `pyproject.toml` — `TotalSegmentator` as optional `[totalseg]` extra.
+- STATIC-VERIFIED ONLY (compile + AST + existing test-compat). NOT run live —
+  this machine lacks fastapi/torch/SimpleITK/TotalSegmentator.
 
-## Where to look (MY NOTES — hypotheses; verify against real code and correct me)
-Relative to the ITK-SNAP repo root:
-- Headless workspace ops:      Logic/WorkspaceAPI/WorkspaceAPI.{h,cxx}
-- Headless proof (itksnap-wt): Utilities/Workspace/WorkspaceTool.cxx
-- Remote transport:            Logic/WorkspaceAPI/RESTClient.cxx, SSHTunnel.cxx
-- DL-server client:            GUI/Model/DeepLearningSegmentationModel.{h,cxx}
-- Async ticket pattern:        GUI/Model/DistributedSegmentationModel.{h,cxx}
-- Undo/edit history:           Logic/Framework/UndoDataManager.*, IRISApplication
-- Qt-free property/event:      Common/PropertyModel.h, SNAPEvents.h
-- GUI test harness (Layer 2!): Testing/GUI/Qt/SNAPTestQt.{h,cxx}; --test/--testdir in GUI/Qt/main.cxx
-  → does it address widgets by objectName? can it act on the image canvas / inject image-space edits?
-- Existing prototypes:         look in prototype/ (I think there's an early itksnap-wt→MCP
-  experiment; assess what it does and whether the MVP should extend it)
-- Which GUI-Model headers pull in Qt (I believe only the DL model, for threading) — bounds
-  how hard a clean headless Layer-1 build is.
-In itksnap-dls: read its actual server API (endpoints, session model, nnInteractive prompt
-interface) so the plan calls the real thing.
-
-## Principles & constraints
-- Integration, not invention: compose shipped components over new subsystems.
-- One local, distributable MCP server the client launches; it can drive a live app. No hosted
-  service, no per-user cost. Do NOT rebuild model serving — call itksnap-dls.
-- The HUMAN correction step is the visual star and is shown in the real GUI, on camera; a
-  concept that only shows automation misses the point.
-- Demo-scale data (a handful of images) is fine, but everything shown is a real code path.
+## Next steps (prioritized)
+1. SMOKE-TEST on a GPU box: `pip install -e '.[totalseg]'`, start the server, then
+   `GET /v2/start_session/TotalSegmentator` → `upload_raw` →
+   `GET /v2/run_automatic/{id}?fast=true`. Confirm the multi-label result decodes
+   with correct geometry vs the input (int16, client reshapes to uploaded dims).
+2. SYNC→ASYNC: full-res TS is multi-minute; move automatic inference to the async
+   job pattern (`modules/propagation/{router,jobs}.py`) per §8. Keep the sync
+   endpoint for fast-mode demos.
+3. (If heading to a shippable product) hard-whitelist the Apache `total`/`total_mr`
+   tasks; several TS subtasks carry non-commercial weights (§8 license note).
+4. Start the MVP vertical slice (§5): P2 "audited callable" first — the audit-record
+   serializer over `UndoDataManager` — then the live-GUI command channel over
+   `SNAPTestQt`, then stitch into one local MCP tool namespace.
+5. Packaging nit for §9: `[tool.setuptools] packages=["itksnap_dls"]` omits the new
+   `modules`/`common` subpackages — fine for editable/source runs, must fix before
+   building a wheel.
 
 ## How to work
-- Explore before proposing; ground every claim in files you actually read and cite paths.
-- Don't fabricate APIs, files, or capabilities — if something isn't there, say so.
-- Correct my notes explicitly where wrong; I'd rather know.
-- Ask me clarifying questions before any consequential assumption; state assumptions you make.
-- Output is the plan doc only. Do not implement or scaffold this session.
+- Integration over invention; ground every claim in real files + line numbers.
+- The human-correction step is the visual star — keep it a real code path.
+- Ask before consequential assumptions; state the ones you make.
