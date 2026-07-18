@@ -3,6 +3,38 @@
 Newest entries first. See `docs/agentic-prototype-plan.md` for the authoritative plan
 and `NEXT_SESSION_PROMPT.md` for the resume prompt.
 
+## 2026-07-18 — Sprint Day 1 executed (Gate 1 PASS; Gate 2 design GREEN)
+
+**Env (this RTX 2080 box).** The base conda env already had torch 2.3.1+cu121 (CUDA OK) plus the
+whole DLS stack (nnunetv2, SimpleITK, fastapi, nnInteractive) and an old `itksnap-dls==0.0.4`.
+Cloning base failed (pip pkgs), so instead: `pip install TotalSegmentator` + `pip install -e
+itksnap-dls --no-deps` (editable `feature/agentic-api` → shadows 0.0.4). `models: [nnInteractive,
+SAM2, TotalSegmentator]`, `TotalSegmentatorWrapper.AUTOMATIC=True`. Caveat: **nnInteractive 1.0.1
+wants torch≥2.6** (we have 2.3.1) — irrelevant for TS/Gate 1; only matters if the interactive
+nnInteractive model is used later (flagship uses human paintbrush, so likely not).
+
+**itksnap-mcp repo scaffolded + pushed** (`github.com/jilei-hao/itksnap-mcp`, submodule of the
+wrapper, tracks `main`): thin DLS client (`dls_client.py`, exact wire format, no ITK dep), confidence
+gate placeholder, MCP server skeleton, `demo/smoke_totalseg.py`, pyproject, README. License still TBD.
+
+**Gate 1 — PASS (empirical).** `smoke_totalseg.py` end-to-end on TS example CT (122×101×30, 3mm):
+start_session(TotalSegmentator) → upload_raw → run_automatic(fast) → decoded multi-label int16,
+shape (30,101,122) matching input, **5 anatomically-correct labels** (lung_upper_lobe_left, heart,
+aorta, pulmonary_vein, costal_cartilages). **t[model]=12.9 s** on the RTX 2080. The "propose" backbone
+works live. Finding: the DLS scalar `upload_raw` path drops spacing/origin/direction (unlike the 4D
+path) → automatic seg runs on identity geometry; fine for Gate 1, must thread geometry through for
+faithful demo output.
+
+**Gate 2 — DESIGN GREEN** (`docs/spike_live_channel.md`). Read `main.cxx` (harness built at 1445–1446
+*before* `app.exec()` at 1504; `QTimer::singleShot` already defers work into the loop) and
+`SNAPTestQt.h` (primitives are main-thread `public slots`). A `QLocalServer` created pre-`exec()` and
+serving during it dispatches JSON commands on the GUI thread — *safer* than today's worker-thread JS.
+No blocker. Next: a `set_cursor`-only prototype (needs an ITK-SNAP rebuild) to close Gate 2 empirically.
+
+**Commits.** wrapper `b2ee0f5` (sprint docs), `9804b2a` (itksnap-mcp submodule + reference docs);
+itksnap-mcp `53f8dbd` (scaffold, pushed). itksnap-dls left on `feature/agentic-api` locally (pointer
+intentionally not recorded — wrapper tracks its `main`).
+
 ## 2026-07-17 — CAIMI Builder Showcase sprint planned
 
 - Target: submit a **SIIM-CAIMI26 AI Builder Showcase** entry by **2026-07-24 11:59 PM PST** (~7 days) —
