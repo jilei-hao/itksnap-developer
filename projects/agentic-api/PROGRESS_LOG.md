@@ -3,6 +3,26 @@
 Newest entries first. See `docs/agentic-prototype-plan.md` for the authoritative plan
 and `NEXT_SESSION_PROMPT.md` for the resume prompt.
 
+## 2026-07-17 — CAIMI Builder Showcase sprint planned
+
+- Target: submit a **SIIM-CAIMI26 AI Builder Showcase** entry by **2026-07-24 11:59 PM PST** (~7 days) —
+  a 500-word abstract (6 sections) + a working demo/repo/video. The demo is concrete evidence-of-function
+  for **OS4LS Goal 1** (Milestones 1.1/1.2).
+- Wrote **`docs/sprint_caimi.md`** — 7-day plan: scope (**P2 "audited callable" = guaranteed floor;
+  P1 "live handoff" = stretch flagship gated on a Day-2 live-channel spike**), workstreams W0–W8,
+  day-by-day, two go/no-go gates, an abstract draft, definition-of-done, and sprint risks.
+- Rewrote **`NEXT_SESSION_PROMPT.md`** for the sprint + this-machine (Linux) setup.
+- Ground truth checked: **this box has an NVIDIA RTX 2080 (8 GB)** → it can be the demo box, **fast-mode
+  TS only**. `itksnap-dls` is detached at merge `4c92155`; the TS wrapper `bbaac51` is on
+  `origin/feature/agentic-api` — `git switch` to it. C++ audit-record work lands on `itksnap` `sprint/caimi`.
+- Eligibility: **clears the vendor gate** (academic OSS; using TS/nnInteractive SDKs ≠ vendor submission);
+  TS `total`/`total_mr` Apache; nnInteractive weights non-commercial (demo-OK, product liability).
+- **Open items resolved (owner):** presenter = **jilei-hao** (abstract header placeholder pending Paul);
+  recording GPU = a **4090+ (24 GB)** available → **full-res TS viable** (this RTX 2080 = dev only);
+  **new public repo `itksnap-mcp`** for the Python glue + demo (the CAIMI link + future pip artifact,
+  `greedy_python` pattern) — C++/server stay in `itksnap`/`itksnap-dls`, planning stays private;
+  scope **P2-floor / P1-stretch confirmed**.
+
 ## 2026-07-17 — Planning complete; TotalSegmentator wrapper landed & pushed
 
 ### Decisions locked (owner)
