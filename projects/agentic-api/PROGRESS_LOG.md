@@ -3,6 +3,59 @@
 Newest entries first. See `docs/agentic-prototype-plan.md` for the authoritative plan
 and `NEXT_SESSION_PROMPT.md` for the resume prompt.
 
+## 2026-07-18 — Audit record (P2 core) built, reviewed, verified
+
+**Attempted:** Build W2 — the segmentation **audit record**, the last net-new piece the
+guaranteed P2 "audited callable" demo depends on. Landed complete.
+
+**Landed (commit hash):** `itksnap` `sprint/caimi` **`560dcd2f`** (local; **not pushed yet**).
+- New Qt-free `Logic/Framework/SegmentationAuditRecord.{h,cxx}`: value type + hand-rolled
+  `ToJSON()` + `BuildFromDeltas()`. Record = `{op, timestamp (ISO-8601 UTC), actor(agent|human),
+  changed_voxels, rle_count, time_point, bbox{min,max}, before_counts, after_counts}`.
+- `UndoDataManagerCommit::GetName()` getter (the plan's explicit ask; was `protected`, no getter)
+  + `UndoDataManager::GetLastCommit()`.
+- `LabelImageWrapper`: capture the record in `StoreUndoPoint` (the single commit chokepoint);
+  actor **consume-on-commit** with throwaway `"Temporary undo point"` skipped; audit log bounded
+  (ring, 4096) + cleared with undo history; last record invalidated on `Undo()`.
+- `IRISApplication::SetNextSegmentationCommitActor` (returns bool) / `GetLastSegmentationAuditRecordJSON`.
+- `main.cxx` `--agent-listen` channel: `get_audit` + `set_actor` (input-validated) commands.
+- `Testing/Logic/SegmentationAuditRecordTest.cxx` — L1 test, links `itksnaplogic` alone.
+
+**Key design decision (why):** the rich fields (bbox, before/after histograms) are **reconstructed
+at commit time by walking the committed RLE delta against the current post-edit image**
+(`old = new − delta`, modular `LabelType` arithmetic — exactly how `Undo()` recovers prior state).
+This puts capture in the ONE chokepoint (`LabelImageWrapper::StoreUndoPoint`) every edit path funnels
+through, so **zero changes** to the ~11 `SegmentationUpdateIterator`/Paint call sites, and it handles
+multi-delta paintbrush strokes for free.
+
+**Verified:**
+- L1 `SegmentationAuditRecordTest` + existing `IRISApplicationTest` **pass** (ctest, 0.08 s). The L1
+  test proves reconstruction is exact on a plain image, **the production RLE label image** (confirms
+  `ImageRegionConstIteratorWithIndex` raster order matches delta encoding), non-zero before-labels,
+  multi-delta accumulation, **overlapping same-voxel deltas counted once**, and serializer escaping.
+- ITK-SNAP builds clean (exit 0).
+- Headless (Xvfb) channel smoke: `ping`→pong, `get_audit`→null (no edit), `set_actor agent`→ok,
+  `set_actor bogus`→`ok:false "unknown actor"`. Round-trips over the Unix socket, no crash.
+
+**Adversarial review (code-reviewer agent, given only the requirement) + fixes.** It found real bugs
+in the `actor` field; all fixed and re-verified: (1) actor reset was decoupled from commit creation →
+switched to consume-on-commit + skip `"Temporary undo point"`; (2) stale record after undo →
+invalidate on `Undo()`; (3) unbounded audit log → bounded + cleared with undo history; (4) softened an
+over-strong "exact for every path" comment to the actual precondition; (5) added `set_actor` validation.
+
+**Broke / surprised:**
+- **Multi-delta commits.** Paintbrush stages *several* deltas per commit (drag segments) then one
+  `StoreUndoPoint`; reconstruction had to walk all deltas in the commit, not one iterator's Finalize.
+  The reconstruct-from-delta-vs-image approach handles this cleanly.
+- **`ninja --target A B` skipped relinking ITK-SNAP** once (batched build stopped at the model lib;
+  binary mtime gave it away) — always confirm the final target actually relinked before smoke-testing.
+- Making `PaintBox` a template broke `SmartPointer→T*` deduction in the test (use `.GetPointer()`).
+
+**Known residuals (not blocking P2; see NEXT_SESSION_PROMPT traps):** actor "arm" model leaks if an
+agent arms then triggers a genuine no-op (documented contract: arm immediately before a committing op);
+`get_audit` not reconciled with `Redo()` (only `Undo` invalidates); one extra O(N) pass on whole-image
+commits; a real GUI edit → non-null audit over the socket still needs a paint/apply channel command (W4).
+
 ## 2026-07-18 — Session close / handoff
 
 **Attempted:** stand up the CAIMI sprint end-to-end — plan it, execute Day 1 (env + both go/no-go

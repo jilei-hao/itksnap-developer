@@ -3,70 +3,87 @@
 ## Current state (read this paragraph first)
 We are building a prototype for a **SIIM-CAIMI26 AI Builder Showcase** submission (deadline
 **2026-07-24 11:59 PM PST**). Thesis: *"model proposes, human disposes"* — expose expert human
-judgment as a **callable, resumable, audited** pipeline step an external agent can invoke, shown on
-camera. The demo has three code homes: **`itksnap`** (C++ GUI/logic, branch `sprint/caimi`),
-**`itksnap-dls`** (Python FastAPI model server, branch `feature/agentic-api`), and **`itksnap-mcp`**
-(new public repo, the agent-facing Python glue + demo — the CAIMI link reviewers open). Both technical
-blockers are now **cleared**: **Gate 1** — automatic segmentation works live (TotalSegmentator fast mode
-via the DLS server + the `itksnap-mcp` thin client, 12.9 s on this box's RTX 2080); **Gate 2** — a live
-command channel (`itksnap` `--agent-listen` QLocalServer, commit `d9f2329f`) lets an external process
-drive the running GUI (moved the crosshair via `set_cursor`, no `--test` scaffold). The guaranteed
-submission floor is **P2 "audited callable"**; the now-unblocked stretch flagship is **P1 "live
-handoff"**. What does NOT exist yet: the **audit record**, the **MCP tool namespace** (only a skeleton),
-the demo driver/video, and the abstract.
+judgment as a **callable, resumable, audited** pipeline step an external agent can invoke. Three code
+homes: **`itksnap`** (C++ GUI/logic, branch `sprint/caimi`), **`itksnap-dls`** (Python FastAPI model
+server, branch `feature/agentic-api`), **`itksnap-mcp`** (public repo, the agent-facing glue + demo —
+the CAIMI link reviewers open). Cleared so far: **Gate 1** — automatic segmentation live (TotalSegmentator
+fast mode via DLS + the `itksnap-mcp` client, 12.9 s on this RTX 2080); **Gate 2** — a live command
+channel (`itksnap` `--agent-listen` QLocalServer) drives the running GUI; and now the **audit record
+(P2 core)** — commit `560dcd2f` on `sprint/caimi` (**local, NOT pushed**): every committed segmentation
+edit produces a structured JSON record `{op, timestamp, actor(agent|human), changed_voxels, bbox,
+before/after label counts}`, reconstructed from the undo delta vs the current image at commit time. It is
+unit-tested (L1 test passes, incl. the production RLE image) and the channel exposes `get_audit` +
+`set_actor`. **What is proven but NOT yet demonstrated end-to-end:** a *real* segmentation edit flowing
+through ITK-SNAP's commit path and returning a *populated* audit record over the socket — because the
+channel has no command that triggers a committing edit yet (`get_audit` currently returns `null` until
+something commits). Still absent overall: the MCP tool namespace (skeleton only), the demo driver/video,
+the abstract.
 
 ## The single next goal
-**Build the audit record (P2 core) in `itksnap` on `sprint/caimi`.** When a segmentation edit is
-committed, produce a structured JSON record: `{op, timestamp, actor(agent|human), changed-voxel count,
-bbox, before/after label counts}`. Concretely: add a public getter for `UndoDataManagerCommit::m_Name`
-(currently `protected`) and the missing provenance fields, a JSON serializer over the existing undo
-delta, and confirm `SegmentationChangeEvent` fires once per commit at the right granularity. This is
-the differentiator that makes an expert correction a *return value*, not a side effect — and it is the
-last net-new piece the guaranteed P2 demo depends on. (After it: extend the live channel — extract
-`SNAPTestQt` primitives into a shared helper, add `trigger`/`click`/`get_state`/`screenshot`, and wire
-the MCP `live.*` tools — then record the video and write the 500-word abstract.)
+**Close the P2 loop with a REAL edit: apply a segmentation through ITK-SNAP's commit path and read back
+the populated audit record over the `--agent-listen` socket.** Concretely, add an `apply_segmentation`
+command to the channel in `itksnap/GUI/Qt/main.cxx` (next to the new `get_audit`/`set_actor` at ~line
+1507): it ingests a label volume (start simple — e.g. a small box or a base64/np payload, or reuse the
+DLS-result path) and calls `IRISApplication::UpdateSegmentationWithBinarySegmentation(...)`
+(`IRISApplication.cxx:676`) — which finalizes the iterator, commits, fires `SegmentationChangeEvent`, and
+(via `LabelImageWrapper::StoreUndoPoint`) captures the audit record. Have the client do
+`set_actor agent` → `apply_segmentation` → `get_audit` and confirm a populated record comes back with
+`actor:"agent"`, correct `changed_voxels`/`bbox`/`before_counts`/`after_counts`. That is the P2
+"commit() returns the audit record" beat filmed as **Clip C** — and it feeds directly into W3 (the MCP
+`apply`/`commit`/`read-audit` tools). Then (still P2): wire the MCP `headless.*` namespace to this loop.
 
 ## Files to read first (in order)
 1. `projects/agentic-api/docs/sprint_caimi.md` — the sprint plan (scope, day-by-day, ticked status, DoD).
-2. `projects/agentic-api/PROGRESS_LOG.md` — newest entry first; the "Session close / handoff" entry has
-   every commit hash and every trap.
-3. `projects/agentic-api/docs/spike_live_channel.md` — how the live channel works + how to test it.
-4. `projects/agentic-api/docs/agentic-prototype-plan.md` — the grounded technical plan; §2.9 (undo
-   engine, the audit-record starting point), §5 (MVP + video), §8 (models), §9 (distribution).
-5. `projects/agentic-api/docs/caimi-submission-requirements.md` — submission rules + abstract skeleton.
-6. For the audit record, in `itksnap/`: `Logic/Framework/UndoDataManager.{h,txx}`,
-   `Logic/Framework/IRISApplication.{h,cxx}` (`UpdateSegmentationWith*`), `Common/SNAPEvents.h`
-   (`SegmentationChangeEvent`), `Logic/ImageWrapper/LabelImageWrapper.{h,cxx}` (`StoreUndoPoint`).
+   W2 audit record is now ✅; you are on **Day 3 (W3 MCP + headless slice)**.
+2. `projects/agentic-api/PROGRESS_LOG.md` — newest entry (this session) has the audit-record design,
+   the commit hash, what surprised, and the known residuals.
+3. `projects/agentic-api/docs/spike_live_channel.md` — how the live channel works + how to extend it.
+4. In `itksnap/` (the audit record — already built, `sprint/caimi`):
+   - `GUI/Qt/main.cxx` — the `--agent-listen` block; `get_audit`/`set_actor` are the pattern to copy for
+     `apply_segmentation` (JSON-RPC dispatch ~1474–1530).
+   - `Logic/Framework/SegmentationAuditRecord.{h,cxx}` — the record type + `ToJSON()` + `BuildFromDeltas`.
+   - `Logic/ImageWrapper/LabelImageWrapper.cxx` — `StoreUndoPoint` (capture site), `Undo` (invalidation).
+   - `Logic/Framework/IRISApplication.cxx` — `UpdateSegmentationWithBinarySegmentation` (676, the commit
+     path to invoke), `GetLastSegmentationAuditRecordJSON`/`SetNextSegmentationCommitActor` (548+).
+5. `itksnap-mcp/` (server + `demo/agent_send.py`) — where the MCP `headless.*`/`live.*` tools get wired.
+6. `projects/agentic-api/docs/caimi-submission-requirements.md` — submission rules + abstract skeleton.
 
-## Setup (this machine — Linux, has GPUs)
-- Env is ready in the **base conda env** (`conda activate base`): torch 2.3.1+cu121 (CUDA OK),
-  `TotalSegmentator`, and `itksnap-dls` installed **editable** on `feature/agentic-api`. Recording box
-  is a separate **4090+ (24 GB)** → full-res TS viable; this **RTX 2080 (8 GB)** is dev/fast-mode.
-- Branches: `itksnap` → `sprint/caimi`; `itksnap-dls` → `feature/agentic-api` (its submodule pointer is
-  **intentionally not recorded** in the wrapper, which tracks itksnap-dls `main` — `git switch` manually);
-  `itksnap-mcp` → `main`.
-- Build ITK-SNAP: `cmake --build build-release --target ITK-SNAP` (out-of-source dir `build-release/`).
+## Setup (this machine — Linux, RTX 2080 8 GB; dev/fast-mode only)
+- Env ready in the **base conda env** (`conda activate base`): torch 2.3.1+cu121, TotalSegmentator,
+  `itksnap-dls` editable on `feature/agentic-api`.
+- Branches: `itksnap` → `sprint/caimi`; `itksnap-dls` → `feature/agentic-api` (submodule pointer
+  intentionally NOT recorded in the wrapper — `git switch` manually); `itksnap-mcp` → `main`.
+- Build: `cmake --build build-release --target ITK-SNAP -j` (out-of-source dir `build-release/`).
+  Build the logic test: `--target segmentation_audit_test`; run `ctest -R SegmentationAuditRecordTest`.
 - Run the model server: `conda activate base && cd itksnap-dls && python -m itksnap_dls --port 8911 --device cuda`.
-- Test the propose backbone: `python itksnap-mcp/demo/smoke_totalseg.py --ct <body_ct.nii.gz> --url http://localhost:8911 --out /tmp/seg.nii.gz`.
-- Test the live channel: launch `build-release/ITK-SNAP -g <img> --agent-listen /tmp/snap-agent.sock`,
-  then `python itksnap-mcp/demo/agent_send.py /tmp/snap-agent.sock set_cursor 30 40 10`.
+- Test the live channel (headless): `Xvfb :97 & DISPLAY=:97 setsid ./build-release/ITK-SNAP -g <ct>
+  -s <seg> --agent-listen /tmp/snap-agent.sock &`, then send JSON with a small Python AF_UNIX client
+  (see `/tmp/audit_smoke.py` this session, or `itksnap-mcp/demo/agent_send.py`).
 
 ## Known traps
-- **Unix socket path limit ~108 chars.** `--agent-listen` with a long path → `QLocalServer: Name error`.
-  Use a short path like `/tmp/snap-agent.sock`.
-- **Don't `pkill -f "ITK-SNAP"`** from the working shell — it self-matches the command (exit 144). Use a
-  specific pattern (`ITK-SNAP.*agent-listen`) or `setsid`, and prefer targeting the launcher PID.
-- **`nnInteractive` needs torch≥2.6** (we have 2.3.1) — TotalSegmentator is unaffected; only a concern if
-  you use the interactive nnInteractive model (the flagship uses the human paintbrush, so likely not).
-- **DLS scalar `upload_raw` drops spacing/origin/direction** (unlike the 4D path) — auto-seg runs on
-  identity geometry. Fine for smoke tests; thread geometry through for anatomically faithful demo output.
-- **`itksnap-mcp` license is undecided** (MIT vs GPL-3.0) — pick before publishing the CAIMI demo link.
-- **Portal account** (AbstractScorecard EventKey `QRFBVSUS`, Chrome/Firefox only) must be created by a
-  human — not done yet.
-- Keep the C++ audit work on `sprint/caimi`; commit inside the submodule first, then bump the wrapper
-  pointer.
+- **`get_audit` returns `null` until an edit commits.** That is correct (no committed edit = no record).
+  Proving a populated record needs the new `apply_segmentation` command — that is the whole next goal.
+- **Actor "arm" model.** `set_actor agent` is consumed by the *next real commit* (auto-resets to human;
+  `"Temporary undo point"` commits are skipped). Arm it **immediately before** the committing op — if the
+  armed op is a genuine no-op, the tag carries to the next commit. A fully robust fix = pass the actor as
+  an argument through `StoreUndoPoint`/`Finalize` (a follow-up, only if the demo needs it).
+- **`get_audit` is not reconciled with `Redo()`** — only `Undo()` invalidates the last record. Fine for
+  the demo (agent reads immediately post-commit); note it if a redo appears in the flow.
+- **Audit reconstruction precondition:** exact only because each commit uses one constant active label
+  (revisited voxel → zero delta). See the header comment in `SegmentationAuditRecord.h`.
+- **`ninja --target A B` may not relink the final exe** — verify the ITK-SNAP binary mtime updated
+  before smoke-testing (a batched build silently stopped at the model lib this session).
+- **Unix socket path limit ~108 chars** — use a short `/tmp/snap-agent.sock` (`QLocalServer: Name error`).
+- **Don't `pkill -f "ITK-SNAP"`** from the working shell (self-matches, exit 144). Launch with `setsid`
+  and `kill -TERM -<pid>` the process group; run under `Xvfb` for headless.
+- **DLS scalar `upload_raw` drops spacing/origin/direction** — auto-seg runs on identity geometry; thread
+  geometry through for anatomically faithful demo output.
+- `itksnap-mcp` license undecided (MIT vs GPL-3.0); AbstractScorecard portal account (EventKey
+  `QRFBVSUS`, Chrome/Firefox) must be created by a human — not done yet.
+- **Push is pending:** `itksnap` `560dcd2f` and the wrapper checkpoint are **local**. Push the submodule
+  branch before anyone relies on the wrapper pointer.
 
 ## How to work
 Integration over invention; ground claims in real files + line numbers. Protect the P2 floor and the
-abstract; the live-handoff flagship is stretch. The on-camera human correction is the visual star — keep
-it a real code path. State assumptions; ask before consequential ones.
+abstract; live-handoff (Clip B) is stretch. Keep the on-camera human correction a real code path. State
+assumptions; ask before consequential ones. Commit inside the submodule first, then bump the wrapper.

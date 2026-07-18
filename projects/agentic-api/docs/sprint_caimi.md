@@ -67,7 +67,7 @@ truthful "human-in-the-loop" story). Do **not** fake a live channel we don't hav
 |---|---|---|---|---|
 | W0 | Env setup + de-risk; scaffold the new public repo | wrapper / venv / `itksnap-mcp` | ✅ done | §6.6 |
 | W1 | "Propose" backbone: TotalSegmentator live + thin HTTP client | `itksnap-dls` `feature/agentic-api` | ✅ done (Gate 1 PASS) | §8, §2.5 |
-| W2 | **Audit record** (C++ net-new) | `itksnap` `sprint/caimi` | not started | §2.9, P2 |
+| W2 | **Audit record** (C++ net-new) | `itksnap` `sprint/caimi` | ✅ done (`560dcd2f`) | §2.9, P2 |
 | W3 | MCP namespace + confidence gate | new repo `itksnap-mcp` | scaffold only | §5.2 |
 | W4 | **(STRETCH)** live GUI command channel | `itksnap` `sprint/caimi` | ✅ prototype (Gate 2 PASS) | §6.2, P4 |
 | W5 | Demo driver + `manifest.yaml` + golden data | `itksnap-mcp/demo/` | not started | §5.3, §6.6 |
@@ -113,6 +113,10 @@ truthful "human-in-the-loop" story). Do **not** fake a live channel we don't hav
   changed-voxel count, bbox, before/after label counts}`; JSON serializer; confirm `SegmentationChangeEvent`
   fires per commit at the right granularity. Build the tiny Qt-free L1 test binary from §6.4 to prove
   voxel-edit + serialize links `itksnaplogic` alone.
+  - **✅ RESULT (2026-07-18): DONE** — `itksnap` `560dcd2f`. `SegmentationAuditRecord.{h,cxx}` +
+    getter + `LabelImageWrapper` capture + `IRISApplication`/`--agent-listen` accessors + L1 test
+    (`SegmentationAuditRecordTest`, passes, incl. production RLE image). Confirmed one commit → one
+    `SegmentationChangeEvent`. Remaining: demonstrate over the socket with a real committing edit (Day 3).
 - W1: thin **DLS Python client** (HTTP + gzip + base64, **no ITK**) matching the actually-run server;
   pin the version via `/status` in `manifest.yaml`.
 - **Gate 2 (EOD): live-channel spike verdict.** Can a `QLocalServer` inject `postEvent`/method-invokes
