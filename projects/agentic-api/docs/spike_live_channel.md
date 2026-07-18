@@ -4,8 +4,28 @@
 **running** ITK-SNAP event loop — driving the same live GUI the human sees — without the `--test`
 scaffold that runs canned JS *before* `app.exec()`?
 
-**Verdict: DESIGN GREEN.** No architectural blocker found. Empirical prototype (below) is the next
-concrete step; it needs an ITK-SNAP rebuild, so it's booked as a focused task, not done in this note.
+**Verdict: GREEN — empirically closed (2026-07-18).** Design was sound and the prototype confirms it:
+a `--agent-listen` `QLocalServer` in `main.cxx` (commit `d9f2329f` on `sprint/caimi`) let an external
+client move the live crosshair in a headless ITK-SNAP with **no `--test` scaffold**. See "Empirical
+result" below. **The P1 live-handoff flagship is unblocked.**
+
+## Empirical result
+
+`itksnap/GUI/Qt/main.cxx` now registers `--agent-listen <socket>`; when set, before `app.exec()` it
+opens a `QLocalServer` whose `readyRead` (main/GUI thread) dispatches newline-delimited JSON-RPC. Test
+(`scratchpad/run_gate2.sh` + `agent_client.py`): launch `ITK-SNAP -g <ct> --agent-listen /tmp/snap-agent.sock`
+under Xvfb, then from a separate Python process over the Unix socket:
+
+```
+ping                       -> {ok:true, result:"pong"}
+get_cursor  (before)       -> {ok:true, result:{x:61,y:50,z:15}}
+set_cursor  {x:60,y:50,z:15}-> {ok:true}
+get_cursor  (after)        -> {ok:true, result:{x:60,y:50,z:15}}   # crosshair moved
+```
+
+Gotcha found: the AF_UNIX `sun_path` limit (~108 chars) — use a short socket path (`/tmp/…`), not the
+long scratchpad path (which failed with `QLocalServer::listen: Name error`). Qt6::Network links
+transitively (already used by `DeepLearningServerPanel`), so no CMake change was needed.
 
 ## Evidence from the code (branch `sprint/caimi`)
 

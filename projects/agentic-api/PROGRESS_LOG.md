@@ -3,6 +3,19 @@
 Newest entries first. See `docs/agentic-prototype-plan.md` for the authoritative plan
 and `NEXT_SESSION_PROMPT.md` for the resume prompt.
 
+## 2026-07-18 — Gate 2 empirically CLOSED (live command channel works)
+
+Built the live-channel prototype: `itksnap` commit **`d9f2329f`** (`sprint/caimi`, pushed) adds a
+`--agent-listen <socket>` `QLocalServer` in `main.cxx`, created before `app.exec()` and dispatching
+newline-delimited JSON-RPC on the GUI thread. Empirically verified headless (Xvfb): an external Python
+client over a Unix socket ran `ping`→pong and moved the live crosshair via `set_cursor` (61,50,15 →
+60,50,15), confirmed by `get_cursor` — **no `--test` scaffold**. This closes the sprint's hardest gate
+(plan §6.2) and **unblocks the P1 live-handoff flagship**. Prototype commands: ping/get_cursor/set_cursor
+(voxel coords via `IRISApplication::Set/GetCursorPosition`). Gotcha: AF_UNIX path limit ~108 chars → use
+a short socket path. Qt6::Network links transitively (no CMake change). Details in
+`docs/spike_live_channel.md`. Next: extract `SNAPTestQt` primitives into a shared helper; add
+trigger/click/get_state/screenshot; wire the MCP `live.*` tools.
+
 ## 2026-07-18 — Sprint Day 1 executed (Gate 1 PASS; Gate 2 design GREEN)
 
 **Env (this RTX 2080 box).** The base conda env already had torch 2.3.1+cu121 (CUDA OK) plus the
