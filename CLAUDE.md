@@ -14,7 +14,7 @@ Top-level submodules (all under `github.com/jilei-hao/`), each tracking the bran
 
 | Path | Branch | Purpose |
 |---|---|---|
-| `itksnap/` | `feature/cardiac-io` | Main ITK-SNAP application (architecture documented below) |
+| `itksnap/` | `sprint/caimi` | Main ITK-SNAP application (architecture documented below). `sprint/caimi` = `feature/cardiac-io` + the Linux/GCC build patches; it is the active sprint working branch. |
 | `greedy_python/` | `test/integration` | Python bindings for Greedy (see below) |
 | `convert-mesh/` | `main` | ConvertMesh CLI/library |
 | `cmrep/` | `local` | cm-rep; ground-truth parity reference for ConvertMesh |

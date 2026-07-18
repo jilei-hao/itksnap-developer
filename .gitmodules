@@ -17,7 +17,7 @@
 [submodule "itksnap"]
 	path = itksnap
 	url = https://github.com/jilei-hao/itksnap.git
-	branch = feature/cardiac-io
+	branch = sprint/caimi
 [submodule "itksnap-dls"]
 	path = itksnap-dls
 	url = https://github.com/jilei-hao/itksnap-dls.git
