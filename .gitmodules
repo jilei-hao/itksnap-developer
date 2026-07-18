@@ -26,3 +26,7 @@
 	path = segflow4d
 	url = https://github.com/jilei-hao/segflow4d.git
 	branch = main
+[submodule "itksnap-mcp"]
+	path = itksnap-mcp
+	url = https://github.com/jilei-hao/itksnap-mcp.git
+	branch = main
