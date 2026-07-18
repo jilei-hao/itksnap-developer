@@ -66,8 +66,10 @@ if [ -z "$QT_PREFIX" ]; then
 fi
 [ $errors -gt 0 ] && exit 1
 
-if [ ! -d "$SNAP_DIR/.git" ]; then
-  echo "ERROR: itksnap not found at $SNAP_DIR. Run scripts/setup.sh first." >&2
+# itksnap is a git submodule, so .git is a gitlink *file*; a plain clone has a
+# .git *directory*. Accept either, and require CMakeLists.txt as a sanity check.
+if [ ! -e "$SNAP_DIR/.git" ] || [ ! -f "$SNAP_DIR/CMakeLists.txt" ]; then
+  echo "ERROR: itksnap not found at $SNAP_DIR. Run 'git submodule update --init --recursive' first." >&2
   exit 1
 fi
 

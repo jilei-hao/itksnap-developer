@@ -117,8 +117,10 @@ xvfb-run -a build-release/ITK-SNAP --test VolumeRendering \
   build (it also refreshes VTK for the other projects that consume `vtk-dev/installed`).
 
 - **Qt version-API guards.** `qt_add_translations(TARGETS …)` needs Qt ≥ 6.7 and
-  `qt_generate_deploy_script` needs Qt ≥ 6.5; both are guarded by `QTVERSION` in
-  `itksnap/CMakeLists.txt`. The `VTK 9.3.1` hard requirement in
+  `qt_generate_deploy_script` needs Qt ≥ 6.5; on `feature/cardiac-io` both are unguarded
+  upstream, so each call is wrapped in `if(Qt6Widgets_VERSION VERSION_GREATER_EQUAL …)` in
+  `itksnap/CMakeLists.txt` (the older `test/dls_sam2` branch used a `QTVERSION` guard; this
+  branch has no such variable). The `VTK 9.3.1` hard requirement in
   `itksnap/CMake/standalone.cmake` was relaxed to `9.3` (CI's 9.3.1 still satisfies it).
 
 - **Stricter compiler than macOS.** GCC/libstdc++ rejected code Clang accepted: streaming
@@ -126,18 +128,24 @@ xvfb-run -a build-release/ITK-SNAP --test VolumeRendering \
   and `<QTimeZone>` / `<QDialogButtonBox>` must be included explicitly rather than relied on
   transitively.
 
-**Source patches** (historically applied on `test/dls_sam2` for Linux/GCC CI). The submodule now
-tracks **`feature/cardiac-io`**, branched from upstream `master` (which has since moved VTK to
-9.5.2) — **re-verify which of these are still needed** on this branch before relying on them:
+- **`build-release.sh` rejected `itksnap` after the submodule conversion.** The script
+  guarded on `[ -d "$SNAP_DIR/.git" ]`, but once `itksnap/` became a git submodule its `.git`
+  is a gitlink **file**, not a directory, so the guard failed with "itksnap not found …".
+  Fixed to accept either (`[ -e .git ]` + require `CMakeLists.txt`).
+
+**Source patches.** Originally applied on `test/dls_sam2`; the submodule now tracks
+**`feature/cardiac-io`** (branched from upstream `master`, which has since moved VTK to 9.5.2).
+**All six were re-verified as still required on `feature/cardiac-io` and re-applied** in the
+2026-07-17 Linux build (the branch ships none of them). Each row notes the exact site:
 
 | File | Change |
 |---|---|
-| `CMake/standalone.cmake` | `VTK 9.3.1` → `9.3` |
-| `CMakeLists.txt` | version-guard `qt_add_translations` (≥6.7) and `qt_generate_deploy_script` (≥6.5) |
-| `GUI/Qt/Components/SSHTunnelWorkerThread.cxx` | `QString::fromStdString(…)` around 3 qDebug streams |
-| `GUI/Qt/Components/SNAPQtCommon.cxx` | add `#include <QTimeZone>` |
-| `GUI/Qt/Windows/DeepLearningServerPanel.cxx` | add `#include <QDialogButtonBox>`, wrap one qDebug stream |
-| `Testing/GUI/Qt/SSHTunnelTest/main.cxx` | `QString::fromStdString(…)` around 3 qDebug streams (built only by the `all` target, not `ITK-SNAP` alone) |
+| `CMake/standalone.cmake` | `VTK 9.3.1` → `9.3` (line ~72, `FIND_PACKAGE(VTK …)`) |
+| `CMakeLists.txt` | wrap `qt_add_translations` in `if(Qt6Widgets_VERSION VERSION_GREATER_EQUAL 6.7)` and the Linux `qt_generate_deploy_script` block in `… ≥ 6.5` |
+| `GUI/Qt/Components/SSHTunnelWorkerThread.cxx` | `QString::fromStdString(…)` around 3 std::string streams (lines 67, 74, 82: `message` ×2, `ready_info.hostname`) |
+| `GUI/Qt/Components/SNAPQtCommon.cxx` | add `#include <QTimeZone>` — needed for `.timeZone()`/`.toTimeZone()` at line ~636 (the type name never appears literally, so grep for it misses; only the compiler catches it) |
+| `GUI/Qt/Windows/DeepLearningServerPanel.cxx` | add `#include <QDialogButtonBox>`, wrap `p->GetHostname()` (std::string) in the line-181 qDebug stream |
+| `Testing/GUI/Qt/SSHTunnelTest/main.cxx` | `QString::fromStdString(…)` around 3 std::string streams (built only by the `all` target, not `ITK-SNAP` alone) |
 
 > Note: `ninja ITK-SNAP` builds just the app, but `scripts/build-release.sh` / `ninja`
 > build the `all` target (CLI tools + test executables). Build `all` to catch everything.
@@ -147,6 +155,30 @@ tracks **`feature/cardiac-io`**, branched from upstream `master` (which has sinc
 ninja ITK-SNAP          # main application
 ninja SlicingPerformanceTest testTDigest iteratorTests
 ```
+
+**Known test status on Linux headless (Xvfb + llvmpipe software OpenGL), 2026-07-17.**
+`xvfb-run -a ctest` → **30/33 pass**. The 3 failures are pre-existing on `feature/cardiac-io`
+and unrelated to the Linux build patches above:
+
+- **`4DContinuousRenderingD`** — CMake `GUI_TESTS` typo. The runner maps a test name to
+  `:/scripts/Scripts/test_<name>.js`, but the entry has a stray trailing `D`, so it looks for
+  `test_4DContinuousRenderingD.js` (does not exist). The real script `test_4DContinuousRendering.js`
+  exists and is in `TestingScripts.qrc` but is orphaned (no matching entry). Fix: rename the
+  `GUI_TESTS` entry `4DContinuousRenderingD` → `4DContinuousRendering` in `itksnap/CMakeLists.txt`.
+- **`4DReplayWithMeshUpdate`** — **timing-flaky under llvmpipe, not a logic regression.** Same
+  binary passes when the cold-start mesh build is fast (verified: replay free-runs through all 11
+  frames and Phase B passes); it fails only when the first software-rendered mesh build exceeds
+  the test's 8 s Phase-A budget, so `on4DReplayTimeout` (`MainImageWindow.cxx:1769`) stays gated
+  on `IsMeshUpdating`. Latent fragility worth noting: that guard is set in `ViewPanel3D.cxx:391`
+  before the `QtConcurrent::run` and cleared **only from inside the worker** (`Generic3DModel.cxx:282`)
+  — there is no `QFutureWatcher::finished` main-thread completion handler, so a worker that hangs or
+  throws anything other than `bad_alloc`/`IRISException` leaves replay blocked permanently.
+- **`RemoteImageLoadTest_Cache`** — network test; the download succeeds but `CacheMetadata.xml`
+  is not written afterward.
+
+Note: some GUI tests are timing-sensitive under software rendering — `4DReplayWithMeshUpdate`
+also intermittently fails to populate the layer-inspector rows when launched as a standalone
+`ITK-SNAP --test …` process, yet reaches Phase A reliably under `ctest`.
 
 ## Running Tests
 
