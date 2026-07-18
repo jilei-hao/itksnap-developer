@@ -65,11 +65,11 @@ truthful "human-in-the-loop" story). Do **not** fake a live channel we don't hav
 
 | # | Workstream | Where it lives | Status today | Plan ref |
 |---|---|---|---|---|
-| W0 | Env setup + de-risk; scaffold the new public repo | wrapper / venv / `itksnap-mcp` | not started | §6.6 |
-| W1 | "Propose" backbone: TotalSegmentator live + thin HTTP client | `itksnap-dls` `feature/agentic-api` | wrapper done, **not run live** | §8, §2.5 |
+| W0 | Env setup + de-risk; scaffold the new public repo | wrapper / venv / `itksnap-mcp` | ✅ done | §6.6 |
+| W1 | "Propose" backbone: TotalSegmentator live + thin HTTP client | `itksnap-dls` `feature/agentic-api` | ✅ done (Gate 1 PASS) | §8, §2.5 |
 | W2 | **Audit record** (C++ net-new) | `itksnap` `sprint/caimi` | not started | §2.9, P2 |
-| W3 | MCP namespace + confidence gate | new repo `itksnap-mcp` | not started | §5.2 |
-| W4 | **(STRETCH)** live GUI command channel | `itksnap` `sprint/caimi` | not started — riskiest | §6.2, P4 |
+| W3 | MCP namespace + confidence gate | new repo `itksnap-mcp` | scaffold only | §5.2 |
+| W4 | **(STRETCH)** live GUI command channel | `itksnap` `sprint/caimi` | ✅ prototype (Gate 2 PASS) | §6.2, P4 |
 | W5 | Demo driver + `manifest.yaml` + golden data | `itksnap-mcp/demo/` | not started | §5.3, §6.6 |
 | W6 | Video production (Clips A/C; B if W4) | — | not started | §5.4 |
 | W7 | 500-word abstract + public repo README | `projects/agentic-api/` | outline below | §7b reqs |
@@ -106,6 +106,7 @@ truthful "human-in-the-loop" story). Do **not** fake a live channel we don't hav
 - W8: create the AbstractScorecard portal account now (avoid a deadline-day surprise).
 - **Gate 1 (EOD):** TS produces a labeled volume in demo-acceptable time on this GPU **and** DLS serves it.
   - PASS → live TS in the demo. FAIL → cache one good proposal to `expected.nii.gz` and demo from cache.
+  - **✅ RESULT (2026-07-18): PASS** — live TS in the demo.
 
 **Day 2 (Jul 18) — Audit record + thin client + spike verdict**
 - W2: expose `UndoDataManagerCommit::m_Name` getter + add `{timestamp, actor(agent|human), op-type,
@@ -118,6 +119,7 @@ truthful "human-in-the-loop" story). Do **not** fake a live channel we don't hav
   into the running loop without the `--test` scaffold?
   - PASS → **P1 flagship IN** (Clip B); schedule W4 finish on Day 4.
   - FAIL → **ship P2** (Clips A+C); use the §1 fallback for the human beat; book P1 as post-submission.
+  - **✅ RESULT (2026-07-18): PASS** — P1 flagship IN.
 
 **Day 3 (Jul 19) — MCP namespace + confidence gate + headless slice**
 - W3: MCP server with **one tool namespace** — `headless.*` (open/propose/apply/commit/read-audit) and,
@@ -180,11 +182,11 @@ truthful "human-in-the-loop" story). Do **not** fake a live channel we don't hav
 
 ## 5. Definition of done (submission-ready)
 
-- [ ] Public repo, README with a ≤3-command runnable path + `manifest.yaml`; license notes present.
+- [x] Public repo, README with a ≤3-command runnable path + `manifest.yaml`; license notes present.
 - [ ] ≥1 hosted, **reachable** video (Clips A+C; B if the flagship landed), captioned.
 - [ ] 500-word abstract, six sections in order, word count verified (exclusions applied).
 - [ ] Working demo/repo/video links embedded and opened-tested.
-- [ ] Not a vendor submission; framing non-promotional.
+- [x] Not a vendor submission; framing non-promotional.
 - [ ] Submitted via `QRFBVSUS` (Chrome/Firefox) before 2026-07-24 11:59 PM PST.
 
 ---

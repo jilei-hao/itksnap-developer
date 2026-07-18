@@ -3,6 +3,40 @@
 Newest entries first. See `docs/agentic-prototype-plan.md` for the authoritative plan
 and `NEXT_SESSION_PROMPT.md` for the resume prompt.
 
+## 2026-07-18 — Session close / handoff
+
+**Attempted:** stand up the CAIMI sprint end-to-end — plan it, execute Day 1 (env + both go/no-go
+gates), and build the Gate-2 live command channel. All landed.
+
+**Landed (commit hashes):**
+- Planning: `docs/sprint_caimi.md` (7-day plan), `docs/spike_live_channel.md`, rewritten
+  `NEXT_SESSION_PROMPT.md`. Wrapper `main`: `b2ee0f5` (sprint docs), `9804b2a` (itksnap-mcp submodule +
+  reference docs), `ae72efb` (Day-1 results), `86c68c4` (Gate-2 pointer+docs), `68cffcc` (agent_send bump).
+- `itksnap-mcp` (new public repo, submodule tracking `main`): `53f8dbd` scaffold (thin DLS client,
+  confidence gate, MCP skeleton, `demo/smoke_totalseg.py`), `46ea911` (`demo/agent_send.py`). Pushed.
+- `itksnap` `sprint/caimi`: `d9f2329f` — `--agent-listen` QLocalServer live command channel. Pushed.
+- Env (this RTX 2080 box, base conda): `TotalSegmentator` installed + `itksnap-dls` editable on
+  `feature/agentic-api`. torch 2.3.1+cu121 CUDA OK.
+- **Gate 1 PASS** — TotalSegmentator fast mode end-to-end, 12.9 s, 5 correct thoracic labels.
+- **Gate 2 PASS** — external socket client moved the live crosshair (`set_cursor`), no `--test` scaffold.
+
+**Broke / surprised:**
+- `conda create --clone base` failed (base has pip-only pkgs + unclonable root pkgs). Base env already
+  had the whole stack, so used it directly + `pip install -e itksnap-dls --no-deps`.
+- **AF_UNIX `sun_path` ~108-char limit:** `QLocalServer::listen` gave "Name error" on the long
+  scratchpad socket path; a short `/tmp/snap-agent.sock` fixed it.
+- `pkill -f "ITK-SNAP"` self-matched the tool shell (exit 144) and swept a few stale build-waiter loops.
+  Use specific patterns / `setsid`.
+- `nnInteractive 1.0.1` requires torch≥2.6 (we have 2.3.1) — TotalSegmentator unaffected; interactive
+  nnInteractive deferred (flagship uses human paintbrush).
+- DLS scalar `upload_raw` drops spacing/origin/direction (unlike the 4D path) → auto-seg runs on
+  identity geometry. Fine for gates; must thread geometry through for anatomically faithful demo output.
+
+**Decisions (why):** use the base conda env (already complete, saves a torch re-download); short socket
+path convention; `itksnap-dls` submodule pointer intentionally NOT recorded in the wrapper (wrapper
+tracks its `main`; check out `feature/agentic-api` manually); `itksnap-mcp` license still TBD (MIT vs
+GPL-3.0); next goal = the audit record (P2 core, guaranteed floor). Both flagship blockers now cleared.
+
 ## 2026-07-18 — Gate 2 empirically CLOSED (live command channel works)
 
 Built the live-channel prototype: `itksnap` commit **`d9f2329f`** (`sprint/caimi`, pushed) adds a

@@ -1,83 +1,72 @@
 # RESUME — ITK-SNAP Agentic API · CAIMI Builder Showcase sprint
 
-You are resuming the ITK-SNAP "agentic API" prototype. **The current focus is a time-boxed
-sprint to submit a SIIM-CAIMI26 AI Builder Showcase entry.** Thesis unchanged:
-"model proposes, human disposes" — expose expert human judgment as a callable, resumable,
-audited pipeline step an external agent can invoke, shown on camera.
+## Current state (read this paragraph first)
+We are building a prototype for a **SIIM-CAIMI26 AI Builder Showcase** submission (deadline
+**2026-07-24 11:59 PM PST**). Thesis: *"model proposes, human disposes"* — expose expert human
+judgment as a **callable, resumable, audited** pipeline step an external agent can invoke, shown on
+camera. The demo has three code homes: **`itksnap`** (C++ GUI/logic, branch `sprint/caimi`),
+**`itksnap-dls`** (Python FastAPI model server, branch `feature/agentic-api`), and **`itksnap-mcp`**
+(new public repo, the agent-facing Python glue + demo — the CAIMI link reviewers open). Both technical
+blockers are now **cleared**: **Gate 1** — automatic segmentation works live (TotalSegmentator fast mode
+via the DLS server + the `itksnap-mcp` thin client, 12.9 s on this box's RTX 2080); **Gate 2** — a live
+command channel (`itksnap` `--agent-listen` QLocalServer, commit `d9f2329f`) lets an external process
+drive the running GUI (moved the crosshair via `set_cursor`, no `--test` scaffold). The guaranteed
+submission floor is **P2 "audited callable"**; the now-unblocked stretch flagship is **P1 "live
+handoff"**. What does NOT exist yet: the **audit record**, the **MCP tool namespace** (only a skeleton),
+the demo driver/video, and the abstract.
 
-## ⏰ The deadline drives everything
-- **CAIMI submission due: 2026-07-24, 11:59 PM PST.** Today's baseline was 2026-07-17 → ~7 days.
-- Deliverable = a **500-word abstract (6 sections) + a working demo link reviewers WILL open**
-  (repo / video / live app). *Less polish, more innovation* — a working prototype beats a polished slide.
-- Portal: AbstractScorecard EventKey **`QRFBVSUS`**, **Chrome/Firefox only**. Create the account early.
+## The single next goal
+**Build the audit record (P2 core) in `itksnap` on `sprint/caimi`.** When a segmentation edit is
+committed, produce a structured JSON record: `{op, timestamp, actor(agent|human), changed-voxel count,
+bbox, before/after label counts}`. Concretely: add a public getter for `UndoDataManagerCommit::m_Name`
+(currently `protected`) and the missing provenance fields, a JSON serializer over the existing undo
+delta, and confirm `SegmentationChangeEvent` fires once per commit at the right granularity. This is
+the differentiator that makes an expert correction a *return value*, not a side effect — and it is the
+last net-new piece the guaranteed P2 demo depends on. (After it: extend the live channel — extract
+`SNAPTestQt` primitives into a shared helper, add `trigger`/`click`/`get_state`/`screenshot`, and wire
+the MCP `live.*` tools — then record the video and write the 500-word abstract.)
 
-## Read first (authoritative, in order)
-1. `projects/agentic-api/docs/sprint_caimi.md` — **THE SPRINT PLAN** (scope, workstreams, day-by-day,
-   two go/no-go gates, abstract draft, definition-of-done). Start here.
-2. `projects/agentic-api/docs/caimi-submission-requirements.md` — submission rules & §7b abstract skeleton.
-3. `projects/agentic-api/docs/agentic-prototype-plan.md` — the grounded technical plan:
-   §0.1 locked decisions + `features/segflow4d` findings · §5 MVP + video suite · §6 risks ·
-   §8 model roadmap (TotalSegmentator flagship) · §9 pip-distribution/metrics.
-4. `projects/agentic-api/docs/os4ls_work_plan_draft.md` — the grant this demo is evidence for
-   (Goal 1 Milestones 1.1/1.2 == this prototype). Keep the demo aligned to it.
-5. `projects/agentic-api/PROGRESS_LOG.md` — history, newest first. Auto-memory `project_agentic_api`.
+## Files to read first (in order)
+1. `projects/agentic-api/docs/sprint_caimi.md` — the sprint plan (scope, day-by-day, ticked status, DoD).
+2. `projects/agentic-api/PROGRESS_LOG.md` — newest entry first; the "Session close / handoff" entry has
+   every commit hash and every trap.
+3. `projects/agentic-api/docs/spike_live_channel.md` — how the live channel works + how to test it.
+4. `projects/agentic-api/docs/agentic-prototype-plan.md` — the grounded technical plan; §2.9 (undo
+   engine, the audit-record starting point), §5 (MVP + video), §8 (models), §9 (distribution).
+5. `projects/agentic-api/docs/caimi-submission-requirements.md` — submission rules + abstract skeleton.
+6. For the audit record, in `itksnap/`: `Logic/Framework/UndoDataManager.{h,txx}`,
+   `Logic/Framework/IRISApplication.{h,cxx}` (`UpdateSegmentationWith*`), `Common/SNAPEvents.h`
+   (`SegmentationChangeEvent`), `Logic/ImageWrapper/LabelImageWrapper.{h,cxx}` (`StoreUndoPoint`).
 
-## Machines (GPUs)
-- **This box** (`/home/jileihao/dev/itksnap-developer`, Linux, **RTX 2080 8 GB**) = **dev/iteration**;
-  8 GB → **TotalSegmentator fast (3 mm) mode** here. DLS Python deps **not installed yet** — venv Day 1.
-- **Recording box = a 4090+ (24 GB)** (available): **full-res TotalSegmentator is viable** and TS +
-  nnInteractive can co-reside → record the flagship there. Route full-res "propose" through the
-  **async-job path** (plan §8); keep the sync endpoint for fast-mode dev. Always cache one golden
-  proposal so filming never blocks on a live GPU.
+## Setup (this machine — Linux, has GPUs)
+- Env is ready in the **base conda env** (`conda activate base`): torch 2.3.1+cu121 (CUDA OK),
+  `TotalSegmentator`, and `itksnap-dls` installed **editable** on `feature/agentic-api`. Recording box
+  is a separate **4090+ (24 GB)** → full-res TS viable; this **RTX 2080 (8 GB)** is dev/fast-mode.
+- Branches: `itksnap` → `sprint/caimi`; `itksnap-dls` → `feature/agentic-api` (its submodule pointer is
+  **intentionally not recorded** in the wrapper, which tracks itksnap-dls `main` — `git switch` manually);
+  `itksnap-mcp` → `main`.
+- Build ITK-SNAP: `cmake --build build-release --target ITK-SNAP` (out-of-source dir `build-release/`).
+- Run the model server: `conda activate base && cd itksnap-dls && python -m itksnap_dls --port 8911 --device cuda`.
+- Test the propose backbone: `python itksnap-mcp/demo/smoke_totalseg.py --ct <body_ct.nii.gz> --url http://localhost:8911 --out /tmp/seg.nii.gz`.
+- Test the live channel: launch `build-release/ITK-SNAP -g <img> --agent-listen /tmp/snap-agent.sock`,
+  then `python itksnap-mcp/demo/agent_send.py /tmp/snap-agent.sock set_cursor 30 40 10`.
 
-Branches / repos for the sprint:
-- **`itksnap` submodule → `sprint/caimi`** (already the tracked branch; = `feature/cardiac-io` + Linux
-  build fixes). C++ work (audit record; stretch: live command channel) lands here.
-- **`itksnap-dls` submodule → `feature/agentic-api`** (= `origin/main` + `origin/features/segflow4d` +
-  the TotalSegmentator wrapper). **Currently checked out DETACHED at merge `4c92155`; origin tip is
-  `bbaac51` (the TS wrapper) — switch to the branch to get it:**
-
-```bash
-cd itksnap-dls
-git fetch origin
-git switch feature/agentic-api      # brings in the TotalSegmentator wrapper (bbaac51)
-git pull
-python -m venv .venv && . .venv/bin/activate
-pip install -e '.[totalseg]'        # + torch with CUDA
-```
-NOTE: the wrapper `.gitmodules` still tracks itksnap-dls `main` (deliberate) and the submodule pointer
-is NOT committed — check out the branch manually as above. itksnap-dls is MIT; branch is `feature/` singular.
-
-- **NEW public repo `itksnap-mcp`** (proposed name; not created yet) — the Python glue (thin DLS client,
-  MCP server, demo driver, manifest) + README + video links. **This is the CAIMI demo link reviewers open**
-  and the future pip artifact (OS4LS §9 / `greedy_python` pattern). Scaffold Day 1, add as a wrapper
-  submodule like `greedy_python`. Keep it clean/public — planning docs stay private in `projects/agentic-api/`.
-
-## State at this handoff
-DONE and pushed:
-- itksnap-dls `feature/agentic-api` created + `features/segflow4d` merged (merge `4c92155`);
-  **`TotalSegmentatorWrapper`** implemented + pushed (commit `bbaac51`) — automatic (prompt-free) model
-  in the `ModelWrapper` registry (`AUTOMATIC`+`run()`), label-preserving encoder, `/v2/run_automatic` +
-  `/v2/models/{id}/labels` endpoints, `[totalseg]` optional dep. **STATIC-VERIFIED ONLY — never run live.**
-- itksnap `sprint/caimi` created & pushed; wrapper tracks it.
-NOT yet built (the sprint's net-new work): audit record, thin DLS client, MCP namespace + confidence gate,
-(stretch) live GUI command channel, demo driver + manifest, the video, the abstract.
-
-## Immediate next actions (Sprint Day 1 — see sprint_caimi.md §3)
-1. **Env + first light:** venv + `git switch feature/agentic-api` + `pip install -e '.[totalseg]'`;
-   **scaffold the public `itksnap-mcp` repo** (README, pyproject, `demo/`) and add it as a wrapper submodule.
-2. **Smoke-test TotalSegmentator on the GPU:** `GET /v2/start_session/TotalSegmentator` → `upload_raw` →
-   `GET /v2/run_automatic/{id}?fast=true`; confirm the multi-label result decodes with correct geometry.
-   → **Gate 1:** live TS works on this box, or cache one good proposal to `expected.nii.gz`.
-3. **Spike the live command channel** (the flagship's riskiest piece): sketch a `QLocalServer` in
-   `itksnap/GUI/Qt/main.cxx` forwarding JSON to existing `SNAPTestQt` slots after `exec()`.
-   → **Gate 2 (Day 2):** if injecting into the running loop works, the P1 live-handoff flagship (Clip B)
-   is IN; else ship the **P2 "audited callable"** floor (Clips A+C) — still a complete Showcase entry.
-4. Create the AbstractScorecard portal account.
+## Known traps
+- **Unix socket path limit ~108 chars.** `--agent-listen` with a long path → `QLocalServer: Name error`.
+  Use a short path like `/tmp/snap-agent.sock`.
+- **Don't `pkill -f "ITK-SNAP"`** from the working shell — it self-matches the command (exit 144). Use a
+  specific pattern (`ITK-SNAP.*agent-listen`) or `setsid`, and prefer targeting the launcher PID.
+- **`nnInteractive` needs torch≥2.6** (we have 2.3.1) — TotalSegmentator is unaffected; only a concern if
+  you use the interactive nnInteractive model (the flagship uses the human paintbrush, so likely not).
+- **DLS scalar `upload_raw` drops spacing/origin/direction** (unlike the 4D path) — auto-seg runs on
+  identity geometry. Fine for smoke tests; thread geometry through for anatomically faithful demo output.
+- **`itksnap-mcp` license is undecided** (MIT vs GPL-3.0) — pick before publishing the CAIMI demo link.
+- **Portal account** (AbstractScorecard EventKey `QRFBVSUS`, Chrome/Firefox only) must be created by a
+  human — not done yet.
+- Keep the C++ audit work on `sprint/caimi`; commit inside the submodule first, then bump the wrapper
+  pointer.
 
 ## How to work
-- **The submission is the deliverable** — protect the P2 floor + the abstract; the live-handoff flagship
-  is stretch, gated on the Day-2 spike. Never fake a capability we don't have.
-- Integration over invention; ground every claim in real files + line numbers.
-- The human-correction step is the visual star — keep it a real code path.
-- Ask before consequential assumptions; state the ones you make.
+Integration over invention; ground claims in real files + line numbers. Protect the P2 floor and the
+abstract; the live-handoff flagship is stretch. The on-camera human correction is the visual star — keep
+it a real code path. State assumptions; ask before consequential ones.
