@@ -116,7 +116,9 @@ truthful "human-in-the-loop" story). Do **not** fake a live channel we don't hav
   - **✅ RESULT (2026-07-18): DONE** — `itksnap` `560dcd2f`. `SegmentationAuditRecord.{h,cxx}` +
     getter + `LabelImageWrapper` capture + `IRISApplication`/`--agent-listen` accessors + L1 test
     (`SegmentationAuditRecordTest`, passes, incl. production RLE image). Confirmed one commit → one
-    `SegmentationChangeEvent`. Remaining: demonstrate over the socket with a real committing edit (Day 3).
+    `SegmentationChangeEvent`. **Demonstrated end-to-end over the socket** with a real committing edit
+    (`apply_box` + `IRISApplication::PaintRegionWithLabel`, `f1743f04`): `set_actor agent` → `apply_box`
+    → `get_audit` returns a populated record; actor consume-on-commit verified live.
 - W1: thin **DLS Python client** (HTTP + gzip + base64, **no ITK**) matching the actually-run server;
   pin the version via `/status` in `manifest.yaml`.
 - **Gate 2 (EOD): live-channel spike verdict.** Can a `QLocalServer` inject `postEvent`/method-invokes

@@ -3,6 +3,43 @@
 Newest entries first. See `docs/agentic-prototype-plan.md` for the authoritative plan
 and `NEXT_SESSION_PROMPT.md` for the resume prompt.
 
+## 2026-07-18 (session 2) — P2 loop CLOSED: real edit → audit over the live channel
+
+**Attempted:** the next-session goal — demonstrate the audit record end-to-end with a *real*
+committing edit driven over the `--agent-listen` socket (the P2 "commit() returns the audit record"
+beat). Landed.
+
+**Landed (commit hash):** `itksnap` `sprint/caimi` **`f1743f04`** (local; **not pushed yet**).
+- `IRISApplication::PaintRegionWithLabel(region, label, undoTitle)` — paints a labeled axis-aligned
+  voxel region through the normal `SegmentationUpdateIterator → Finalize → commit` path (so the audit
+  record is captured and `SegmentationChangeEvent` fires); honors the armed actor; `PAINT_OVER_ALL`.
+- `main.cxx` `--agent-listen`: **`apply_box`** `{x0,y0,z0,x1,y1,z1,label}` command → calls it and
+  returns the resulting audit record inline (null if nothing committed).
+
+**Verified live (headless Xvfb, real Unix socket), exact values:**
+- `set_actor agent` → `apply_box (10,10,5)-(19,19,9) label 5` → `get_audit` returns
+  `{actor:"agent", changed_voxels:500, bbox:[10,10,5]-[19,19,9], before:{0:500}, after:{5:500},
+  op:"Agent apply (box)", timestamp}`. 500 = 10×10×5. ✓
+- A **second, unarmed** `apply_box (30,30,5)-(34,34,7) label 6` → `{actor:"human", changed_voxels:75}`
+  (75 = 5×5×3) — proving **consume-on-commit + auto-reset** over the socket (the agent tag was consumed
+  by the first commit). ✓
+- `IRISApplicationTest` + `SegmentationAuditRecordTest` still pass (ctest); ITK-SNAP builds clean.
+
+**Broke / surprised (process, not code):**
+- **`nohup … & ` fires a FALSE "completed" instantly** — the launcher returns immediately while `ninja`
+  keeps building detached, so several smoke runs hit a not-yet-relinked binary (`apply_box` = "unknown
+  cmd"). Diagnosed via the ITK-SNAP binary mtime not advancing. **Use foreground builds** (or the Bash
+  tool's native background that tracks real completion), and confirm the binary relinked before smoke-testing.
+- **`pkill -f "ninja ITK-SNAP"` self-matched the tool shell** (its own command line contains the pattern)
+  → SIGKILL, exit 1/no output — same class as the `pkill ITK-SNAP` trap. Kill by exact name
+  (`pgrep -x ninja` → `kill <pid>`) or by PID; never `pkill -f` a string your own command contains.
+
+**Decisions (why):** started with a geometric `apply_box` (not a full-volume/file apply) because it
+closes the loop with zero image-serialization/geometry-matching and is deterministic + headlessly
+testable — exactly what the next-session prompt suggested ("start simple — a small box"). It reuses the
+tested commit path, so it de-risks the richer "apply a real proposed segmentation" (W3) without new
+serialization code. Added an `n==0 → null audit` guard so the response never reports a stale record.
+
 ## 2026-07-18 — Audit record (P2 core) built, reviewed, verified
 
 **Attempted:** Build W2 — the segmentation **audit record**, the last net-new piece the
