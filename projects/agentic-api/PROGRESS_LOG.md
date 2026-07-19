@@ -3,6 +3,36 @@
 Newest entries first. See `docs/agentic-prototype-plan.md` for the authoritative plan
 and `NEXT_SESSION_PROMPT.md` for the resume prompt.
 
+## 2026-07-18 (session 4) — Design docs + architecture/flow figures
+
+**Attempted:** write developer-facing design & implementation documentation for the whole agentic-API
+system, with diagrams. Done. **Docs-only session — no code changed.**
+
+**Landed:** new folder `projects/agentic-api/design_docs/` (committed in the wrapper checkpoint below):
+- `DESIGN.md` — the *why*: problem framing, the three-tier architecture and why each seam exists, the two
+  channels (HTTP propose / Unix-socket drive-read), the core "reconstruct the audit record from the undo
+  delta" idea (with a worked 2×2-patch example), actor consume-on-commit, geometry restoration, and the
+  end-to-end story. Human-readable.
+- `IMPLEMENTATION.md` — the *how*: `file:line` references across all three repos (DLS wire format; the
+  `itksnap-mcp` modules; the `main.cxx` channel dispatch table; the Logic-tier engine — `BuildFromDeltas`
+  walk, `StoreUndoPoint` chokepoint, actor model, `PaintMaskWithLabel`); a step-by-step end-to-end code
+  trace of one `apply_seg_file`; the testing story; known limitations; a reference-commit table.
+- `architecture.svg` — layered component diagram (Agent/MCP → DLS via HTTP + ITK-SNAP via socket; the
+  ITK-SNAP internal stack from channel → chokepoint → audit record).
+- `flow-chart.svg` — a 14-step sequence diagram (Agent · DLS · ITK-SNAP · Human) of the full run:
+  propose → gate → apply → in-GUI processing → audit read-back → human correction → human-tagged diff.
+
+**Verified:** both SVGs are well-formed XML and were **rendered to PNG with `rsvg-convert` and visually
+inspected** (layout/labels/arrows/legend all legible). C++ tests unchanged — re-ran `IRISApplicationTest`
++ `SegmentationAuditRecordTest` for the record: **2/2 pass**. No submodule code changed (itksnap only has
+the pre-existing `Submodules/greedy` untracked content; itksnap-mcp clean).
+
+**Decision (open):** placed the docs in the wrapper's private planning area (`projects/agentic-api/`,
+alongside the other docs) because `DESIGN`/`IMPLEMENTATION` cite internal commit hashes + cross-repo paths.
+**Open option for next session:** mirror the public-facing pair (`DESIGN.md` + the two SVGs, lightly
+de-referenced) into the `itksnap-mcp` repo, since that is the link CAIMI reviewers open — decide when
+writing the demo README (W7).
+
 ## 2026-07-18 (session 3) — Full P2 flow LIVE: propose → apply → audit through MCP
 
 **Attempted:** the next-session goal — wire the full P2 flow through `itksnap-mcp` with a *real*
