@@ -68,7 +68,7 @@ truthful "human-in-the-loop" story). Do **not** fake a live channel we don't hav
 | W0 | Env setup + de-risk; scaffold the new public repo | wrapper / venv / `itksnap-mcp` | ✅ done | §6.6 |
 | W1 | "Propose" backbone: TotalSegmentator live + thin HTTP client | `itksnap-dls` `feature/agentic-api` | ✅ done (Gate 1 PASS) | §8, §2.5 |
 | W2 | **Audit record** (C++ net-new) | `itksnap` `sprint/caimi` | ✅ done (`560dcd2f`) | §2.9, P2 |
-| W3 | MCP namespace + confidence gate | new repo `itksnap-mcp` | scaffold only | §5.2 |
+| W3 | MCP namespace + confidence gate | new repo `itksnap-mcp` | ✅ tools wired (`9909663`); gate TODO | §5.2 |
 | W4 | **(STRETCH)** live GUI command channel | `itksnap` `sprint/caimi` | ✅ prototype (Gate 2 PASS) | §6.2, P4 |
 | W5 | Demo driver + `manifest.yaml` + golden data | `itksnap-mcp/demo/` | not started | §5.3, §6.6 |
 | W6 | Video production (Clips A/C; B if W4) | — | not started | §5.4 |
@@ -132,6 +132,11 @@ truthful "human-in-the-loop" story). Do **not** fake a live channel we don't hav
   if Gate 2 passed, `live.*` (focus GUI, request_human). Confidence gate = mask instability across 2
   seeds (trivial, agent-side).
 - Integrate the headless end-to-end slice: `open → propose → gate → auto-accept → commit → audited result`.
+  - **✅ RESULT (2026-07-18): propose → apply → read_audit wired + run LIVE on the GPU.** `itksnap-mcp`
+    `9909663` (`server.py` tools, `channel.py`, `demo/run_p2.py`) + `itksnap` `e1aa19d5` (`apply_seg_file`
+    + `PaintMaskWithLabel`). Ran TotalSegmentator on a body CT → 48 correct structures → agent applied the
+    left-upper-lung (1,169,665 vox) into live ITK-SNAP → populated agent-tagged audit record. **Remaining:
+    the confidence gate** (`confidence.py`, mask instability across seeds — still a placeholder).
 
 **Day 4 (Jul 20) — Integration, determinism, (stretch) live channel**
 - W5: `demo/manifest.yaml` (never hardcode filenames) + deterministic **demo driver**; golden mask;

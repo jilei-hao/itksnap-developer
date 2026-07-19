@@ -3,6 +3,49 @@
 Newest entries first. See `docs/agentic-prototype-plan.md` for the authoritative plan
 and `NEXT_SESSION_PROMPT.md` for the resume prompt.
 
+## 2026-07-18 (session 3) — Full P2 flow LIVE: propose → apply → audit through MCP
+
+**Attempted:** the next-session goal — wire the full P2 flow through `itksnap-mcp` with a *real*
+proposed segmentation (propose → apply → read the audit record) and run it end-to-end on the GPU.
+Landed, including a live GPU run.
+
+**Landed (commit hashes):**
+- `itksnap` `sprint/caimi` **`e1aa19d5`** (pushed): `IRISApplication::PaintMaskWithLabel` + `apply_seg_file`
+  `{path,label}` channel command — apply a real proposed segmentation FILE as a committed edit (audit
+  captured, actor-tagged). The plain-image mask walks in lockstep with the RLE update iterator over the
+  grid overlap (mirrors `UpdateSegmentationWithBinarySegmentation`); reads the NIfTI with a plain
+  `itk::ImageFileReader` (LabelImageType is RLE, so it can't be read directly).
+- `itksnap-mcp` `main` **`9909663`** (pushed): `channel.py` (`SnapChannel` stdlib socket client),
+  `server.py` MCP tools `propose`/`apply`/`read_audit`/`set_actor`/`list_models` + reusable helpers
+  (`propose_segmentation`/`proposal_summary`/`write_label_mask`), and `demo/run_p2.py` (scripted driver).
+
+**Verified — the whole chain, live on the RTX 2080:** started the DLS server (`itksnap_dls`, port 8911,
+cuda), extracted frame 0 of a BAV cardiac CTA (`img4d_CT_bavcta028_baseline_rs50` → 256×256×181, 0.93 mm,
+`/tmp/ct3d_bavcta028.nii.gz`), loaded it in headless ITK-SNAP with `--agent-listen`, and ran
+`demo/run_p2.py`:
+- **propose** (TotalSegmentator fast) → **48 anatomically-correct thoracic structures**: heart (867,916
+  vox), aorta, all lung lobes, esophagus/trachea, vertebrae T3–T12, SVC/IVC, atrial appendage, ribs,
+  sternum, costal cartilages, liver/spleen/stomach.
+- **apply** (largest = `lung_upper_lobe_left`, 1,169,665 vox → ITK-SNAP label 1) → audit
+  `{actor:"agent", changed_voxels:1169665, bbox:[84,2,0]-[247,189,180], before:{0:…}, after:{1:…},
+  op:"Agent apply (proposal)"}`. `read_audit` returns the same. **exit 0.**
+- Also verified independently: `channel.py` drove `apply_seg_file(MRIcrop-seg)` → 55893 vox; the C++
+  `apply_seg_file` smoke on MRIcrop-seg. `IRISApplicationTest` + `SegmentationAuditRecordTest` pass.
+
+**Broke / surprised:**
+- The local body CTs are **4D cardiac CTA** (`img4d…`, 20 phases); TotalSegmentator needs 3D. Extract
+  frame 0 with `sitk.Extract(im4, size_with_0_in_dim3, [0,0,0,0])`.
+- **DLS scalar upload drops geometry** (identity) — as noted. `write_label_mask` restores it via
+  `sitk.GetImageFromArray(mask_zyx).CopyInformation(source_ct)` so the mask aligns with the CT loaded
+  in ITK-SNAP (index-aligned, same grid). Worked cleanly here.
+- Kill the long-running DLS server by **port** (`lsof -ti:8911 | xargs kill`), never `pkill -f itksnap_dls`
+  (self-matches the tool shell). Same lesson as `pkill -f "ninja ITK-SNAP"` last session.
+
+**Decisions (why):** `apply` extracts ONE proposed structure (largest by default) and applies it under a
+single ITK-SNAP label — matches the demo beat ("agent proposes a structure, human corrects it") and keeps
+the audit before/after histograms clean. Read the mask into a *plain* image (not RLE) so a stock
+`itk::ImageFileReader` works; only the target seg is RLE (behind the update iterator).
+
 ## 2026-07-18 (session 2) — P2 loop CLOSED: real edit → audit over the live channel
 
 **Attempted:** the next-session goal — demonstrate the audit record end-to-end with a *real*
