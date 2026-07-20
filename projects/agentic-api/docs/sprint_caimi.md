@@ -68,11 +68,11 @@ truthful "human-in-the-loop" story). Do **not** fake a live channel we don't hav
 | W0 | Env setup + de-risk; scaffold the new public repo | wrapper / venv / `itksnap-mcp` | ✅ done | §6.6 |
 | W1 | "Propose" backbone: TotalSegmentator live + thin HTTP client | `itksnap-dls` `feature/agentic-api` | ✅ done (Gate 1 PASS) | §8, §2.5 |
 | W2 | **Audit record** (C++ net-new) | `itksnap` `sprint/caimi` | ✅ done (`560dcd2f`) | §2.9, P2 |
-| W3 | MCP namespace + confidence gate | new repo `itksnap-mcp` | ✅ tools wired (`9909663`); gate TODO | §5.2 |
+| W3 | MCP namespace + confidence gate | new repo `itksnap-mcp` | ✅ tools wired + agreement gate (`f80d880`) | §5.2 |
 | W4 | **(STRETCH)** live GUI command channel | `itksnap` `sprint/caimi` | ✅ prototype (Gate 2 PASS) | §6.2, P4 |
 | W5 | Demo driver + `manifest.yaml` + golden data | `itksnap-mcp/demo/` | not started | §5.3, §6.6 |
 | W6 | Video production (Clips A/C; B if W4) | — | not started | §5.4 |
-| W7 | 500-word abstract + public repo README | `projects/agentic-api/` | outline below | §7b reqs |
+| W7 | 500-word abstract + public repo README | `projects/agentic-api/` | ✅ done (abstract 456w; README+MIT `f80d880`) | §7b reqs |
 | W8 | Portal submission | AbstractScorecard | not started | §1 reqs |
 
 **Branch/repo layout for this sprint**
@@ -195,7 +195,7 @@ truthful "human-in-the-loop" story). Do **not** fake a live channel we don't hav
 
 - [x] Public repo, README with a ≤3-command runnable path + `manifest.yaml`; license notes present.
 - [ ] ≥1 hosted, **reachable** video (Clips A+C; B if the flagship landed), captioned.
-- [ ] 500-word abstract, six sections in order, word count verified (exclusions applied).
+- [x] 500-word abstract, six sections in order, word count verified (456/500; `docs/abstract.md`). Author line pending Paul.
 - [ ] Working demo/repo/video links embedded and opened-tested.
 - [x] Not a vendor submission; framing non-promotional.
 - [ ] Submitted via `QRFBVSUS` (Chrome/Firefox) before 2026-07-24 11:59 PM PST.

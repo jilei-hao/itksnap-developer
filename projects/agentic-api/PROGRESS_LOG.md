@@ -3,6 +3,40 @@
 Newest entries first. See `docs/agentic-prototype-plan.md` for the authoritative plan
 and `NEXT_SESSION_PROMPT.md` for the resume prompt.
 
+## 2026-07-20 — Submission deliverables: abstract + public demo repo
+
+**Attempted:** the next-session goal — draft the SIIM-CAIMI26 submission deliverables (the 500-word
+abstract + a runnable public demo README/manifest for `itksnap-mcp`). Done, plus the confidence gate.
+
+**Landed:**
+- **Abstract** — `projects/agentic-api/docs/abstract.md` (committed in the wrapper checkpoint below).
+  **AI Builder Showcase** track (≤500 words, NOT blind, reviewers open the demo). **456 body words**
+  (verified excluding title/headings/keywords), six sections in exact order, real results (48 TS
+  structures; a concrete audit-record JSON in the Demo section, the heaviest-weighted criterion).
+  Author = jilei-hao (confirm affiliation/co-authors with Paul before submit).
+- **`itksnap-mcp` `f80d880`** (pushed): MIT `LICENSE` + pyproject license/classifiers; README rewritten
+  to the working-prototype state with a **3-command runnable path** (DLS server → ITK-SNAP
+  `--agent-listen` → `demo/run_p2.py`); `docs/` = mirrored DESIGN.md + architecture.svg + flow-chart.svg
+  (de-referenced of internal paths — the public CAIMI link); `manifest.example.yaml` updated to the real
+  propose/apply/socket flow; `confidence.py` gained the perturbation-agreement gate (`dice` +
+  `agreement_gate`, per-label Dice across two runs → route-to-human) + `tests/test_confidence.py`.
+
+**Verified:** abstract word count 456/500 (counter script). `tests/test_confidence.py` **4/4 pass**
+(pure numpy, no GPU). All `itksnap-mcp` modules import; README links + mirrored SVGs validated (no
+internal-ref leakage, SVGs well-formed). No C++ changed this session (audit-engine tests unchanged,
+last 2/2).
+
+**Decisions (why):** **License = MIT** (user-confirmed) — the repo is pure HTTP/socket glue with no ITK
+(GPL) source, and MIT maximizes adoption of the pip-installable agent surface (OS4LS distribution goal);
+the GUI/model-server repos keep their own licenses. Track = **Builder Showcase** (working tool + demo,
+rigor not primary) not Experiential (which is blind + can't rely on a linked app). Mirrored only the
+public-facing docs (DESIGN + SVGs), not IMPLEMENTATION.md (internal file:line + commit refs), into the
+public repo.
+
+**Remaining for submission (both human-gated):** W6 record the video (Clips A/C — best on the 4090 box);
+W8 create the AbstractScorecard portal account (EventKey `QRFBVSUS`, Chrome/Firefox — must be a human)
+and submit before **2026-07-24 11:59 PM PST**. Non-blocking: confirm the abstract author line with Paul.
+
 ## 2026-07-18 (session 4) — Design docs + architecture/flow figures
 
 **Attempted:** write developer-facing design & implementation documentation for the whole agentic-API
