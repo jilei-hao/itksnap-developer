@@ -71,7 +71,7 @@ truthful "human-in-the-loop" story). Do **not** fake a live channel we don't hav
 | W3 | MCP namespace + confidence gate | new repo `itksnap-mcp` | ✅ tools wired + agreement gate (`f80d880`) | §5.2 |
 | W4 | **(STRETCH)** live GUI command channel | `itksnap` `sprint/caimi` | ✅ prototype (Gate 2 PASS) | §6.2, P4 |
 | W5 | Demo driver + `manifest.yaml` + golden data | `itksnap-mcp/demo/` | not started | §5.3, §6.6 |
-| W6 | Video production (Clips A/C; B if W4) | — | not started | §5.4 |
+| W6 | Video production (Clips A/C; B if W4) | — | runbook + sample media + MCP-callable (Claude Code ✔); final take TODO | §5.4 |
 | W7 | 500-word abstract + public repo README | `projects/agentic-api/` | ✅ done (abstract 456w; README+MIT `f80d880`) | §7b reqs |
 | W8 | Portal submission | AbstractScorecard | not started | §1 reqs |
 

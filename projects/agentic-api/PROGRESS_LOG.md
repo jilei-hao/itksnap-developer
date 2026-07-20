@@ -3,6 +3,49 @@
 Newest entries first. See `docs/agentic-prototype-plan.md` for the authoritative plan
 and `NEXT_SESSION_PROMPT.md` for the resume prompt.
 
+## 2026-07-20 (session 2) — Sample demo videos + Claude-Code-callable MCP server
+
+**Attempted:** create sample demo videos of the concept; then (on feedback) make the *agent-directed*
+flow real — Claude Code driving ITK-SNAP via MCP, not a hidden script.
+
+**Landed:**
+- **Sample screencast** in `design_docs/media/` (committed in the wrapper checkpoint below):
+  `agentic-demo.mp4` (15 s, captioned) + `agentic-demo.gif` + two still frames + `drive_demo.py` +
+  a `README.md`. Recorded with `ffmpeg -f x11grab` on `Xvfb`, driving ITK-SNAP over the socket (scrub
+  slices → apply the cached TS lung proposal, red → a correction, green), captions via a `drawtext`
+  filtergraph. Needs no GPU (reuses `/tmp/p2_proposal_10.nii.gz`).
+- **Key realization (surfaced by the user):** that screencast shows only ITK-SNAP reacting; the "agent"
+  was `drive_demo.py`, a hardcoded socket script — **not** Claude Code, and invisible on screen. So it
+  does NOT show "you directing an agent."
+- **Wired the tools to Claude Code for real** — `itksnap-mcp` **`0297396`** (pushed): `apply_file` tool
+  (apply a cached mask without re-running the model → GPU-free/deterministic demos) + env-var config
+  (`ITKSNAP_DLS_URL` / `ITKSNAP_AGENT_SOCK`). Installed the MCP server in an **isolated venv**
+  (`~/.venvs/itksnap-mcp`), registered it: `claude mcp add itksnap -- ~/.venvs/itksnap-mcp/bin/python
+  -m itksnap_mcp.server` → `claude mcp list` shows **✔ Connected** (tools: list_models · propose · apply
+  · apply_file · read_audit · set_actor).
+- **`demo_runbook.md`** gained a "Recording with Claude Code" section: the setup, screen layout
+  (Claude Code terminal + live ITK-SNAP), and the exact conversation to type.
+
+**Verified:** an MCP client (stdio, exactly like Claude Code) listed the tools and called `apply_file` to
+**drive a live ITK-SNAP end-to-end** — lung applied (1,169,665 vox), audit `actor: agent`; the server
+logged the real `CallToolRequest`s. `claude mcp list` → ✔ Connected. Confidence tests 4/4.
+
+**Broke / surprised — IMPORTANT env lesson:** `pip install 'itksnap-mcp[mcp]'` into the **base** conda env
+upgraded `starlette` to 1.3.1, which **broke the DLS server** (`itksnap_dls` import → FastAPI
+`Router.__init__() got an unexpected keyword argument 'on_startup'`). fastapi 0.115 pins `starlette<0.47`;
+`mcp` needs a newer one — they **cannot coexist in one env**. Fix: uninstalled `mcp` from base + restored
+`starlette 0.46.2` (DLS server imports again), and put the MCP server in its **own venv**. **Never install
+`mcp` into the DLS base env; the MCP server gets a dedicated venv.**
+
+**Decisions:** dedicated venv for the MCP server (isolation from the DLS FastAPI stack); `apply_file` for
+GPU-free deterministic demos; MCP registered at **local (project) scope** (move to user scope if the demo
+runs outside this repo). Sample videos kept as illustrative (software-rendered; the human beat is a
+scripted `apply_box` standing in for a paintbrush) — the authentic take is a live Claude Code session.
+
+**Remaining (both human-gated):** record the live Claude-Code demo on a real display (terminal + ITK-SNAP),
+and submit via the portal (`QRFBVSUS`, Chrome/Firefox) before **2026-07-24 11:59 PM PST**. A fresh
+Claude Code session is needed to see the `itksnap` tools (MCP loads at startup).
+
 ## 2026-07-20 — Submission deliverables: abstract + public demo repo
 
 **Attempted:** the next-session goal — draft the SIIM-CAIMI26 submission deliverables (the 500-word
