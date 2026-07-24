@@ -56,6 +56,7 @@ The system spans three repositories, each a tier with a single job. See
   │  AGENT / ORCHESTRATION                                               │
   │  itksnap-mcp  (public Python: MCP tools + demo driver)              │
   │    propose · apply · read_audit · set_actor · list_models          │
+  │    set_labels · get_labels                                          │
   └───────────────┬───────────────────────────────┬────────────────────┘
                   │ HTTP (propose)                 │ Unix socket (apply / audit)
                   ▼                                 ▼
@@ -92,6 +93,7 @@ the three seams separate is a core design choice:
 |---|---|---|---|
 | **Propose** | HTTP → `itksnap-dls` | Run a model, get a label volume | `propose(ct_path)` |
 | **Apply** (base) | headless → `itksnap-wt` + SimpleITK, editing the workspace segmentation | Commit a proposal, produce the audit record — no GUI needed | `apply(label_id)`, `read_audit()` |
+| **Label** (base) | headless → `itksnap-wt` (`-labels-set-name`/`-labels-set-color`), or the live socket when a GUI is attached | Name/recolor labels so the editor reads "spleen" not "Label 1" | `set_labels({1:"spleen"})`, `get_labels()` |
 | **Live** (optional) | Unix domain socket → ITK-SNAP `--agent-listen` | Open the workspace for the human to view/correct; read the correction | `open_in_itksnap()`, `read_audit()` |
 
 Why headless-first? The workspace file is a single durable source of truth, so `apply` never depends on
@@ -111,7 +113,16 @@ set_actor {actor: "agent"|"human"}       → tag who is responsible for the next
 apply_box {x0..z1, label}                → paint a labeled box (a committed edit)
 apply_seg_file {path, label}             → apply a proposed mask NIfTI (a committed edit)
 get_audit                                → return the last edit's audit record
+set_labels {labels:[{id,name?,color?}]}  → name/recolor labels in the live table
+get_labels                               → read back the id → name/color mapping
 ```
+
+A label rename is *configuration*, not an undoable segmentation edit, so `set_labels`
+produces **no audit record** — it uses the same primitive the label editor uses
+(`GetColorLabel → SetLabel → SetColorLabel`), so the open editor and slice/mesh views
+refresh live. The same names can be written headlessly into the workspace file via
+`itksnap-wt` (`-labels-set-name` / `-labels-set-color`); the MCP `set_labels` tool routes
+to the live socket when a GUI is attached, else to the workspace file — exactly like `apply`.
 
 Running commands *on the GUI thread* is not a limitation — it is what makes this **safe**. Every
 edit goes through the same code path a mouse click would, so there is no second, racy write path
@@ -206,7 +217,9 @@ See [`flow-chart.svg`](./flow-chart.svg) for the diagram. In words:
 3. **apply** — the agent extracts one structure (e.g. the left upper lung lobe, 1,169,665 voxels),
    restores geometry, and merges it into the workspace segmentation under `actor = agent`. This is
    **headless** — no running ITK-SNAP — and the audit record is computed from the before/after label
-   volumes (§4).
+   volumes (§4). `apply` also *names* the label after the structure (from the model's label map, so
+   the editor reads "left upper lung lobe" not "Label 1"); `set_labels`/`get_labels` set or read the
+   names directly for bulk or corrective naming.
 4. **read_audit** — the agent reads back the structured record (shown in §1) from the workspace log.
 5. **human disposes** — the agent opens ITK-SNAP on the workspace (`open_in_itksnap`) and the expert
    corrects the proposal in the live GUI (paintbrush). That edit commits and is auto-tagged `human`;

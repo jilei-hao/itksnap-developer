@@ -58,7 +58,8 @@ Pure Python, no ITK/compiled dependency. Four modules under `src/itksnap_mcp/`.
 - `class SnapChannel(sock_path)` — one request/response per call over `AF_UNIX`.
 - `SnapChannel.call(cmd, args)` builds `{"id":1,"cmd":...,"args":...}`, sends one newline-terminated
   JSON line, reads one line back, and raises `SnapChannelError` on `ok:false`.
-- Convenience wrappers: `ping`, `set_actor`, `apply_box`, `apply_seg_file`, `get_audit`, `set_cursor`.
+- Convenience wrappers: `ping`, `set_actor`, `apply_box`, `apply_seg_file`, `get_audit`,
+  `set_labels`, `get_labels`, `set_cursor`.
 - Stdlib only (`socket` + `json`), so it imports with zero cost anywhere.
 
 ### 2.3 `server.py` — the MCP tools (and reusable helpers)
@@ -78,9 +79,17 @@ a closure `state` dict:
 |---|---|---|
 | `list_models()` | list models | `DLSClient.list_models` |
 | `propose(ct_path, ...)` | run auto-seg, cache result, return summary | `propose_segmentation` |
-| `apply(label_id, itksnap_label, actor)` | mask → NIfTI → `set_actor` + `apply_seg_file` | `write_label_mask` + `SnapChannel` |
+| `apply(label_id, itksnap_label, actor, name)` | mask → NIfTI → `set_actor` + `apply_seg_file`, then name the label (`name` or the model's anatomy name) | `write_label_mask` + `SnapChannel` + `_set_labels` |
+| `set_labels(labels)` | name/recolor labels (live socket or workspace file) | `normalize_label_spec` + `SnapChannel`/`Workspace` |
+| `get_labels()` | read back the id → name/color mapping | `SnapChannel.get_labels` / `Workspace.get_labels` |
 | `read_audit()` | last edit's audit record | `SnapChannel.get_audit` |
 | `set_actor(actor)` | arm agent/human | `SnapChannel.set_actor` |
+
+`set_labels` accepts either a mapping (`{id: "name"}` or `{id: {"name":…, "color":[r,g,b]}}`) or a
+list of `{"id":…, "name"?:…, "color"?:[r,g,b]}`; `normalize_label_spec` collapses both into the one
+canonical list both transports consume. `_set_labels` routes live-when-attached exactly like the
+`_apply_mask` helper. A rename preserves the label's other attributes and produces no audit record
+(it is configuration, not a segmentation edit).
 
 ### 2.4 `demo/run_p2.py` — scripted end-to-end driver
 
@@ -110,6 +119,25 @@ get_audit`. This is exactly the sequence the MCP tools expose, runnable as one s
 | `apply_box` | 1533 | build region from corners → `PaintRegionWithLabel` → return audit |
 | `apply_seg_file` | 1581 | `itk::ImageFileReader` → `PaintMaskWithLabel` → return audit |
 | `get_audit` | 1639 | `GetLastSegmentationAuditRecordJSON` → embed as JSON object |
+| `set_labels` | 1652 | per label: `GetColorLabelTable()->GetColorLabel → SetLabel/SetRGB → SetColorLabel`; no audit (config, not an edit) |
+| `get_labels` | 1689 | iterate `GetColorLabelTable()->GetValidLabels()` → `[{id,name,color,visible,alpha}]` |
+
+The `set_labels`/`get_labels` handlers reuse the label table on `IRISApplication`
+(`driver->GetColorLabelTable()`) — the same object and the same `GetColorLabel → SetLabel →
+SetColorLabel` sequence the GUI's `LabelEditorModel::SetCurrentLabelDescription` uses, so the open
+label editor and the slice/mesh views refresh from the events `SetColorLabel` already fires. Line
+numbers are signposts; grep for the `cmd` string if they drift.
+
+**Headless (workspace) side.** `Workspace.set_labels`/`get_labels` shell out to `itksnap-wt`
+(`-labels-set-name <id> <name>`, `-labels-set-color <id> <r> <g> <b>`, `-P -labels-list`), which call
+new `WorkspaceAPI` methods (`SetLabelName`/`SetLabelColor`/`PrintLabels`,
+`Logic/WorkspaceAPI/WorkspaceAPI.cxx`). Each loads the current `ColorLabelTable` from the main
+layer's `ProjectMetaData.IRIS.LabelTable`, mutates one label, and writes it back — so names/colors
+merge incrementally and preserve every other attribute (same folder the pre-existing `-labels-set`
+uses). *Gotcha:* the GUI only re-reads that table when the workspace's recorded
+`Files.Grey.Dimensions` matches the loaded image (`SNAPRegistryIO::ReadImageAssociatedSettings`
+bails early otherwise), which holds for real 3D CTs but silently fails for 2D test images (a
+recorded `W H 0` never matches) — verify with a 3D volume.
 
 The `apply_seg_file` handler (line **1581**) reads the mask into a **plain** `itk::Image<LabelType,3>`
 (a stock `itk::ImageFileReader`), because the segmentation's own image type is run-length-encoded
