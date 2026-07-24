@@ -59,7 +59,7 @@ Pure Python, no ITK/compiled dependency. Four modules under `src/itksnap_mcp/`.
 - `SnapChannel.call(cmd, args)` builds `{"id":1,"cmd":...,"args":...}`, sends one newline-terminated
   JSON line, reads one line back, and raises `SnapChannelError` on `ok:false`.
 - Convenience wrappers: `ping`, `set_actor`, `apply_box`, `apply_seg_file`, `get_audit`,
-  `set_labels`, `get_labels`, `set_cursor`.
+  `get_audit_log`, `set_labels`, `get_labels`, `set_cursor`.
 - Stdlib only (`socket` + `json`), so it imports with zero cost anywhere.
 
 ### 2.3 `server.py` — the MCP tools (and reusable helpers)
@@ -83,6 +83,7 @@ a closure `state` dict:
 | `set_labels(labels)` | name/recolor labels (live socket or workspace file) | `normalize_label_spec` + `SnapChannel`/`Workspace` |
 | `get_labels()` | read back the id → name/color mapping | `SnapChannel.get_labels` / `Workspace.get_labels` |
 | `read_audit()` | last edit's audit record | `SnapChannel.get_audit` |
+| `read_audit_log(since)` | *every* edit's record, cursor-paged; syncs the live log into the workspace first | `Workspace.sync_live_audit` + `SnapChannel.get_audit_log` |
 | `set_actor(actor)` | arm agent/human | `SnapChannel.set_actor` |
 
 `set_labels` accepts either a mapping (`{id: "name"}` or `{id: {"name":…, "color":[r,g,b]}}`) or a
@@ -119,8 +120,9 @@ get_audit`. This is exactly the sequence the MCP tools expose, runnable as one s
 | `apply_box` | 1533 | build region from corners → `PaintRegionWithLabel` → return audit |
 | `apply_seg_file` | 1581 | `itk::ImageFileReader` → `PaintMaskWithLabel` → return audit |
 | `get_audit` | 1639 | `GetLastSegmentationAuditRecordJSON` → embed as JSON object |
-| `set_labels` | 1652 | per label: `GetColorLabelTable()->GetColorLabel → SetLabel/SetRGB → SetColorLabel`; no audit (config, not an edit) |
-| `get_labels` | 1689 | iterate `GetColorLabelTable()->GetValidLabels()` → `[{id,name,color,visible,alpha}]` |
+| `get_audit_log` | 1652 | `GetSegmentationAuditLogJSON(since)` → `{since,total,records[]}` |
+| `set_labels` | 1669 | per label: `GetColorLabelTable()->GetColorLabel → SetLabel/SetRGB → SetColorLabel`; no audit (config, not an edit) |
+| `get_labels` | 1706 | iterate `GetColorLabelTable()->GetValidLabels()` → `[{id,name,color,visible,alpha}]` |
 
 The `set_labels`/`get_labels` handlers reuse the label table on `IRISApplication`
 (`driver->GetColorLabelTable()`) — the same object and the same `GetColorLabel → SetLabel →
@@ -188,8 +190,23 @@ Notes:
   immediately undo) are **skipped** so they neither pollute the log nor steal the actor tag.
 - The in-memory `m_AuditLog` is bounded (`MAX_AUDIT_LOG`) and cleared alongside undo history in
   `ClearUndoPoints*`, so it can't grow without limit.
-- `Undo()` (line **162**) sets `m_HasLastAuditRecord = false` — after an undo, `get_audit` reports
+- `Undo()` (line **183**) sets `m_HasLastAuditRecord = false` — after an undo, `get_audit` reports
   "no record in effect" rather than a reverted edit.
+
+### 4.2b The log tracks undo/redo — `MoveAuditRecord`
+
+`m_AuditLog` describes the edits **currently in effect**, which matters once a caller reads the
+*whole* log rather than just the newest record: an undone correction must not still be reported.
+`MoveAuditRecord` (line **137**) transfers the newest record for the current time point between
+`m_AuditLog` and `m_UndoneAuditRecords`:
+
+- `Undo()` (line **230**) moves log → undone; `Redo()` (line **281**) moves it back and restores it
+  as `m_LastAuditRecord`. So `get_audit`/`get_audit_log` now follow redo, not only undo.
+- Matching is **per time point** (each time point has its own undo manager, so the newest record
+  logged against that time point is the one being undone) and **skips temporary commits**, which
+  never entered the log — without that guard, undoing a smart-brush temporary commit would pop the
+  genuine record beneath it.
+- Covered by scenario 5 of the L1 test (§6), which fails if either guard is removed.
 
 ### 4.3 The record and its serializer — `SegmentationAuditRecord`
 
@@ -299,7 +316,9 @@ Observed live (GPU run, `run_p2.py` on a body CT): the applied left-upper-lung p
   `SegmentationAuditRecordTest`. Links `itksnaplogic` alone (proves the audit engine is GUI-free) and
   checks `BuildFromDeltas` on: a plain image, the **production RLE image type** (proves iterator order
   matches delta encoding), non-zero "before" labels, multi-delta accumulation, **overlapping
-  same-voxel deltas counted once** (the precondition from §4.4), and JSON escaping.
+  same-voxel deltas counted once** (the precondition from §4.4), and JSON escaping. **Scenario 5**
+  drives a real `LabelImageWrapper` through commit → undo → redo → temporary-commit-undo and asserts
+  the log tracks what is in effect (§4.2b).
 - **Runtime smokes** (headless Xvfb): drive `set_actor`/`apply_box`/`apply_seg_file`/`get_audit` over
   the socket and assert exact voxel counts (e.g. applying `MRIcrop-seg` → 55,893 voxels).
 - **Full chain** — `demo/run_p2.py` against the live DLS server + ITK-SNAP (see the sprint's
@@ -312,8 +331,9 @@ Observed live (GPU run, `run_p2.py` on a body CT): the applied left-upper-lung p
 - **Actor arming** must happen immediately before a committing operation; a genuine no-op between
   arming and the real edit would carry the tag to the next commit. A fully robust fix would thread
   the actor through `StoreUndoPoint`/`Finalize` as an argument.
-- **`get_audit` is not reconciled with `Redo()`** — only `Undo()` invalidates the last record. Fine
-  for the demo (the agent reads immediately after a commit).
+- **Audit log bound** — the live log is capped at `MAX_AUDIT_LOG` (4096) records; past that the
+  oldest are evicted, which would also break the `since` cursor's alignment with the workspace log.
+  Far above any real correction session.
 - **Reconstruction precondition** (§4.4) — one constant label per commit. Contrived multi-label
   overwrites in a single commit would mis-reconstruct; no real path does this.
 - **Geometry** — the proposal must share the loaded image's grid; the agent restores geometry from

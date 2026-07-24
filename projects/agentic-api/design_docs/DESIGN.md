@@ -55,8 +55,8 @@ The system spans three repositories, each a tier with a single job. See
   ┌─────────────────────────────────────────────────────────────────────┐
   │  AGENT / ORCHESTRATION                                               │
   │  itksnap-mcp  (public Python: MCP tools + demo driver)              │
-  │    propose · apply · read_audit · set_actor · list_models          │
-  │    set_labels · get_labels                                          │
+  │    propose · apply · read_audit · read_audit_log · set_actor        │
+  │    list_models · set_labels · get_labels                            │
   └───────────────┬───────────────────────────────┬────────────────────┘
                   │ HTTP (propose)                 │ Unix socket (apply / audit)
                   ▼                                 ▼
@@ -94,7 +94,7 @@ the three seams separate is a core design choice:
 | **Propose** | HTTP → `itksnap-dls` | Run a model, get a label volume | `propose(ct_path)` |
 | **Apply** (base) | headless → `itksnap-wt` + SimpleITK, editing the workspace segmentation | Commit a proposal, produce the audit record — no GUI needed | `apply(label_id)`, `read_audit()` |
 | **Label** (base) | headless → `itksnap-wt` (`-labels-set-name`/`-labels-set-color`), or the live socket when a GUI is attached | Name/recolor labels so the editor reads "spleen" not "Label 1" | `set_labels({1:"spleen"})`, `get_labels()` |
-| **Live** (optional) | Unix domain socket → ITK-SNAP `--agent-listen` | Open the workspace for the human to view/correct; read the correction | `open_in_itksnap()`, `read_audit()` |
+| **Live** (optional) | Unix domain socket → ITK-SNAP `--agent-listen` | Open the workspace for the human to view/correct; read the correction(s) | `open_in_itksnap()`, `read_audit_log()` |
 
 Why headless-first? The workspace file is a single durable source of truth, so `apply` never depends on
 a running process, the audit trail survives across sessions, and a case can be prepared entirely by an
@@ -113,6 +113,7 @@ set_actor {actor: "agent"|"human"}       → tag who is responsible for the next
 apply_box {x0..z1, label}                → paint a labeled box (a committed edit)
 apply_seg_file {path, label}             → apply a proposed mask NIfTI (a committed edit)
 get_audit                                → return the last edit's audit record
+get_audit_log {since?}                   → return every edit in effect (cursor-paged)
 set_labels {labels:[{id,name?,color?}]}  → name/recolor labels in the live table
 get_labels                               → read back the id → name/color mapping
 ```
@@ -222,12 +223,35 @@ See [`flow-chart.svg`](./flow-chart.svg) for the diagram. In words:
    names directly for bulk or corrective naming.
 4. **read_audit** — the agent reads back the structured record (shown in §1) from the workspace log.
 5. **human disposes** — the agent opens ITK-SNAP on the workspace (`open_in_itksnap`) and the expert
-   corrects the proposal in the live GUI (paintbrush). That edit commits and is auto-tagged `human`;
-   the agent calls `read_audit` again and receives the correction as a structured diff over the live
-   socket.
+   corrects the proposal in the live GUI (paintbrush). Each correction commits and is auto-tagged
+   `human`; the agent calls `read_audit_log` and receives **every** correction as structured diffs
+   over the live socket (see §7.1).
 
 The result: an agent orchestrated an automatic model **and** a human expert as two callable steps
 in one pipeline, with every change captured as reusable, attributable provenance.
+
+### 7.1 A correction session is many edits, and it must outlive the GUI
+
+The "human disposes" beat is rarely one paintbrush stroke. An expert reviewing a whole-body
+proposal typically fixes *several* structures in one sitting, and each fix is its own commit with
+its own record. Two consequences shape the API:
+
+**Report all of them, not the newest.** `read_audit` answers "what was the last edit?", which
+silently hides every correction but the final one — an agent using it to summarize a review session
+would under-report the expert's work. `read_audit_log` returns the whole log, and takes a `since`
+cursor so the natural agent question — *"what did the human change while I was waiting?"* — is one
+call: pass back the `total` from the previous read. The cursor, rather than a full dump, keeps the
+agent from re-deriving the delta itself as a session grows.
+
+**Persist it.** The live GUI's log is in-memory, so on its own every record — the agent's applies
+*and* the human's corrections — dies with the GUI process. The MCP layer therefore copies new live
+records into the workspace's durable log (`sync_live_audit`, tracked by a `live_cursor` so repeated
+syncs are idempotent) after each apply and on every read. The workspace file stays the single
+durable source of truth it is for segmentation, and provenance survives the window closing.
+
+Because the log is read as a whole, it must describe only the edits **in effect**: an undone
+correction leaves the log and a redone one returns (§4.2b of `IMPLEMENTATION.md`). Otherwise a
+caller would be told about work the human explicitly rolled back.
 
 ---
 
