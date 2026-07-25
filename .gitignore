@@ -15,6 +15,9 @@ aqtinstall.log
 # macOS
 .DS_Store
 
+# Word/Office lock files (created while a document is open)
+~$*
+
 # Leak test logs (large, generated)
 memory_leak_profiling/asan_logs/
 config.local.sh
