@@ -70,10 +70,10 @@ truthful "human-in-the-loop" story). Do **not** fake a live channel we don't hav
 | W2 | **Audit record** (C++ net-new) | `itksnap` `sprint/caimi` | ✅ done (`560dcd2f`) | §2.9, P2 |
 | W3 | MCP namespace + confidence gate | new repo `itksnap-mcp` | ✅ tools wired + agreement gate (`f80d880`) | §5.2 |
 | W4 | **(STRETCH)** live GUI command channel | `itksnap` `sprint/caimi` | ✅ prototype (Gate 2 PASS) | §6.2, P4 |
-| W5 | Demo driver + `manifest.yaml` + golden data | `itksnap-mcp/demo/` | not started | §5.3, §6.6 |
-| W6 | Video production (Clips A/C; B if W4) | — | runbook + sample media + MCP-callable (Claude Code ✔); final take TODO | §5.4 |
-| W7 | 500-word abstract + public repo README | `projects/agentic-api/` | ✅ done (abstract 456w; README+MIT `f80d880`) | §7b reqs |
-| W8 | Portal submission | AbstractScorecard | not started | §1 reqs |
+| W5 | Demo driver + `manifest.yaml` + golden data | `itksnap-mcp/demo/` | ✅ done (`run_p2.py`, `agent_send.py`, `manifest.example.yaml`; golden data stays out of the repo) | §5.3, §6.6 |
+| W6 | Video production (Clips A/C; B if W4) | — | ✅ done (`final-demo.mp4` submitted; hosted at `youtu.be/H60bflq-O1o`) | §5.4 |
+| W7 | 500-word abstract + public repo README | `projects/agentic-api/` | ✅ done — superseded by the 11-field form; as-sent text in `caimi-submission/caimi_submitted.md` (README+MIT `f80d880`) | §7b reqs |
+| W8 | Portal submission | AbstractScorecard | ✅ done — submission ID `2480386`, status Complete, Oral | §1 reqs |
 
 **Branch/repo layout for this sprint**
 - C++ audit record + (stretch) live channel → **`itksnap` submodule, `sprint/caimi`** (already the tracked branch).
@@ -194,11 +194,11 @@ truthful "human-in-the-loop" story). Do **not** fake a live channel we don't hav
 ## 5. Definition of done (submission-ready)
 
 - [x] Public repo, README with a ≤3-command runnable path + `manifest.yaml`; license notes present.
-- [ ] ≥1 hosted, **reachable** video (Clips A+C; B if the flagship landed), captioned.
-- [x] 500-word abstract, six sections in order, word count verified (456/500; `docs/abstract.md`). Author line pending Paul.
-- [ ] Working demo/repo/video links embedded and opened-tested.
+- [x] ≥1 hosted, **reachable** video (Clips A+C; B if the flagship landed), captioned. `youtu.be/H60bflq-O1o` (HTTP 200, 2026-07-25).
+- [x] 500-word abstract, six sections in order, word count verified (456/500; `docs/abstract.md`). Author line pending Paul. — *Superseded: the portal takes 11 fields × 250 words; the as-sent text is `caimi-submission/caimi_submitted.md`, and authors were confirmed as Hao · Pouch · Yushkevich.*
+- [x] Working demo/repo/video links embedded and opened-tested. All three HTTP 200, 2026-07-25.
 - [x] Not a vendor submission; framing non-promotional.
-- [ ] Submitted via `QRFBVSUS` (Chrome/Firefox) before 2026-07-24 11:59 PM PST.
+- [x] Submitted via `QRFBVSUS` (Chrome/Firefox) before 2026-07-24 11:59 PM PST. Submission ID `2480386`, status Complete.
 
 ---
 

@@ -3,6 +3,95 @@
 Newest entries first. See `docs/agentic-prototype-plan.md` for the authoritative plan
 and `NEXT_SESSION_PROMPT.md` for the resume prompt.
 
+## 2026-07-25 — CAIMI submitted; abstract rewritten to the real form; submodule sync repaired
+
+**Attempted:** polish the abstract for tone, then — on discovering the portal form was nothing
+like our spec — rewrite it against the real form, submit, and record what was actually sent.
+
+**Landed**
+
+- **Submitted. SIIM-CAIMI26 AI Builder Showcase, submission ID `2480386`, status Complete,**
+  preferred presentation Oral. Authors: Jilei Hao · Alison M. Pouch · Paul A. Yushkevich.
+  Uploads `final-demo.mp4` + `fig1_flow.png`; links to both repos and
+  `https://youtu.be/H60bflq-O1o`.
+- **The form was not what `docs/caimi-submission-requirements.md` §4 described.** It is
+  **11 fields, each capped at 250 words, no overall limit** — not a 500-word six-section
+  abstract. Three required fields had no draft content at all: *Tech Stack*, *Known Limitations
+  & Honest Failures*, and a demo description. Captured as `docs/caimi_submission_form.pdf`.
+- **Rewrote the abstract against the real form** (wrapper `d5c2dcc`). Register moved from
+  "scientific abstract" to plain and candid, because the form asks for exactly that
+  ("rough edges are welcome", "the community learns more from honest struggles").
+  Then a second pass on author direction moved it back toward objective and unpromotional —
+  the audience and the PIs read as scientists. Both are recorded in the file header.
+- **`caimi-submission/caimi_submitted.md`** — the as-sent text, **verified field-by-field
+  against the portal preview PDF by diff**, not by eye. `caimi_submitted.docx` is generated
+  from it. Author edits made in the portal are enumerated in its header.
+- **`docs/build_caimi_submission.py`** — markdown → `.docx` generator, standard library only
+  (no `npm`, no `node_modules`). Prints per-field word counts and **exits non-zero over the
+  250-word cap**, so the limit is enforced locally instead of by the portal.
+- **`project_retrospective.md`** — limitations and next steps, lessons split into development
+  and abstract writing, and an assessment of the sprint system.
+- **`SUBMODULE_SYNC.md`** (wrapper root, `48f4d9d`) — source of truth for which branch each
+  submodule tracks per wrapper branch. Covers all **eight** submodules; `itksnap-mcp` was
+  missing from `CLAUDE.md`'s table.
+- **Repaired two real submodule-sync faults** (`9dc1e77`), both found by writing that file:
+  - `.gitmodules` declared `itksnap-dls` on `main`, but the agentic API and the
+    TotalSegmentator wrapper are on `feature/agentic-api`, where the pointer recorded at
+    `3689ba8` (`bbaac51`) exclusively lives. A bare `git submodule update --remote` would
+    have regressed the submodule and dropped that work. Now declared correctly.
+  - **`git clone --recursive` of the wrapper had been failing.** The pointers for `itksnap`
+    (`daeeb99`) and `itksnap-mcp` (`12286185`) were on **no remote branch** — each submodule
+    was one commit ahead of its upstream. Pushed: `itksnap` `e06937f8..daeeb995`,
+    `itksnap-mcp` `b83ef64..1228618`. No pointer bump was needed; the SHAs the wrapper already
+    recorded became valid once they reached the remotes.
+- Wrapper commits this session: `3689ba8` (dls bump) · `d5c2dcc` (submission + retrospective) ·
+  `48f4d9d` (SUBMODULE_SYNC, authored by owner) · `9dc1e77` (sync fixes).
+
+**Tests** — `itksnap-mcp`: **12 passed** (`~/.venvs/itksnap-mcp/bin/python -m pytest tests/`).
+Word-count gate: exit 0 for both the submitted record and the draft. `SUBMODULE_SYNC.md` §3:
+all eight submodules `ok` on both checks. A fresh-machine simulation
+(`git fetch --depth=1 <url> <sha>` into an empty repo) reports every recorded pointer
+**FETCHABLE**. No ITK-SNAP C++ build or `ctest` run — this session changed no C++.
+
+**Broke / surprised**
+
+1. **The submission spec we planned against was wrong**, and we only learned it at submission
+   time. Everything downstream of it — a 500-word budget, six section headings, the whole
+   `abstract.md` structure — was wasted shape. The requirements file was written from the
+   call-for-submissions page; the actual portal form was never opened until the end.
+2. **The clone was broken for five wrapper commits and nothing surfaced it** — including
+   `48f4d9d`, the commit that added the file documenting it. A pointer to an unpushed commit
+   resolves perfectly on the machine that made it; it is invisible without an explicit
+   reachability check against the remote.
+3. **My first reachability check was itself wrong.** `git ls-remote <url> | grep <sha>` matches
+   only ref **tips**, so it reported `segflow4d` as missing when its pointer is a healthy
+   ancestor of `origin/main`. Corrected to `git branch -r --contains` after a fetch; the trap
+   is written into `SUBMODULE_SYNC.md` §3 so it does not get "simplified" back.
+4. **`.docx` output is not byte-reproducible.** `zipfile` stamps entry mtimes, so every rebuild
+   dirties git even when content is identical (verified: content hashes match, only
+   `date_time` differs). Rebuilding before a commit produces meaningless churn. Fix is a fixed
+   `ZipInfo.date_time`; not done — no new work inside a handoff.
+5. **`pytest` cannot collect from the base conda env** — `ModuleNotFoundError: itksnap_mcp`,
+   because the package is `src`-layout and not installed there. Use the dedicated venv or
+   `PYTHONPATH=src`. Do **not** `pip install` into the base env; that is the documented trap
+   that previously broke the DLS server.
+6. **Word comments do not survive regeneration.** The `.docx` is generated from markdown, so a
+   review round is: comment → save → extract → apply to the `.md` → rebuild. Commented copies
+   are archived (`caimi_submission.REVIEW*.docx`) rather than lost. Two rounds happened this way.
+
+**Decisions**
+
+- **Markdown is the source of truth; `.docx` is a build artifact.** Chosen after the form
+  rewrite, because the text needed to survive several review rounds and a word-count gate.
+- **Generator in Python, not `docx`-js** — the npm package was absent, and installing it would
+  have put `node_modules` in the repo. Standard library keeps the rebuild dependency-free.
+- **`SUBMODULE_SYNC.md` outranks `.gitmodules` and `CLAUDE.md`** when they disagree; the branch
+  contract is stated per wrapper branch, since a sprint branch may need different submodules.
+- **§6 of that file is a drift log, not a fixed-and-deleted list** — each entry records *how the
+  failure recurs*, so the checks stay motivated after the specific instance is gone.
+- **Kept the developer-not-clinician disclosure** in the submitted text. It is the honest
+  framing and this track rewards it.
+
 ## 2026-07-20 (session 2) — Sample demo videos + Claude-Code-callable MCP server
 
 **Attempted:** create sample demo videos of the concept; then (on feedback) make the *agent-directed*

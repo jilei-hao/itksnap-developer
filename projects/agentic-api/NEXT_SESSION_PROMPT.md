@@ -1,85 +1,110 @@
-# RESUME — ITK-SNAP Agentic API · CAIMI Builder Showcase sprint
+# RESUME — ITK-SNAP Agentic API · post-CAIMI-submission
 
 ## Current state (read this paragraph first)
-We are submitting a **SIIM-CAIMI26 AI Builder Showcase** entry by **2026-07-24 11:59 PM PST** (deadline
-is close). Thesis: *"model proposes, human disposes"* — an expert's segmentation correction as a callable,
-resumable, **audited** pipeline step. Three repos: **`itksnap`** (C++ GUI/logic, `sprint/caimi`),
-**`itksnap-dls`** (FastAPI model server, `feature/agentic-api`), **`itksnap-mcp`** (public repo `main` —
-the CAIMI demo link). **Everything technical + the submission materials are DONE:** the full
-`propose → apply → audit` backbone runs live (verified on GPU with a real body CT); the ≤500-word abstract
-(`docs/abstract.md`, 456 words), the MIT-licensed public repo with a rewritten README + mirrored design
-docs, and a tested confidence gate are all committed. **The agent-directed flow is now REAL:** the
-`itksnap` MCP server is registered with Claude Code (`claude mcp list` → ✔ Connected; tools `list_models ·
-propose · apply · apply_file · read_audit · set_actor`) and verified — an MCP client drove ITK-SNAP
-end-to-end. There are **sample demo videos** (`design_docs/media/agentic-demo.mp4/.gif`) and a recording
-runbook with the exact Claude-Code conversation (`docs/demo_runbook.md`). Pushed: `itksnap` `e1aa19d5`,
-`itksnap-mcp` `0297396`, wrapper `main` (latest checkpoint). **What's left is packaging + the two
-human-gated steps:** record the live demo, and submit through the portal.
+
+**The CAIMI sprint is over and the submission is in.** SIIM-CAIMI26 AI Builder Showcase,
+submission ID **`2480386`**, status **Complete**, preferred presentation **Oral**; notifications
+**2026-08-26**; the conference is **Oct 26–27, 2026** at Penn. Authors: Jilei Hao · Alison M.
+Pouch · Paul A. Yushkevich. What was built and submitted: ITK-SNAP made callable by an AI agent
+over the Model Context Protocol, where every edit — by agent or person — returns a structured
+record of what changed and who changed it. Three repos, all pushed and all clone-clean:
+**`itksnap`** (C++ audit record + live socket channel, `sprint/caimi`, `daeeb99`),
+**`itksnap-dls`** (FastAPI model server, `feature/agentic-api`, `bbaac51`), **`itksnap-mcp`**
+(public, `main`, `12286185`). Wrapper `main` is at `9dc1e77` and in sync with origin. The
+submitted text lives in `caimi-submission/caimi_submitted.md`, verified field-by-field against
+the portal preview; treat it as a record, not a draft. **No deadline is now pending** — the next
+session is free work, not a scramble.
 
 ## The single next goal
-**Assemble the portal-ready submission package and support a final rehearsal.** Concretely:
-1. **`projects/agentic-api/docs/submission.md`** — the exact copy-paste fields for AbstractScorecard:
-   title, keywords, and the six sections (from `docs/abstract.md`, verbatim), plus the **Demo/Evidence
-   links** — repo URLs (`github.com/jilei-hao/itksnap-mcp`, `…/itksnap`) and the **video URL placeholder**
-   (fill after recording). Open-test every link. Re-verify the word count (456/500).
-2. **Final rehearsal support** — if asked, do a dry run of the live flow (start the DLS server + ITK-SNAP,
-   confirm `claude mcp list` shows itksnap ✔, walk the runbook conversation) and capture the real Clip-B
-   `actor:"human"` numbers into the runbook so narration matches.
-3. Optional polish: a higher-fidelity sample recording (heart/aorta instead of lung; drop the title bar so
-   the menu shows), or move the MCP server to **user scope** if the user will run the demo outside this repo.
-Then the human does W6 (record the Claude Code + ITK-SNAP session; host unlisted on YouTube) and W8 (create
-the AbstractScorecard account `QRFBVSUS`, paste `submission.md`, submit). Non-blocking: confirm the abstract
-author line with Paul.
+
+**Decide the post-submission track, then do exactly one of these — do not start all three.**
+In rough priority order:
+
+1. **Close the honesty gap the submission names.** Field 10 says the routing decision "is the
+   point of the design" and is not implemented: the confidence gate in
+   `itksnap-mcp/src/itksnap_mcp/confidence.py` (`agreement_gate`) is unit-tested but **called by
+   nothing** — not by `server.py`, not by `demo/run_p2.py`. Wiring it into an MCP tool so a case
+   is routed by measurement rather than by a person choosing it is the highest-value next
+   increment, and it is what the Q&A will probe.
+2. **Prepare the October demo.** The submitted demo description commits to a **live** run in six
+   steps, applying into a **running** ITK-SNAP session over the socket — not the headless
+   workspace path that `docs/demo_runbook.md` documents as the default. That path needs to be
+   rehearsed end to end on the presentation machine, and there is no pinned inference seed.
+3. **Explicit commit/discard of a correction** (field 10, item 2): after correcting a proposal
+   the operator has no way to accept or reject — the outcome is implied by whether the file is
+   saved. This is the most user-visible of the named limitations.
+
+Everything else — OS4LS Goal 1, the pip-shippable Layer-1 binding, batch triage (P3) — is
+planning work, not this file's business. See `docs/agentic-prototype-plan.md`.
 
 ## Files to read first (in order)
-1. `projects/agentic-api/docs/abstract.md` — the final abstract (source for `submission.md`).
-2. `projects/agentic-api/docs/demo_runbook.md` — the recording runbook; **§A "Recording with Claude Code"**
-   has the setup + the exact prompts to type.
-3. `projects/agentic-api/docs/caimi-submission-requirements.md` — §4 Builder Showcase spec, §6 checklist,
-   §7b skeleton, portal details.
-4. `projects/agentic-api/PROGRESS_LOG.md` — newest two entries (deliverables; sample videos + MCP wiring),
-   including the **env lesson** (mcp vs the DLS FastAPI stack).
-5. `itksnap-mcp/README.md`, `itksnap-mcp/docs/DESIGN.md`, `design_docs/media/` (the sample videos).
 
-## Setup (this machine — Linux, RTX 2080 8 GB; recording box = a 4090 for full-res)
+1. **`project_retrospective.md`** — limitations, next steps, and lessons. Start here; it is the
+   condensed form of everything below.
+2. **`caimi-submission/caimi_submitted.md`** — what was actually submitted, including the
+   limitations we committed to in public. Its header lists the edits made in the portal.
+3. **`PROGRESS_LOG.md`** — newest entry (2026-07-25) for this session; the two before it for how
+   the prototype was built.
+4. **`../../SUBMODULE_SYNC.md`** (wrapper root) — which branch each submodule must track, and the
+   two checks to run before pushing anything that bumps a pointer.
+5. `docs/demo_runbook.md` — the recording/demo runbook. Note §254: the default `apply` is
+   headless, so nothing paints into a running window on that path.
+6. `docs/agentic-prototype-plan.md` — the authoritative long-range plan (§8 models, §9 distribution).
+
+## Setup (this machine — Linux, RTX 2080 8 GB; a 4090 box is used for full-res)
+
 - **Base env** (DLS server): `source ~/tk/miniconda3/etc/profile.d/conda.sh && conda activate base`.
-  Do NOT `pip install mcp` here — it breaks the DLS server's FastAPI (see traps).
-- **MCP server env** (isolated): `~/.venvs/itksnap-mcp` (has `itksnap-mcp[mcp]`). The Claude Code MCP
-  registration already points at `~/.venvs/itksnap-mcp/bin/python -m itksnap_mcp.server`.
-- Branches: `itksnap`→`sprint/caimi`; `itksnap-dls`→`feature/agentic-api` (pointer NOT recorded — switch
-  manually); `itksnap-mcp`→`main`.
-- **Build FOREGROUND** if C++ changes: `cmake --build build-release --target ITK-SNAP -j` (never `nohup &`;
-  confirm the binary mtime advanced before testing).
-- **Live agent-directed demo (the real take):**
+- **MCP server env** (isolated): `~/.venvs/itksnap-mcp`. Claude Code's registration points at
+  `~/.venvs/itksnap-mcp/bin/python -m itksnap_mcp.server`.
+- **Tests:** `cd itksnap-mcp && ~/.venvs/itksnap-mcp/bin/python -m pytest tests/ -q` → **12 passed**.
+  `PYTHONPATH=src python3 -m pytest tests/ -q` also works. Plain `python3 -m pytest` from the base
+  env **fails to collect** (`ModuleNotFoundError: itksnap_mcp` — `src` layout, not installed there).
+- **Build FOREGROUND** if C++ changes: `cmake --build build-release --target ITK-SNAP -j`. Never
+  `nohup &` — it reports success instantly while `ninja` is still linking. Confirm the binary mtime
+  advanced before testing.
+- **Live agent-directed run:**
   1. base env: `cd itksnap-dls && python -m itksnap_dls --port 8911 --device cuda` (poll `/status`).
-  2. `ITK-SNAP -g /tmp/ct3d_bavcta028.nii.gz --agent-listen /tmp/snap-agent.sock` on a **real display**.
-  3. **Start a fresh `claude` session in this repo** (MCP loads at startup) and type the runbook §A prompts.
-  4. Retake without GPU: ask Claude Code to `apply_file /tmp/p2_proposal_10.nii.gz` (label 1).
-  5. Stop the DLS server by PORT: `lsof -ti:8911 | xargs -r kill`.
-- Sample-video reproduction (no agent, no GPU): `/tmp/drive_demo.py` + `ffmpeg -f x11grab` (see
-  `design_docs/media/README.md`).
-- Confidence-gate tests: `cd itksnap-mcp && PYTHONPATH=src python -m pytest tests -q`.
+  2. `ITK-SNAP -g /tmp/ct3d_bavcta028.nii.gz --agent-listen /tmp/snap-agent.sock` on a real display.
+  3. Start a **fresh** `claude` session in this repo (MCP tools load at session start).
+  4. GPU-free retake: `apply_file /tmp/p2_proposal_10.nii.gz` (label 1).
+  5. Stop the server by port: `lsof -ti:8911 | xargs -r kill`.
+- **Rebuild the submission docs** (only if the record must change — it should not):
+  `python3 docs/build_caimi_submission.py caimi-submission/caimi_submitted.md caimi-submission/caimi_submitted.docx`
 
 ## Known traps
-- **Never `pip install mcp` into the DLS base env** — it upgrades `starlette` past FastAPI's pin and breaks
-  `itksnap_dls` (`on_startup` TypeError). The MCP server lives in its own venv (`~/.venvs/itksnap-mcp`); the
-  DLS server stays in base (`starlette 0.46.2`). They cannot share one env.
-- **A fresh Claude Code session is required** to see the `itksnap` MCP tools (loaded at session start). It's
-  registered at **local (project) scope** for this repo; use `-s user` to run the demo elsewhere.
-- **The video + portal need a HUMAN.** Record ITK-SNAP on a real display (not Xvfb) so the live correction
-  is on camera; the AbstractScorecard account (Chrome/Firefox) must be created by a person.
-- **Local body CTs are 4D cardiac CTA** — extract a 3-D frame first (`/tmp/ct3d_bavcta028.nii.gz`).
-- **DLS upload drops geometry** — `write_label_mask` restores it (`CopyInformation`); proposal + image must
-  share the grid, or `apply` reports `changed_voxels: 0`.
-- **Never `pkill -f "<string>"` in your own command** (`itksnap_dls`, `ninja ITK-SNAP`) — kill servers by
-  port, GUIs by `setsid`+`kill -TERM -<pid>`, builds by `pgrep -x ninja`.
-- **Sample videos are illustrative** — software-rendered; the "human" beat is a scripted `apply_box`. The
-  final take should show a real paintbrush correction driven from a real Claude Code session.
-- **Push state:** `itksnap` `e1aa19d5`, `itksnap-mcp` `0297396`, wrapper checkpoints — all pushed.
-  `itksnap-dls` pointer intentionally unrecorded.
+
+- **Never `pip install mcp` into the DLS base env.** It upgrades `starlette` past FastAPI's pin and
+  breaks `itksnap_dls` (`on_startup` TypeError). The two cannot share one environment.
+- **Never `pkill -f "<string>"` from your own shell** — the pattern matches the tool shell's own
+  command line and kills it. Servers by port, GUIs by `setsid` + `kill -TERM -<pid>`, builds by
+  `pgrep -x ninja`.
+- **Push submodules BEFORE recording the pointer in the wrapper.** This was broken for five wrapper
+  commits this sprint: `git clone --recursive` failed because two pointers referenced commits that
+  existed only locally. It is invisible on the machine that made them. Run the reachability check in
+  `SUBMODULE_SYNC.md` §3 before pushing a pointer bump.
+- **Do not "simplify" that check to `git ls-remote | grep <sha>`** — `ls-remote` lists only ref
+  **tips**, so it reports healthy ancestor pointers as missing. Use `git branch -r --contains` after
+  a fetch.
+- **`.docx` output is not byte-reproducible.** `zipfile` stamps entry mtimes, so a rebuild dirties
+  git even when content is identical. Either don't rebuild before committing, or `git checkout --`
+  the file after verifying content. A fixed `ZipInfo.date_time` would fix this properly.
+- **Word comments do not survive regeneration.** The `.docx` is a build artifact of the `.md`. A
+  review round is: comment → save in Word → extract → apply to the `.md` → rebuild → archive the
+  commented copy. Note Word holds the file open; unsaved comments are not on disk.
+- **`.gitmodules` drifts silently.** It declared `itksnap-dls` on `main` for most of the sprint while
+  the work was on `feature/agentic-api`; a bare `git submodule update --remote` would have discarded
+  it. Fixed at `9dc1e77`, but the failure mode recurs whenever a submodule is switched with
+  `git switch` and `.gitmodules` is not updated.
+- **Local body CTs are 4D cardiac CTA** — extract a 3D frame first (`/tmp/ct3d_bavcta028.nii.gz`).
+- **DLS upload drops geometry** — `write_label_mask` restores it via `CopyInformation`. If the
+  proposal and image do not share a grid, `apply` silently reports `changed_voxels: 0`.
+- **The demo depends on one machine and one dataset.** Everything traces to `/tmp` paths and a
+  hardcoded MCP config; nothing has run on a second dataset, scanner, modality, or machine.
 
 ## How to work
-The tech, the writing, and the agent wiring are done — this is packaging and rehearsal under a tight
-deadline. Verify every demo link opens; keep the on-camera correction a real code path; produce copy-paste
-portal text so the human's submission is mechanical. Build foreground; kill by port/PID, not `pkill -f`.
-Commit inside each submodule first, then bump the wrapper pointer.
+
+The deadline pressure is gone; the failure mode now is drift, not haste. Prefer one finished
+increment over three started ones. The submitted text is a public commitment — when the code and
+`caimi_submitted.md` disagree, that is a bug in the code or a note for the Q&A, never a silent edit
+to the record. Commit and **push** inside a submodule first, then bump the wrapper pointer, then run
+the `SUBMODULE_SYNC.md` §3 checks. Run `/handoff` at the end of the session rather than improvising it.
