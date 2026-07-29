@@ -18,7 +18,7 @@ Wrapper remote: `https://github.com/jilei-hao/itksnap-developer.git`
 |---|---|---|---|
 | `itksnap/` | `sprint/caimi` | `itksnap.git` | Main ITK-SNAP application. `sprint/caimi` = `feature/cardiac-io` + Linux/GCC build patches; the active sprint branch. |
 | `itksnap-mcp/` | `main` | `itksnap-mcp.git` | Python agent glue: the Model Context Protocol server and demo driver. |
-| `itksnap-dls/` | **`feature/agentic-api`** | `itksnap-dls.git` | Deep-learning segmentation server (TotalSegmentator, nnInteractive, SAM2). **`.gitmodules` wrongly says `main` — see §6.1.** |
+| `itksnap-dls/` | `feature/agentic-api` | `itksnap-dls.git` | Deep-learning segmentation server (TotalSegmentator, nnInteractive, SAM2). Not `main` — the agentic API and the TotalSegmentator wrapper live on this branch. |
 | `segflow4d/` | `main` | `segflow4d.git` | 4D segmentation flow. |
 | `greedy_python/` | `test/integration` | `greedy_python.git` | Python bindings for Greedy. |
 | `convert-mesh/` | `main` | `convert-mesh.git` | ConvertMesh CLI/library. |
@@ -49,20 +49,22 @@ git submodule update --init --recursive
 
 ---
 
-## 2. Status as verified 2026-07-25, wrapper `d5c2dcc`
+## 2. Status as verified 2026-07-25 (both §6 items resolved)
 
 | Path | Declared | Checked out | Pointer reachable from its remote branch? |
 |---|---|---|---|
-| `itksnap/` | `sprint/caimi` | `sprint/caimi` | ❌ **no — 1 unpushed commit** |
-| `itksnap-mcp/` | `main` | `main` | ❌ **no — 1 unpushed commit** |
-| `itksnap-dls/` | `main` ⚠️ | `feature/agentic-api` | ✅ on `origin/feature/agentic-api` |
+| `itksnap/` | `sprint/caimi` | `sprint/caimi` | ✅ on `origin/sprint/caimi` |
+| `itksnap-mcp/` | `main` | `main` | ✅ on `origin/main` |
+| `itksnap-dls/` | `feature/agentic-api` | `feature/agentic-api` | ✅ on `origin/feature/agentic-api` |
 | `segflow4d/` | `main` | `main` (detached at pointer) | ✅ |
 | `greedy_python/` | `test/integration` | `test/integration` | ✅ |
 | `convert-mesh/` | `main` | `main` | ✅ |
 | `cmrep/` | `local` | `local` (detached at pointer) | ✅ |
 | `FireANTs/` | `main` | `main` | ✅ |
 
-No submodule has uncommitted working-tree changes.
+Declared matches checked out for all eight, every recorded pointer resolves on its remote, and
+no submodule has uncommitted working-tree changes. `git clone --recursive` of this wrapper
+succeeds.
 
 ---
 
@@ -130,10 +132,10 @@ git submodule update --remote <path>   # moves to the tip of the branch in .gitm
 git add <path> && git commit -m "Bump <path> to <sha> (<why>)"
 ```
 
-> ⚠️ **Do not run bare `git submodule update --remote`** (no path) while §6.1 is unfixed.
-> It reads the branch from `.gitmodules`, so it would move `itksnap-dls` onto `main` and
-> silently discard the agentic-API work, including the TotalSegmentator wrapper this
-> project depends on.
+> ⚠️ `git submodule update --remote` reads the branch from `.gitmodules`, so it is only ever
+> as safe as that file is correct. A bare `--remote` (no path) moves **every** submodule to
+> the tip of its declared branch at once — prefer naming the one you mean. If `.gitmodules`
+> ever drifts from §1 again, this is the command that turns the drift into lost work.
 
 ### Change which branch a submodule tracks
 
@@ -168,42 +170,48 @@ Otherwise the commit lands on no branch and is easy to lose.
 
 ---
 
-## 6. Known drift — open items
+## 6. Drift log
 
-### 6.1 `itksnap-dls` tracks the wrong branch in `.gitmodules` (medium)
+No open items. Both entries below were found when this file was first written on 2026-07-25
+and fixed the same day. They are kept because each has a recurrence mode worth recognising.
 
-`.gitmodules` declares `branch = main`, but all the work — and the pointer recorded at
-wrapper `3689ba8` — is on `feature/agentic-api`. `bbaac51` exists only on that branch.
+### 6.1 `itksnap-dls` tracked the wrong branch in `.gitmodules` — RESOLVED 2026-07-25
 
-Consequence: `git submodule update --remote` regresses the submodule to `main` and drops
-the agentic API and the TotalSegmentator wrapper.
+`.gitmodules` declared `branch = main`, while all the work — and the pointer recorded at
+wrapper `3689ba8` — was on `feature/agentic-api`. `bbaac51` exists only on that branch, so
+`git submodule update --remote` would have regressed the submodule to `main` and dropped the
+agentic API and the TotalSegmentator wrapper.
 
-```bash
-git config -f .gitmodules submodule.itksnap-dls.branch feature/agentic-api
-git add .gitmodules && git commit -m "Track feature/agentic-api for itksnap-dls"
-```
+Fixed by pointing `.gitmodules` at `feature/agentic-api`.
 
-### 6.2 Two recorded pointers are not on their remotes (high — breaks fresh clones)
+**How it recurs:** switching a submodule to a feature branch with `git switch` and never
+updating `.gitmodules`. The checkout is right, work proceeds normally, and nothing complains
+until someone runs `--remote`. The §3 check catches it: `decl=` and `at=` disagree.
 
-| Path | Pointer | Unpushed commit |
+### 6.2 Two recorded pointers were on no remote — RESOLVED 2026-07-25
+
+| Path | Pointer | Commit that was local-only |
 |---|---|---|
 | `itksnap/` | `daeeb99` | `agentic-api: report the whole correction session, not just its last edit` |
 | `itksnap-mcp/` | `12286185` | `Add read_audit_log + persist live audit records into the workspace` |
 
-Both are one commit ahead of their upstream, and both SHAs were confirmed to be on no remote
-branch after fetching. **`git clone --recursive` of this wrapper fails today**, and
-`git submodule update --init` fails for these two on any machine but this one. This predates
-the current wrapper commit — the pointers were first recorded at `acaaaa6`.
+Each was one commit ahead of its upstream, so `git clone --recursive` of this wrapper failed,
+as did `git submodule update --init` on any other machine. The pointers were first recorded at
+wrapper `acaaaa6` and stayed broken through five later wrapper commits — including `48f4d9d`,
+which added this file.
 
-Fix — push each submodule; no wrapper commit is needed afterwards, because the SHAs the
-wrapper already records become valid as soon as they exist on the remote:
+Fixed by pushing each submodule. No wrapper commit was needed: the SHAs the wrapper already
+recorded became valid the moment they existed on the remotes.
 
 ```bash
 git -C itksnap push origin sprint/caimi
 git -C itksnap-mcp push origin main
 ```
 
-Then re-run the reachability check in §3.
+**How it recurs:** committing inside a submodule and recording the pointer in the wrapper
+without pushing the submodule first — see §4. It is invisible locally, because the commit
+resolves fine on the machine that made it. Only the §3 reachability check finds it, which is
+why that check belongs in the pre-push routine rather than in an occasional audit.
 
 ---
 

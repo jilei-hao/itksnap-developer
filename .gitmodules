@@ -21,7 +21,7 @@
 [submodule "itksnap-dls"]
 	path = itksnap-dls
 	url = https://github.com/jilei-hao/itksnap-dls.git
-	branch = main
+	branch = feature/agentic-api
 [submodule "segflow4d"]
 	path = segflow4d
 	url = https://github.com/jilei-hao/segflow4d.git
