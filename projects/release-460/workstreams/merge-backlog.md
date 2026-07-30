@@ -83,29 +83,99 @@ The 6 agentic-API commits on `sprint/caimi` and the whole `itksnap-mcp` repo. Se
 
 ## Plan
 
-1. ~~Fast-forward the local `master` checkout~~ — `origin/master` was already in sync with
+1. ✅ ~~Fast-forward the local `master` checkout~~ — `origin/master` was already in sync with
    `upstream/master` @ `679ba76a`; only the local checkout lagged. Nothing to push.
-2. Cut `staging/v460` from `upstream/master` @ `679ba76a` and push it.
-3. Resolve Q1–Q4 below.
-4. Merge `feature/cardiac-io` → `staging/v460`. Build macOS + Linux; run `ctest`.
-5. Cherry-pick `ad727107`, reworking the VTK line per Q2.
-6. Cherry-pick `cb6f692e` and `ea86df0d`; **add an undo test first** (Q4).
-7. Re-resolve the `Submodules/{c3d,greedy}` bump against current upstream rather than replaying
+2. ✅ Cut `staging/v460` from `upstream/master` @ `679ba76a` and push it. *(2026-07-30)*
+3. ✅ Q1, Q2, Q3 resolved below — Q1 and Q3 were false alarms, Q2 narrowed to one decision.
+   **Q4 still open.**
+4. ✅ Merge `feature/cardiac-io` → `staging/v460` — `594b4033`, clean, no conflicts.
+   macOS arm64 builds 212/212 with no warnings in any cardiac-io file. Linux **still pending**.
+5. ✅ Cherry-pick `ad727107` **minus** the VTK floor line — `e2f19b56`. Verified on macOS/clang;
+   the Linux/GCC build it targets is **still unverified** (needs the Linux box).
+6. ⏳ Cherry-pick `cb6f692e` and `ea86df0d` — **blocked on Q4**; add the undo test first.
+7. ⏳ Re-resolve the `Submodules/{c3d,greedy}` bump against current upstream rather than replaying
    `71e2544d`.
-8. Delete the seven fully-merged branches listed in [../SPRINT_PLAN.md](../SPRINT_PLAN.md) §2.
+8. ⏳ Delete the seven fully-merged branches listed in [../SPRINT_PLAN.md](../SPRINT_PLAN.md) §2.
+
+Landed alongside, from investigating the test baseline (W8 items 1 and 13): `97285971` fixes the
+`4DContinuousRenderingD` typo **and** the reason it survived — a missing test script was reported as
+success, which applied to all 21 GUI tests. See [bugfixes.md](bugfixes.md).
 
 ## Open questions
 
-- **Q1 — Workspace `FormatVersion` 1 → 2 → 3** (`a0f9d6f0`, `c3db9f65`). A 4.6.0 workspace will not
-  open in 4.4.0. Either move `SNAP_VERSION_LAST_COMPATIBLE_RELEASE_DATE` (currently `20131201`) or
-  make the reader degrade gracefully on an unknown version. **Blocks step 4.** Test both directions.
-- **Q2 — VTK floor.** CI moved to 9.5.2 at `c480b003` but `CMake/standalone.cmake:72` still requires
-  9.3.1. Pick one. **Blocks step 5.**
-- **Q3 — jsoncpp dependency** (`3033e9e1`, the NIfTI sidecar reader). Confirm it is available on all
-  three CI platforms and add it to the build docs.
-- **Q4 — Undo semantics under async DLS** (`cb6f692e`). `PaintbrushModel::CommitDrawing` now defers
-  `StoreUndoPoint` / `RecordCurrentLabelUse` into the completion handler. What happens on a
-  cancelled or failed interaction is untested. **Blocks step 6.**
+### Q1 — Workspace `FormatVersion` 1 → 2 → 3 · ✅ RESOLVED 2026-07-30: not a blocker
+
+**The premise was wrong. There is no open-failure compatibility break**, and step 4 was unblocked
+on this basis. Evidence:
+
+- `FormatVersion` is **scoped to the `TimePointProperties` folder**, not to the workspace. It is the
+  only `FormatVersion` in the tree — 4 references, all in `Logic/Framework/TimePointProperties.cxx`.
+- **Neither reader validates it.** `TimePointProperties::Load` reads it into a local `version` at
+  `TimePointProperties.cxx:118` under a `// Validate version` comment and then never uses it —
+  and upstream/master's copy is identical (its line 64). An old build *cannot* reject a v3 folder;
+  it never looks at the value.
+- The old reader takes `Nickname` and `Tags` by explicit key and enumerates nothing, so the four
+  added keys (`RRPercent`, `RRPercentExact`, `FrameValue`, `FrameUnit`) are simply not read.
+- The **workspace**-level `Version` key holds a release date (`IRISApplication.cxx:2289`) and is only
+  checked for *existence* — `preg.HasEntry("SaveLocation") && preg.HasEntry("Version")` at
+  `IRISApplication.cxx:2623`, under a comment that already calls itself "pretty weak". Never compared.
+- **`SNAP_VERSION_LAST_COMPATIBLE_RELEASE_DATE` is dead code.** It is `SET` at `CMakeLists.txt:105`
+  and referenced nowhere else — no source file, no generated header. Moving it would do nothing.
+
+**The real exposure is different and smaller: silent metadata loss on round-trip.**
+`IRISApplication::SaveProjectToRegistry` calls `preg.Clear()` (`IRISApplication.cxx:2283`) and
+rebuilds from in-memory state, so a 4.4.0 build that opens a 4.6.0 workspace and re-saves it drops
+the cardiac keys with no warning. That is a data-integrity nuisance, not a compatibility break.
+
+**Follow-up (not blocking):** make `FormatVersion` do what its comment claims — warn when the folder
+version is newer than the reader knows. Filed as a W8 item.
+
+### Q2 — VTK floor · ✅ RESOLVED 2026-07-30: not a defect; one real decision left
+
+**`c480b003` did not create a contradiction.** `FIND_PACKAGE(VTK 9.3.1 REQUIRED)`
+(`CMake/standalone.cmake:72`) declares a **minimum**, and VTK's `vtk-config-version.cmake` sets
+`PACKAGE_VERSION_COMPATIBLE` whenever installed ≥ requested. CI at 9.5.2 satisfies a 9.3.1 floor.
+Before `c480b003`, CI built exactly `9.3.1` — the floor itself.
+
+The narrower real issue: **nothing exercises the declared floor any more.**
+
+| Where | VTK | vs. declared 9.3.1 floor |
+|---|---|---|
+| CI (`build.yml:56`, after `c480b003`) | 9.5.2 | above |
+| macOS dev box (`lib/vtk/install`) | 9.3.1 | exactly at |
+| Linux dev box | 9.3.0 | **below** — which is why `ad727107` relaxed the requirement to `9.3` |
+
+**Decision for Jilei** (it affects your Linux box, so it is not mine to make):
+
+- **(a) Raise the floor to 9.5.2** — the version CI actually verifies. Cleanest, and it makes
+  `ad727107`'s VTK relax unnecessary. Cost: the Linux box must upgrade VTK.
+- **(b) Keep 9.3.1 and add a CI matrix entry at the floor**, so the claim is tested rather than
+  asserted. Cost: a second CI job.
+- **(c) Lower to 9.3.0** to match the Linux box. Least tested of the three.
+
+**Whichever is chosen, do not carry `ad727107`'s blanket relax to `9.3` into the release** — it
+lowers the project's supported floor to accommodate one development machine.
+
+### Q3 — jsoncpp dependency · ✅ RESOLVED 2026-07-30: false alarm, no new dependency
+
+jsoncpp is **already vendored in-tree** and predates this branch: `Common/JSon/jsoncpp.cpp` and
+`Common/JSon/json/json.h` exist on `upstream/master`, registered at `CMakeLists.txt:243` and
+`:355–356` with the include directory added at `:1058` — **identical line numbers** before and after.
+`git log upstream/master..origin/feature/cardiac-io -- Common/JSon/ CMakeLists.txt` is empty: the
+branch touched neither. `3033e9e1` only `#include "json/json.h"` in
+`Logic/ImageWrapper/GuidedNativeImageIO.cxx:94`, a header that was already there. Confirmed
+empirically — `cmake -S itksnap -B build-release` on the merged tree configures clean. Nothing to
+add to the build docs; nothing to verify per-platform.
+
+### Q4 — Undo semantics under async DLS · ⏳ OPEN, blocks step 6
+
+`cb6f692e` makes `PaintbrushModel::CommitDrawing` defer `StoreUndoPoint` /
+`RecordCurrentLabelUse` into the completion handler. What happens on a cancelled or failed
+interaction is untested. **Still the only open blocker in W1.** Write the test before cherry-picking.
+
+Related and worth reading first: `itksnap/CLAUDE.md` now documents four **unfixed** DLS threading
+races, including a `QtConcurrent` lambda that captures `this` and can dereference a destroyed panel
+after a network timeout. `cb6f692e` adds another `QtConcurrent` path into the same subsystem.
 
 ## Done-criteria
 

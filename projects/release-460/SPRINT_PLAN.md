@@ -129,11 +129,26 @@ complete, the version reads `4.6.0` with no qualifier, and the PR is open with a
 
 ### Test baseline to beat
 
-Linux headless (Xvfb + llvmpipe), recorded 2026-07-17 on `feature/cardiac-io`: **30/33 pass**.
-Three known failures — `4DContinuousRenderingD` (a CMake `GUI_TESTS` name typo, trailing `D`),
-`4DReplayWithMeshUpdate` (timing-flaky under software rendering), `RemoteImageLoadTest_Cache`
-(network; `CacheMetadata.xml` not written). Details in the root `CLAUDE.md`. All three are W8 items.
-A 4th failure is a regression.
+**macOS arm64, `staging/v460`, measured 2026-07-30 — this is now the authoritative baseline: 32/33,
+1 real failure.**
+
+| Test | State | Note |
+|---|---|---|
+| `RandomForestBailOut` | 🔴 **SEGFAULT** | Use-after-free on cancel. **Newly visible**, not new — the test had not executed since 2018. W8 item 15. |
+| `RemoteImageLoadTest_WorkspaceWithMesh` | ⚠️ flaky | Asserts exact equality on an approximate tdigest quantile; ~1 pass in 4. W8 item 3b. |
+| `4DReplayWithMeshUpdate` | ⚠️ flaky | Timing-sensitive; passed here, fails under llvmpipe. |
+| other 30 | ✅ | including `4DContinuousRendering`, which now genuinely runs (37 s, was a 0.98 s no-op) |
+
+> ⚠️ **The old baseline was not trustworthy.** Until `97285971` + `4e1baa2a`, any GUI test whose
+> script was missing reported **Passed**. The previously documented Linux figure of 30/33 counted at
+> least one test that executed nothing. Do not compare against it.
+
+Linux headless (Xvfb + llvmpipe), 2026-07-17 on `feature/cardiac-io`, **superseded**: 30/33, failing
+`4DContinuousRenderingD`, `4DReplayWithMeshUpdate`, `RemoteImageLoadTest_Cache`. Re-measure on Linux
+against `staging/v460` before trusting any Linux number.
+
+Counting rule: a **new** failure is a regression. The three above are stated debt, not a licence to
+ignore new red.
 
 ---
 

@@ -159,7 +159,7 @@ Nine commits, all from the leak-profiling work (see `projects/memory_leak_profil
 
 | Commit | Date | What | Risk |
 |---|---|---|---|
-| `c480b003` | 03-25 | **VTK 9.3.1 → 9.5.2** — ⚠️ **CI workflow only.** `CMake/standalone.cmake:72` still says `FIND_PACKAGE(VTK 9.3.1 REQUIRED)`. CI and source disagree. | **High** |
+| `c480b003` | 03-25 | **VTK 9.3.1 → 9.5.2**, CI workflow only. *Not* a contradiction with `CMake/standalone.cmake:72`'s `FIND_PACKAGE(VTK 9.3.1 REQUIRED)` — that is a **minimum**, and VTK's config-version file is compatible-if-newer. The effect is that the declared floor is no longer exercised by anything: CI is above it, the Linux dev box is below it. See [merge-backlog.md](workstreams/merge-backlog.md) Q2. | Low |
 | `8a01d7d2`, `b107ab02`, `92b413a1`, `0bd3b062` | 03–05 | `CMAKE_OSX_DEPLOYMENT_TARGET` and macOS runner versions; deployment-target mismatch fix | Medium |
 | `b7e8663a` | 05-06 | URL-handler registry keys moved to NSIS; **InnoSetup removed** | Medium |
 | `591c3540`, `2d26df2f` | 2025-09-09 | CI on ubuntu-22.04 (contributed by Matt McCormick) | Low |
@@ -183,9 +183,9 @@ Nine commits, all from the leak-profiling work (see `projects/memory_leak_profil
 
 ## 6. Flags for the release manager
 
-1. **VTK version is inconsistent.** CI builds against 9.5.2 (`c480b003`) but
-   `CMake/standalone.cmake` still requires 9.3.1. Decide the floor for 4.6.0 and make the two
-   agree — otherwise the documented minimum is wrong in one place or the other.
+1. **The declared VTK floor is untested.** Not a contradiction (see the table above), but nothing
+   builds 9.3.1 any more: CI is at 9.5.2, the macOS box at 9.3.1, the Linux box at 9.3.0 — below it.
+   Raise the floor, or add a CI job at it. Decision in [merge-backlog.md](workstreams/merge-backlog.md) Q2.
 2. **`ReleaseNotes.md` has no 4.6 section yet.** The file still tops out at *Version 4.4.0*.
    Sections 2–3 above are the raw material.
 3. **InnoSetup is gone.** Any release/packaging runbook that mentions it is stale.
