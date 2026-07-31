@@ -37,7 +37,13 @@ git submodule update --init --recursive
 
 ## Build System
 
-**Dependencies:** ITK ≥ 5.4, VTK ≥ 9.3.1, Qt6 (Widgets, OpenGL, Concurrent, Qml, LinguistTools), libcurl, libssh. The CI uses ITK v5.4.0, VTK 9.3.1, Qt 6.8.1.
+**Dependencies:** ITK ≥ 5.4, VTK ≥ 9.5.2, Qt6 (Widgets, OpenGL, Concurrent, Qml, LinguistTools), libcurl, libssh. CI uses ITK v5.4.0, VTK 9.5.2, Qt 6.8.1.
+
+> ⚠️ **VTK floor raised to 9.5.2 on `staging/v460` (2026-07-30, `7cc60053`).** Both dev machines are
+> still on 9.3.x (macOS `lib/vtk/install` = 9.3.1, Linux `vtk-dev/installed` = 9.3.0), so **`cmake`
+> will fail to configure against `staging/v460` until VTK is upgraded**. Existing build trees keep
+> working until they are reconfigured. `config.local.sh` and the Linux paths below need updating
+> alongside the upgrade.
 
 **Critical:** After cloning, initialize submodules before building:
 ```bash
@@ -120,8 +126,11 @@ xvfb-run -a build-release/ITK-SNAP --test VolumeRendering \
   `qt_generate_deploy_script` needs Qt ≥ 6.5; on `feature/cardiac-io` both are unguarded
   upstream, so each call is wrapped in `if(Qt6Widgets_VERSION VERSION_GREATER_EQUAL …)` in
   `itksnap/CMakeLists.txt` (the older `test/dls_sam2` branch used a `QTVERSION` guard; this
-  branch has no such variable). The `VTK 9.3.1` hard requirement in
-  `itksnap/CMake/standalone.cmake` was relaxed to `9.3` (CI's 9.3.1 still satisfies it).
+  branch has no such variable). ~~The `VTK 9.3.1` hard requirement in
+  `itksnap/CMake/standalone.cmake` was relaxed to `9.3`.~~ **Reversed on `staging/v460`:** the floor
+  was *raised* to 9.5.2 (`7cc60053`). The stated reason for the old relax — "CI's 9.3.1 still
+  satisfies it" — was a misreading; `FIND_PACKAGE` declares a minimum and VTK's config-version is
+  compatible-if-newer, so nothing needed relaxing. It was really a workaround for a local 9.3.0.
 
 - **Stricter compiler than macOS.** GCC/libstdc++ rejected code Clang accepted: streaming
   `std::string` into `qDebug()`/`qInfo()` is ambiguous (wrap with `QString::fromStdString`),
@@ -140,7 +149,7 @@ xvfb-run -a build-release/ITK-SNAP --test VolumeRendering \
 
 | File | Change |
 |---|---|
-| `CMake/standalone.cmake` | `VTK 9.3.1` → `9.3` (line ~72, `FIND_PACKAGE(VTK …)`) |
+| `CMake/standalone.cmake` | ~~`VTK 9.3.1` → `9.3`~~ — **superseded**: raised to `9.5.2` on `staging/v460` (`7cc60053`). Do not re-apply the relax. |
 | `CMakeLists.txt` | wrap `qt_add_translations` in `if(Qt6Widgets_VERSION VERSION_GREATER_EQUAL 6.7)` and the Linux `qt_generate_deploy_script` block in `… ≥ 6.5` |
 | `GUI/Qt/Components/SSHTunnelWorkerThread.cxx` | `QString::fromStdString(…)` around 3 std::string streams (lines 67, 74, 82: `message` ×2, `ready_info.hostname`) |
 | `GUI/Qt/Components/SNAPQtCommon.cxx` | add `#include <QTimeZone>` — needed for `.timeZone()`/`.toTimeZone()` at line ~636 (the type name never appears literally, so grep for it misses; only the compiler catches it) |

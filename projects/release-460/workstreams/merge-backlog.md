@@ -167,15 +167,40 @@ branch touched neither. `3033e9e1` only `#include "json/json.h"` in
 empirically — `cmake -S itksnap -B build-release` on the merged tree configures clean. Nothing to
 add to the build docs; nothing to verify per-platform.
 
-### Q4 — Undo semantics under async DLS · ⏳ OPEN, blocks step 6
+### Q4 — Undo semantics under async DLS · ✅ ANSWERED 2026-07-30 — **do not cherry-pick as-is**
 
-`cb6f692e` makes `PaintbrushModel::CommitDrawing` defer `StoreUndoPoint` /
-`RecordCurrentLabelUse` into the completion handler. What happens on a cancelled or failed
-interaction is untested. **Still the only open blocker in W1.** Write the test before cherry-picking.
+Two defects, both in `cb6f692e` itself. Step 6 stays blocked, now for understood reasons.
 
-Related and worth reading first: `itksnap/CLAUDE.md` now documents four **unfixed** DLS threading
-races, including a `QtConcurrent` lambda that captures `this` and can dereference a destroyed panel
-after a network timeout. `cb6f692e` adds another `QtConcurrent` path into the same subsystem.
+**A. The undo gap is real.** `on_complete` stores the undo point only when passed `true`:
+
+```cpp
+auto on_complete = [driver](bool success) {
+  if(success) { driver->GetSelectedSegmentationLayer()->StoreUndoPoint("Drawing with paintbrush");
+                driver->RecordCurrentLabelUse(); }
+};
+```
+
+The completion handler wraps `UpdateSegmentation` — which mutates the label image via
+`UpdateSegmentationWithSliceDrawing` — in a `try`, and the `catch` calls `on_complete(false)`. A
+throw partway through leaves the segmentation **modified with no undo point**, so the user cannot
+undo it. (`on_complete(changed)` with `changed == 0` is correct: nothing was modified.)
+
+**B. It reproduces a use-after-free that `itksnap/CLAUDE.md` already documents.** The watcher is
+created parentless (`new QFutureWatcher<Result>()`) and the `[=]` lambda captures `this`, calling
+`this->UpdateSegmentation` and `this->InvokeEvent`. The connection's context object is `watcher`,
+not the model, so nothing disconnects it if the model dies mid-flight. `AbstractModel` is an
+`itk::Object`, **not** a `QObject`, so it cannot serve as a context object — which is precisely why
+the code is shaped this way. This is race #3 in that list ("the `QtConcurrent` lambda … captures
+`this` … a silent use-after-free"), reproduced in new code.
+
+**Before merging:** fix A (make the update transactional, or store the undo point before mutating)
+and B (a `QPointer`/weak guard or an explicit cancellation token, since the context-object route is
+unavailable).
+
+**No test was written, deliberately.** A GUI-script test would run on the harness in
+[bugfixes.md](bugfixes.md) item 17, which drives Qt from a worker thread. A test of *async* behavior
+running on a thread-unsafe harness would not be trustworthy evidence either way. Testing this
+properly needs item 17 fixed, or a model-level test against a stub server.
 
 ## Done-criteria
 
