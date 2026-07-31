@@ -142,3 +142,92 @@ briefly believed it. Stopped piping; capture real exit codes.
 
 Wrapper is committed but **not pushed**. Linux build and test run for `staging/v460` **not done** —
 `e2f19b56` targets Linux/GCC and has only been verified on clang. W1 steps 6–8 remain.
+
+---
+
+## 2026-07-31 — VTK 9.5.2 on macOS; `staging/v460` pushed
+
+Jilei's four decisions from the previous entry: raise VTK to 9.5.2, chase the segfault now, write
+the undo test, don't push yet. All four handled; the last was reversed at the end of the session on
+his instruction ("push staging/v460, I'll test on my linux box").
+
+### Landed
+
+| Commit | Repo | What |
+|---|---|---|
+| `7cc60053` | itksnap | VTK floor → 9.5.2 (Q2) |
+| `1d1fe7ea` | itksnap | Null-engine segfault fix (W8 item 15) |
+| `4e1baa2a` | itksnap | Register `test_RandomForestBailOut.js` in the `.qrc` |
+| `97285971` | itksnap | GUI tests silently passing with a missing script |
+| `4bda8dc` | wrapper | `build-deps.sh` tag-checkout fix + macOS VTK 9.5.2 |
+
+`staging/v460` **pushed** to `origin` at `7cc60053`, 18 commits ahead of `upstream/master`.
+Wrapper `main` has **4 unpushed commits** (`2c65c23`, `2a6bea1`, `8a84392`, `4bda8dc`).
+
+### VTK 9.5.2
+
+- **`9.5.3` does not exist.** The 9.5 series ends at 9.5.2; zero refs match 9.5.3 in Kitware/VTK.
+  Built 9.5.2 — it is upstream CI's version and the floor set in `7cc60053`. 9.6.2 is the newest
+  stable if we ever want to move ahead of CI.
+- Built via `scripts/build-deps.sh --skip-itk --skip-qt` against Homebrew Qt 6.10.2, AppleClang 21,
+  deployment target 12.6. 0 compile errors; `RenderingExternal` present.
+- **9.3.1 retained as a fallback.** VTK versions its libs, headers and cmake packages, so
+  `install/lib/cmake/vtk-9.3` and `…/vtk-9.5` coexist in one prefix; `VTK_DIR` selects. Reverting is
+  a one-line change plus reconfigure — no VTK rebuild.
+- ITK-SNAP: configures against the new floor, builds 446 targets with 0 errors, links
+  `libvtk*-9.5.1.dylib`.
+
+### Found: `build-deps.sh` would have installed the wrong version silently
+
+`build_vtk()` skipped the clone whenever `lib/vtk/src/.git` existed, without checking the tag.
+Bumping `VTK_VERSION` would have rebuilt the 9.3.1 source and installed it as `vtk-9.5` — wrong in a
+way that looks right to every consumer, because the directory name would have lied. Fixed to check
+out the requested tag, with a post-condition that aborts on a mismatch. Build trees are now
+per-version. **`build_itk()` has the identical shape and the same latent bug; left alone** rather
+than changing ITK's build as a side effect of a VTK upgrade.
+
+### Corrections to my own earlier claims
+
+1. **The segfault was not a use-after-free.** I read the `.ips` crash report as a dangling
+   `dynamic_cast` on the queued ITK→Qt event path. Under lldb the real fault is a plain null
+   dereference of `m_ClassificationEngine` (`x0 == 0` at `SnakeWizardModel.cxx:1813`), and
+   breakpoints proved `EnterRandomForestPreprocessingMode` is **never called** during the test. I
+   should not have asserted a mechanism from a symbolized crash report.
+2. **`ctest | tail` returns tail's exit status.** It reported success over two failing tests and I
+   briefly believed it. Stopped piping.
+3. Prior entry's `origin/master`-is-behind claim was already corrected; `git branch -vv`'s
+   `[origin/master: behind 1]` describes the local checkout.
+
+### Q4 answered: do not cherry-pick `cb6f692e` as-is
+
+Two defects in the commit itself — the undo gap is real (the `catch` path calls `on_complete(false)`
+after `UpdateSegmentation` may already have mutated the label image, so the change cannot be undone),
+and it reproduces the documented `QtConcurrent` use-after-free (parentless watcher, `[=]` captures
+`this`, context object is the watcher; `AbstractModel` is an `itk::Object` so it cannot be the
+context). **No test was written, deliberately** — the only harness available is the one W8 item 17
+describes, and async behaviour tested on a thread-unsafe harness is not evidence.
+
+### The most consequential find: W8 item 17
+
+`class TestWorker : public QThread` runs test scripts inside `run()`, so **every scripted GUI call
+executes off the main thread**. That is unsupported by Qt, affects all 21 GUI tests, and is the most
+likely source of the suite's run-to-run instability. Surfaced only because fixing the false-green
+made `RandomForestBailOut` actually run.
+
+### Tests
+
+macOS arm64, `staging/v460` @ `7cc60053`, against VTK 9.5.2: **31/33**. Both failures pre-existing,
+neither attributable to the merge or the VTK upgrade:
+
+- `RemoteImageLoadTest_WorkspaceWithMesh` — asserts exact equality on an approximate tdigest
+  quantile; ~1 pass in 4.
+- `RandomForestBailOut` — aborts on W8 item 17.
+
+Every VTK-heavy test passes: VolumeRendering, MeshImport, MeshWorkspace, SegmentationMesh,
+4DContinuousRendering, 4DReplayWithMeshUpdate, 4DToMC, MCTo4D, DeformationGrid. **No VTK regressions.**
+
+### Not done
+
+Linux: untouched. The box is still on VTK 9.3.0 and cannot configure `staging/v460`. `e2f19b56` —
+the Linux/GCC portability fixes — has only ever been compiled with clang. W1 steps 6–8 remain, and
+step 6 is blocked behind the two `cb6f692e` defects above, not behind a missing test.

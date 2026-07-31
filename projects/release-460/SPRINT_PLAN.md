@@ -33,7 +33,7 @@ the demo builds on release code — but do not merge it, and do not merge `itksn
 | Branch | `staging/v460` (itksnap) |
 | Base | `upstream/master` @ `679ba76a` |
 | Purpose | Land each workstream, run integration tests, then one wholesale PR to `pyushkevich/itksnap:master` |
-| Status | pushed 2026-07-30, tracking `origin/staging/v460`; 0 commits ahead of base |
+| Status | pushed; at `7cc60053`, **18 commits** ahead of base (2026-07-31) |
 
 Nothing merges into `staging/v460` until its workstream row in §3 says the branch builds **and** its
 tests pass. Rebase on `upstream/master` before each merge so the final PR stays a clean fast-forward
@@ -88,7 +88,7 @@ Branch column is authoritative for "where is this work". Tick the box when §4 i
 
 | | Workstream | Branch | Depends on | State |
 |---|---|---|---|---|
-| ☐ **W1** | [Merge the ready backlog](workstreams/merge-backlog.md) — 4D cardiac I/O, Linux/GCC portability, async DLS | `feature/cardiac-io`, `test/dls_sam2` | — | Written; 4 decisions pending |
+| ☐ **W1** | [Merge the ready backlog](workstreams/merge-backlog.md) — 4D cardiac I/O, Linux/GCC portability, async DLS | `staging/v460` | — | Steps 1–5 done, Q1–Q3 answered. **Linux unverified**; step 6 blocked on Q4's two `cb6f692e` defects |
 | ☐ **W2** | [Developer docs & governance](workstreams/developer-docs.md) — `CONTRIBUTING`, `CODE_OF_CONDUCT`, governance, dev guide | none yet | — | Not started — net-new |
 | ☐ **W3** | [itksnap-dls refactor](workstreams/dls-refactor.md) — promote modules + TotalSegmentator + segflow4d + tests to `main` | `itksnap-dls:feature/agentic-api` | segflow4d | **Largely written** — needs promotion |
 | ☐ **W4** | [Auto-segmentation UI](workstreams/auto-seg-ui.md) | none yet | W3 | Not started |

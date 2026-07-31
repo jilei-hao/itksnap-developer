@@ -1,84 +1,125 @@
-# RESUME — ITK-SNAP 4.6.0 release · sprint just opened
+# RESUME — ITK-SNAP 4.6.0 · Linux verification of `staging/v460`
 
 ## Current state (read this paragraph first)
 
-The **release-460 sprint was opened 2026-07-30** and nothing has been built yet — the last session
-was pure survey and scaffolding. ITK-SNAP trunk (`upstream/master` @ `679ba76a`) is already at
-version **`4.6.0-alpha.1`**; **101 commits (83 non-merge)** have landed since v4.4.0 (`20f63186`,
-2025-09-08), dominated by a new **remote/URL image I/O** subsystem (scp/sftp/HTTP/Flywheel) and
-**SAM2** integration. An integration branch **`staging/v460`** exists **locally only** in
-`itksnap/`, cut from `upstream/master` @ `679ba76a`, with tracking deliberately unset so a stray
-push cannot hit `pyushkevich/itksnap`. Eight workstreams are specified in `workstreams/`; **none
-has started**. Nothing was committed or pushed last session. The **agentic API is out of scope** —
-it stays on `sprint/caimi` for the October CAIMI demo (`projects/agentic-api/`).
+**W1 is done on macOS and completely unverified on Linux. This session is the Linux check.**
+`itksnap:staging/v460` is **pushed** to `origin` (`jilei-hao/itksnap`) at **`7cc60053`**, 18 commits
+ahead of `upstream/master`: the 12-commit `feature/cardiac-io` stack, the Linux/GCC portability fixes
+(`e2f19b56`), three test-infrastructure fixes, and the VTK floor raised to 9.5.2 (`7cc60053`). On
+macOS arm64 it builds clean (446 targets, 0 errors) against a freshly built **VTK 9.5.2** and runs
+**31/33** on `ctest`. **The Linux box has never seen any of it** — it is still on **VTK 9.3.0**, so
+`cmake` will refuse to configure until VTK is upgraded there. Wrapper `main` has **4 unpushed
+commits** (`2c65c23`, `2a6bea1`, `8a84392`, `4bda8dc`) — one of which you need before you can build
+(see the first trap). The agentic API stays out of scope on `sprint/caimi`.
 
 ## The single next goal
 
-**Get the four blocking decisions answered, then execute W1 (merge the ready backlog).**
-W1 is 15 already-written, already-verified commits; it is the only workstream that can finish
-without new design, and it unblocks a real `staging/v460`. The decisions, all in
-`workstreams/merge-backlog.md` (Q1–Q4, with the per-commit ship/hold list as D1–D4):
+**Get `staging/v460` building and testing on Linux/GCC, with no local patches.**
 
-1. **Workspace `FormatVersion` 1 → 2 → 3** (`a0f9d6f0`, `c3db9f65`). A 4.6.0 workspace will not open
-   in 4.4.0. Move `SNAP_VERSION_LAST_COMPATIBLE_RELEASE_DATE` (still `20131201`), or make the reader
-   degrade on an unknown version? **This is the single most consequential open item in the sprint.**
-2. **VTK floor.** CI moved to 9.5.2 (`c480b003`); `CMake/standalone.cmake:72` still requires 9.3.1.
-   They disagree today.
-3. **jsoncpp** — new dependency from the NIfTI sidecar reader (`3033e9e1`). Available on all three
-   CI platforms?
-4. **Undo under async DLS** (`cb6f692e`) — `PaintbrushModel::CommitDrawing` defers `StoreUndoPoint`
-   into the completion handler; cancelled/failed interactions are untested.
+That last clause is the point. Historically the Linux build needed six patches applied by hand
+(recorded in the wrapper `CLAUDE.md`); `e2f19b56` puts five of them *on the branch*, and the sixth —
+the VTK floor relax — was deliberately dropped in favour of upgrading VTK. So this should be the
+first time the Linux build works from a clean checkout. **If you still have to patch anything, that
+is the finding.**
 
-Then work `workstreams/merge-backlog.md` steps 1–8 in order.
+In order:
 
-**Do not start W4/W5** — both depend on W3 freezing the DLS API, and W3 has not begun.
+1. **Get the fixed `build-deps.sh`** — see trap 1. Without it the VTK upgrade silently builds the
+   wrong version.
+2. **Upgrade VTK to 9.5.2** on the Linux box. Edit `config.local.sh` there (it is gitignored, so it
+   is per-machine):
+   ```
+   VTK_VERSION=9.5
+   VTK_FULL_VERSION=9.5.2
+   VTK_DIR=/home/jileihao/dev/vtk-dev/installed/lib/cmake/vtk-9.5
+   ```
+   Then `./scripts/build-deps.sh --skip-itk --skip-qt`. **VTK must be built with
+   `RenderingExternal`** — `QtFrameBufferOpenGLWidget` uses `vtkExternalOpenGLRenderWindow`. The
+   script already passes it; verify it landed rather than assuming.
+3. **Build `staging/v460`** with **no local edits**. `scripts/build-release.sh`, or cmake directly.
+   Build the `all` target, not just `ITK-SNAP` — the CLI tools and `SSHTunnelTest` are where two of
+   the portability fixes bite.
+4. **Run the suite**: `xvfb-run -a ctest`. Compare against the expectations below.
+5. **Record the result** in `PROGRESS_LOG.md` and update `SPRINT_PLAN.md` §4's baseline with a real
+   Linux number for `staging/v460`.
+
+Only after Linux is green should W1 steps 6–8 be touched. **Step 6 is blocked** — not on a missing
+test, but on two real defects in `cb6f692e` (see `workstreams/merge-backlog.md` Q4).
+
+## What to expect from `ctest`
+
+macOS baseline on this exact commit: **31/33**. Two known failures, both pre-existing, neither caused
+by the merge or the VTK upgrade:
+
+| Test | Why |
+|---|---|
+| `RemoteImageLoadTest_WorkspaceWithMesh` | Asserts **exact equality on an approximate tdigest quantile**. Byte-identical inputs give a different value every run; ~1 pass in 4. Structurally flaky, not environmental. |
+| `RandomForestBailOut` | Runs for the first time since 2018 and aborts on the worker-thread bug (W8 item 17). |
+
+Two positive checks, both cheap and both meaningful:
+
+- **`4DContinuousRendering` must take ~35 s.** If it passes in under a second it is not running —
+  that was the false-green bug fixed in `97285971`.
+- `RemoteImageLoadTest_Cache` failed on Linux in July but passes on macOS. Worth seeing which way it
+  goes now.
+
+**A third failure is a genuine Linux-specific regression** and is the thing this session exists to
+find. The old "30/33" Linux figure in the wrapper `CLAUDE.md` is **not** a valid comparison — it was
+measured when missing-script tests silently passed.
 
 ## Files to read first (in order)
 
-1. **`workstreams/merge-backlog.md`** — the concrete W1 plan, the per-commit ship/hold decision list
-   (D1–D4), and the four blocking questions. The most useful file here.
-2. **`SPRINT_PLAN.md`** — §2 is the dated branch and dependency-repo snapshot; §3 the eight
-   workstreams; then done-criteria, sequencing, risks, and the cut line.
-3. **`change_tracking.md`** — what already merged; §6 is the release-manager flag list.
-4. **`PROGRESS_LOG.md`** — the 2026-07-30 entry for how these conclusions were reached.
-5. **`../../SUBMODULE_SYNC.md`** (wrapper root) — which branch each submodule must track, and the
-   reachability checks to run before pushing a pointer bump.
+1. **`SPRINT_PLAN.md`** — §2 is the dated branch/dependency snapshot; §4 holds the test baseline and
+   the warning about the superseded Linux number.
+2. **`workstreams/merge-backlog.md`** — what is on the branch and why; Q1–Q4 with their answers.
+   Q4 explains why step 6 is blocked.
+3. **`workstreams/bugfixes.md`** — W8 items 13–17, the test-infrastructure findings. Item 17 is the
+   one that matters most.
+4. **`PROGRESS_LOG.md`** — the 2026-07-31 entry for this session.
+5. **Wrapper `CLAUDE.md`** — the Linux build section: apt packages, dependency paths, and the
+   patch table (now marked superseded where `e2f19b56` covers it).
+6. **`../../SUBMODULE_SYNC.md`** — branch contract per submodule and the reachability checks before
+   any pointer bump.
 
 ## Known traps
 
-- **`staging/v460` had its tracking unset on purpose.** `git branch <name> upstream/master` silently
-  sets upstream to `upstream/master`; a later bare `git push` would target `pyushkevich/itksnap`.
-  If you re-create the branch, unset it again, or push explicitly with
-  `git push -u origin staging/v460`.
+- **The fixed `scripts/build-deps.sh` is in unpushed wrapper commit `4bda8dc`.** The *old* script
+  skips the clone whenever `lib/vtk/src/.git` exists, without checking the tag — so bumping
+  `VTK_VERSION` compiles the 9.3.0 source and installs it as `vtk-9.5`. It looks like it worked;
+  the directory name lies. Either push the wrapper first or check the tag out by hand.
+- **`build_itk()` has the same clone-skip bug**, untouched. Do not bump `ITK_VERSION` on the old
+  script either.
 - **`git branch -vv`'s `[origin/master: behind 1]` describes the LOCAL checkout, not the remote.**
-  `origin/master` and `upstream/master` are both at `679ba76a`. Misreading this cost a wrong entry in
-  three files on 2026-07-30 — check with `git rev-list --count origin/master..upstream/master`.
-- **Do not re-implement the itksnap-dls refactor.** It already exists on `feature/agentic-api`
-  (+6/−0 vs `main`, 21 files, +1333/−361, including TotalSegmentator and a test suite). W3 is a
-  promotion problem. `features/segflow4d`, `test/dls_sam2`, and `claude/create-developer-guide-xaMCx`
-  are all strict subsets of it.
-- **`8539d63c` and `ad727107` are the same Linux/GCC patch set** on two branches. Take one.
-- **`71e2544d` (submodule bump) is stale** — re-resolve `Submodules/{c3d,greedy}` against current
-  upstream rather than replaying that commit.
-- **Push submodules BEFORE recording the pointer in the wrapper.** This broke five wrapper commits
-  last sprint. Run the reachability check in `SUBMODULE_SYNC.md` §3 — and do **not** "simplify" it to
-  `git ls-remote | grep <sha>`; `ls-remote` lists only ref tips and reports healthy ancestor pointers
-  as missing. Use `git branch -r --contains` after a fetch.
-- **`.gitmodules` drifts silently.** It will need to move `itksnap` → `staging/v460` and later
-  `itksnap-dls` → `main`. A bare `git submodule update --remote` discards undeclared switches.
-- **Three tests already fail** on Linux headless (baseline 30/33, 2026-07-17):
-  `4DContinuousRenderingD` (a one-character CMake typo — W8 item 1), `4DReplayWithMeshUpdate`
-  (timing-flaky under llvmpipe), `RemoteImageLoadTest_Cache`. Inherit them as stated debt; a 4th
-  failure is a regression.
+  Misreading it cost wrong entries in three files. Verify with
+  `git rev-list --count origin/master..upstream/master`.
+- **`ctest | tail` returns *tail's* exit status.** It reported success over two failing tests here.
+  Redirect to a file and check `$?` directly; never pipe a command whose exit code you need.
+- **A GUI test that passes suspiciously fast is not passing.** Until `97285971`, a missing script
+  exited 0. If a test's duration drops sharply, check it still loads its script.
+- **`RandomForestBailOut` is red on purpose.** It was never weakened or skipped to get green — see
+  the test-as-ratchet rule. Do not "fix" it by reverting `4e1baa2a`.
+- **The memory-leak canary baseline in `itksnap/CLAUDE.md` is invalid** (≤600 leaks / ≤90 KB for
+  `RandomForestBailOut`) — measured on a process that loaded no script. Re-baseline only after
+  W8 item 15's follow-ups.
+- **Build FOREGROUND.** `nohup &` reports success instantly while the linker is still running.
+  Confirm the binary mtime advanced before testing.
 - **Never `pkill -f "<string>"` from your own shell** — the pattern matches the tool shell's own
   command line and kills it. Servers by port, GUIs by `setsid` + `kill -TERM -<pid>`.
-- **Build FOREGROUND.** `nohup &` reports success instantly while `ninja` is still linking. Confirm
-  the binary mtime advanced before testing.
+- **Push submodules BEFORE bumping the wrapper pointer**, and run the `SUBMODULE_SYNC.md` §3
+  reachability check — using `git branch -r --contains`, **not** `git ls-remote | grep <sha>`, which
+  lists only ref tips and reports healthy ancestor pointers as missing.
+- **`.gitmodules` still points `itksnap` at `sprint/caimi`.** If the wrapper should track
+  `staging/v460` now that the release is the active work, that is a deliberate edit to both
+  `.gitmodules` and `SUBMODULE_SYNC.md` — decide it, do not let it drift.
 
 ## How to work
 
-W1 is the whole job. It is unglamorous — merging work that already exists — but it is the only path
-to a `staging/v460` that means anything, and every other workstream measures itself against it. The
-temptation will be to start W4 or W7 because they are new; resist it. Prefer one finished workstream
-over three started ones, and remember the cut line: **W1 + W2 + W8 alone is a shippable 4.6.0.**
-Run `/handoff` at the end of the session rather than improvising it.
+This is a verification session, not a building one. The valuable output is a trustworthy Linux
+number and a clear answer to "does it build with no local patches" — not new features. If the build
+fails, fix it on the branch and record the fix in the patch table; if it builds, say so plainly with
+the ctest output rather than hedging.
+
+Resist starting W3–W7. W1 is nearly closed and the cut line still holds: **W1 + W2 + W8 alone is a
+shippable 4.6.0.**
+
+Run `/handoff` at the end rather than improvising it.
