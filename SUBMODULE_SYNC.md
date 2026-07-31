@@ -16,7 +16,7 @@ Wrapper remote: `https://github.com/jilei-hao/itksnap-developer.git`
 
 | Path | Should track | Remote (all `github.com/jilei-hao/…`) | Purpose |
 |---|---|---|---|
-| `itksnap/` | `sprint/caimi` | `itksnap.git` | Main ITK-SNAP application. `sprint/caimi` = `feature/cardiac-io` + Linux/GCC build patches; the active sprint branch. |
+| `itksnap/` | `staging/v460` | `itksnap.git` | Main ITK-SNAP application. The 4.6.0 release integration branch, cut from `upstream/master` and the active work — see `projects/release-460/`. **Changed 2026-07-31 from `sprint/caimi`**, which remains alive for the October CAIMI demo but is no longer what the wrapper tracks. |
 | `itksnap-mcp/` | `main` | `itksnap-mcp.git` | Python agent glue: the Model Context Protocol server and demo driver. |
 | `itksnap-dls/` | `feature/agentic-api` | `itksnap-dls.git` | Deep-learning segmentation server (TotalSegmentator, nnInteractive, SAM2). Not `main` — the agentic API and the TotalSegmentator wrapper live on this branch. |
 | `segflow4d/` | `main` | `segflow4d.git` | 4D segmentation flow. |
@@ -49,11 +49,11 @@ git submodule update --init --recursive
 
 ---
 
-## 2. Status as verified 2026-07-25 (both §6 items resolved)
+## 2. Status as verified 2026-07-31
 
 | Path | Declared | Checked out | Pointer reachable from its remote branch? |
 |---|---|---|---|
-| `itksnap/` | `sprint/caimi` | `sprint/caimi` | ✅ on `origin/sprint/caimi` |
+| `itksnap/` | `staging/v460` | `staging/v460` @ `7cc60053` | ✅ on `origin/staging/v460` |
 | `itksnap-mcp/` | `main` | `main` | ✅ on `origin/main` |
 | `itksnap-dls/` | `feature/agentic-api` | `feature/agentic-api` | ✅ on `origin/feature/agentic-api` |
 | `segflow4d/` | `main` | `main` (detached at pointer) | ✅ |

@@ -17,7 +17,7 @@
 [submodule "itksnap"]
 	path = itksnap
 	url = https://github.com/jilei-hao/itksnap.git
-	branch = sprint/caimi
+	branch = staging/v460
 [submodule "itksnap-dls"]
 	path = itksnap-dls
 	url = https://github.com/jilei-hao/itksnap-dls.git
