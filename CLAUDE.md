@@ -46,10 +46,10 @@ git submodule update --init --recursive
 >   `ctest` shows no regressions — every VTK-heavy test passes. **9.3.1 is retained as a fallback:**
 >   VTK versions its libs, headers and cmake packages, so `lib/vtk/install/lib/cmake/vtk-9.3` and
 >   `…/vtk-9.5` coexist in one prefix and `VTK_DIR` selects between them.
-> - **Linux: still on 9.3.0** (`vtk-dev/installed`), so **`cmake` will fail to configure against
->   `staging/v460` there until VTK is upgraded.** Existing build trees keep working until they are
->   reconfigured. Update `config.local.sh` (`VTK_VERSION=9.5`, `VTK_FULL_VERSION=9.5.2`, `VTK_DIR`)
->   and the Linux paths below alongside the upgrade.
+> - **Linux: done (2026-07-31).** VTK 9.5.2 built and installed into `vtk-dev/installed` (the box's
+>   shared prefix, already on `LD_LIBRARY_PATH`) via `./scripts/build-deps.sh --skip-itk --skip-qt`,
+>   with `VTK_INSTALL_PREFIX` set in `config.local.sh`. 0 errors; `RenderingExternal` verified
+>   present. **9.3.0 retained as a fallback** in the same prefix — `VTK_DIR` selects.
 
 **Critical:** After cloning, initialize submodules before building:
 ```bash
@@ -91,18 +91,24 @@ translations and the install-time deploy script (neither needed to build or run 
 | Dep | Path | Notes |
 |---|---|---|
 | ITK 5.4.4 | `itk-dev/installed/lib/cmake/ITK-5.4` | Use the **installed** tree, **not** `build-release-dynamic-540rc02` (stale — see gotchas) |
-| VTK 9.3.0 | `vtk-dev/build-release-dynamic-930` | Built with `RenderingExternal` and `cmake --install`-ed to `vtk-dev/installed` |
+| VTK 9.5.2 | `vtk-dev/installed/lib/cmake/vtk-9.5` | Built 2026-07-31 with `RenderingExternal` and installed into the shared `vtk-dev/installed` prefix (`VTK_INSTALL_PREFIX` in `config.local.sh`). Required by `staging/v460`. |
+| VTK 9.3.0 | `vtk-dev/installed/lib/cmake/vtk-9.3` | Fallback only — coexists in the same prefix. Too old for `staging/v460`. |
 | Qt 6.4.2 | `/usr` (apt) | passed as `CMAKE_PREFIX_PATH=/usr` |
 
 **3. Configure & build:**
 ```bash
 scripts/build-release.sh          # sources config.local.sh; or run cmake directly:
-cmake -G Ninja -S itksnap -B build-release -DCMAKE_BUILD_TYPE=Release \
+cmake -G Ninja -S itksnap -B build-v460 -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_PREFIX_PATH=/usr \
   -DITK_DIR=/home/jileihao/dev/itk-dev/installed/lib/cmake/ITK-5.4 \
-  -DVTK_DIR=/home/jileihao/dev/vtk-dev/build-release-dynamic-930
-ninja -C build-release ITK-SNAP   # binary: build-release/ITK-SNAP
+  -DVTK_DIR=/home/jileihao/dev/vtk-dev/installed/lib/cmake/vtk-9.5
+ninja -C build-v460               # build `all`, not just ITK-SNAP -- see the note below
 ```
+
+> Use a **fresh build directory** when changing a dependency's major version. `build-release/` is
+> still cached against VTK 9.3.0 from July; reconfiguring it in place across a VTK upgrade invites
+> the stale-tree failure class that has already bitten this repo twice. `build-v460/` is the current
+> `staging/v460` tree.
 
 **4. Run (headless / over SSH).** ITK-SNAP is a Qt GUI app; with no display use Xvfb:
 ```bash
@@ -148,12 +154,18 @@ xvfb-run -a build-release/ITK-SNAP --test VolumeRendering \
   is a gitlink **file**, not a directory, so the guard failed with "itksnap not found …".
   Fixed to accept either (`[ -e .git ]` + require `CMakeLists.txt`).
 
-**Source patches.** Originally applied on `test/dls_sam2`; the submodule now tracks
-**`feature/cardiac-io`** (branched from upstream `master`, which has since moved VTK to 9.5.2).
-**All six were re-verified as still required on `feature/cardiac-io` and re-applied** in the
-2026-07-17 Linux build (the branch ships none of them). Each row notes the exact site:
+**Source patches — RETIRED 2026-07-31. Do not apply any of these.**
 
-| File | Change |
+> ✅ **`staging/v460` builds on Linux/GCC with no local patches at all.** Verified 2026-07-31:
+> 766/766 targets, 0 errors, `git diff HEAD` empty. Five of the six patches below are now *on the
+> branch* in `e2f19b56`; the sixth (the VTK floor relax) was deliberately dropped in favour of
+> upgrading VTK to 9.5.2. **If you find yourself needing to patch something here, that is a new
+> finding — record it, do not silently re-apply the old table.**
+>
+> The table is kept only as history, and because each row names a site that a *future* Linux port
+> would hit again. It described the state on `feature/cardiac-io`, which ships none of the fixes.
+
+| File | Change (now carried by `e2f19b56`) |
 |---|---|
 | `CMake/standalone.cmake` | ~~`VTK 9.3.1` → `9.3`~~ — **superseded**: raised to `9.5.2` on `staging/v460` (`7cc60053`). Do not re-apply the relax. |
 | `CMakeLists.txt` | wrap `qt_add_translations` in `if(Qt6Widgets_VERSION VERSION_GREATER_EQUAL 6.7)` and the Linux `qt_generate_deploy_script` block in `… ≥ 6.5` |
@@ -171,16 +183,27 @@ ninja ITK-SNAP          # main application
 ninja SlicingPerformanceTest testTDigest iteratorTests
 ```
 
-**Known test status on Linux headless (Xvfb + llvmpipe software OpenGL), 2026-07-17.**
-`xvfb-run -a ctest` → **30/33 pass**. The 3 failures are pre-existing on `feature/cardiac-io`
-and unrelated to the Linux build patches above:
+**Known test status on Linux headless (Xvfb + llvmpipe software OpenGL).**
 
-- **`4DContinuousRenderingD`** — CMake `GUI_TESTS` typo. The runner maps a test name to
-  `:/scripts/Scripts/test_<name>.js`, but the entry has a stray trailing `D`, so it looks for
-  `test_4DContinuousRenderingD.js` (does not exist). The real script `test_4DContinuousRendering.js`
-  exists and is in `TestingScripts.qrc` but is orphaned (no matching entry). Fix: rename the
-  `GUI_TESTS` entry `4DContinuousRenderingD` → `4DContinuousRendering` in `itksnap/CMakeLists.txt`.
-- **`4DReplayWithMeshUpdate`** — **timing-flaky under llvmpipe, not a logic regression.** Same
+**Current — `staging/v460` @ `7cc60053`, VTK 9.5.2, 2026-07-31: `xvfb-run -a ctest` → 30/33.**
+Full table and the macOS comparison in `projects/release-460/SPRINT_PLAN.md` §4. The three failures
+are `RemoteImageLoadTest_Cache` (Linux-specific), `RandomForestBailOut` (SEGFAULT — W8 item 15d)
+and `4DReplayWithMeshUpdate` (llvmpipe timing). `4DContinuousRendering` now takes **36.5 s**; if it
+ever passes in under a second again, it is not running.
+
+> ⚠️ Do not compare the 30/33 above with the 30/33 below — the totals match by coincidence and the
+> failure sets differ. The 2026-07-17 run counted `4DContinuousRenderingD` as passing when it
+> executed nothing.
+
+**Superseded — 2026-07-17 on `feature/cardiac-io`: 30/33.** The 3 failures were pre-existing and
+unrelated to the Linux build patches:
+
+- **`4DContinuousRenderingD`** — CMake `GUI_TESTS` typo. ✅ **Fixed in `97285971`**, together with
+  the deeper bug it hid: a GUI test whose script was missing reported *Passed*. The runner maps a
+  test name to `:/scripts/Scripts/test_<name>.js`; the entry had a stray trailing `D`, so it looked
+  for `test_4DContinuousRenderingD.js`, which does not exist.
+- **`4DReplayWithMeshUpdate`** — **timing-flaky under llvmpipe, not a logic regression.** Still
+  fails as of 2026-07-31. Same
   binary passes when the cold-start mesh build is fast (verified: replay free-runs through all 11
   frames and Phase B passes); it fails only when the first software-rendered mesh build exceeds
   the test's 8 s Phase-A budget, so `on4DReplayTimeout` (`MainImageWindow.cxx:1769`) stays gated
@@ -189,7 +212,8 @@ and unrelated to the Linux build patches above:
   — there is no `QFutureWatcher::finished` main-thread completion handler, so a worker that hangs or
   throws anything other than `bad_alloc`/`IRISException` leaves replay blocked permanently.
 - **`RemoteImageLoadTest_Cache`** — network test; the download succeeds but `CacheMetadata.xml`
-  is not written afterward.
+  is not written afterward. **Still fails on 2026-07-31 and passes on macOS**, so it is genuinely
+  Linux-specific rather than flaky. Tracked as W8 item 3.
 
 Note: some GUI tests are timing-sensitive under software rendering — `4DReplayWithMeshUpdate`
 also intermittently fails to populate the layer-inspector rows when launched as a standalone

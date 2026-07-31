@@ -231,3 +231,120 @@ Every VTK-heavy test passes: VolumeRendering, MeshImport, MeshWorkspace, Segment
 Linux: untouched. The box is still on VTK 9.3.0 and cannot configure `staging/v460`. `e2f19b56` —
 the Linux/GCC portability fixes — has only ever been compiled with clang. W1 steps 6–8 remain, and
 step 6 is blocked behind the two `cb6f692e` defects above, not behind a missing test.
+
+---
+
+## 2026-07-31 (cont.) — Linux/GCC verification of `staging/v460`
+
+**Goal:** the one the previous handoff set — get `staging/v460` building and testing on Linux/GCC
+**with no local patches**, and produce a Linux number that can be trusted.
+
+### The headline: it builds clean, with nothing patched by hand
+
+`766/766` targets, **0 errors**, `all` target (so the CLI tools and `SSHTunnelTest` are covered —
+two of the portability fixes only bite there). `git diff HEAD` on `itksnap` is **empty**: no local
+edits of any kind. The binary links `libvtk*-9.5.so` exclusively, with **zero** 9.3 leakage.
+
+This is the first time the Linux build has worked from a clean checkout. **`e2f19b56` is confirmed
+sufficient** and the six-patch table in the wrapper `CLAUDE.md` is now history rather than
+instructions. The sixth patch — the VTK floor relax — stayed correctly dropped: 9.5.2 is installed
+instead, as Q2 decided.
+
+### Tests: 30/33, no new failures
+
+Xvfb + llvmpipe, VTK 9.5.2. Full table in [SPRINT_PLAN.md](SPRINT_PLAN.md) §4.
+
+- `RemoteImageLoadTest_Cache` — Linux-specific, reproduces July's failure exactly: the download
+  reports `done`, then `CacheMetadata.xml` is not created. W8 item 3.
+- `RandomForestBailOut` — SEGFAULT. **Not the same crash `1d1fe7ea` fixed** — see below.
+- `4DReplayWithMeshUpdate` — the known llvmpipe timing flake.
+
+**The canary passed the honest way: `4DContinuousRendering` took 36.5 s**, matching macOS's ~35 s.
+It genuinely runs on Linux; the false-green fix (`97285971`) holds on both platforms.
+
+Linux's 30/33 and macOS's 31/33 are **not** comparable as totals — the failure *sets* differ by
+platform, and the tdigest flake landed on opposite sides. Recorded that caveat in §4 rather than
+leaving two numbers to be misread later.
+
+### The find that changes an earlier conclusion (W8 item 15d)
+
+`RandomForestBailOut` still segfaults here, and the live gdb backtrace shows a mechanism macOS
+**cannot reach**:
+
+```
+on_btnClassifyTrain_clicked [.cold]  → Classify/Train threw
+  ReportNonLethalException
+    QDialog::exec()                  → modal dialog re-enters the event loop
+      … sendPostedEvents
+        LatentITKEventNotifierHelper::onQueuedEvent → dispatchEvent(EventBucket)
+          LayerInspectorRowDelegate::onModelUpdate
+            UpdateOverlaysMenu()
+              __dynamic_cast          → SIGSEGV
+```
+
+The faulting cast is `LayerInspectorRowDelegate.cxx:551`,
+`dynamic_cast<ImageWrapperBase*>(m_Model->GetLayer())`. **The error dialog is the trigger**:
+reporting a non-lethal exception opens a nested event loop, which delivers a queued ITK→Qt event to
+a delegate whose layer is being torn down.
+
+**This vindicates the reading that the previous session retracted.** Item 15 first blamed a
+use-after-free in `LayerInspectorRowDelegate::onModelUpdate` on the queued-event path, then withdrew
+it in favour of a null `m_ClassificationEngine`. Both are true, and the retraction was right *for
+macOS*: there the run never enters RF mode (item 15c), so this path is unreachable and the null
+deref is all you can see. On Linux the script gets through "Entering classification mode", paints
+three labels, performs classification and cancels — and then dies on the path originally described.
+`1d1fe7ea` fixed a real bug; it did not fix this one.
+
+Filed as W8 item 15d, to be promoted alongside item 17. What is **not** yet proven: that the
+concurrent teardown is the script's "Cancel segmentation" racing the modal dialog via the
+worker-thread harness. That is the obvious candidate and it is labelled as inference in the item.
+
+Method note: this was taken from a live gdb session, not a symbolized crash report — deliberately,
+given that a `.ips` misread is exactly what produced the retraction being revisited here.
+
+### Also found by GCC (all pre-existing upstream, none from the merge)
+
+- **W8 item 18** — five `-Wreturn-type` sites: exhaustive enum `switch`es with no fallback `return`.
+  Clang does not warn, so macOS never showed them. Verified untouched by `staging/v460`.
+- **W8 item 19** — `RESTClient.cxx` uses curl APIs deprecated since 7.55/7.56 (47 warnings),
+  including `curl_formadd`, which is slated for removal. Same subsystem as the headline feature.
+- **W8 item 20** — `TestLargeImageCheck` prints "only 0.0 GB is currently available" on a box with
+  free RAM. The test still passes, so it hides; the number reaches users in an error dialog.
+
+### Two blockers in the wrapper's own tooling
+
+Neither was in the handoff; both would have stopped the session cold.
+
+1. **`build-deps.sh` could not find apt Qt on any Linux box.** `qt_find_root` knows three Qt
+   layouts, none of them Debian/Ubuntu multiarch (`lib/<triplet>/cmake/Qt6`). `QT_PREFIX=/usr`
+   resolved as invalid and `build_vtk` aborted with "Qt not found" — i.e. the script could not build
+   VTK using the distro Qt, which is how this project builds on Linux. Added a multiarch branch.
+2. **The VTK install prefix was hardcoded** to `lib/vtk/install`. This box keeps its dependencies in
+   `vtk-dev/installed`, which is already on `LD_LIBRARY_PATH` and shared with the other projects
+   here. Made it overridable via `VTK_INSTALL_PREFIX` in `config.local.sh`; the default is unchanged,
+   so macOS is unaffected.
+
+The handoff's trap 1 resolved itself — the fixed `build-deps.sh` (`4bda8dc`) was unpushed last
+session and arrived with the wrapper pull, so the silent wrong-version failure never had a chance to
+fire. VTK 9.5.2 built and installed with 0 errors; `RenderingExternal` verified present in the cache
+**and** as `libvtkRenderingExternal-9.5.so`, rather than assumed. 9.3.0 retained as a fallback.
+
+Built into a fresh `build-v460/` rather than reusing `build-release/`, whose cache still pointed at
+VTK 9.3.0 — reusing a stale cache across a dependency major-version change is the exact failure
+class that has bitten this project twice (stale ITK, and the `build-deps.sh` bug above).
+
+### Not done
+
+W1 steps 6–8 untouched: step 6 remains blocked on Q4's two `cb6f692e` defects. The `.gitmodules`
+question raised in the last handoff was already settled in `50d7261` (wrapper now tracks
+`staging/v460`); `SUBMODULE_SYNC.md` §1 and `.gitmodules` agree.
+
+**Nothing was committed inside `itksnap`** — this was a verification session and the branch needed
+no source changes, which is itself the result. `staging/v460` stays at `7cc60053` on both remotes,
+so no submodule pointer moved and the `SUBMODULE_SYNC.md` §3 reachability check was not needed.
+The wrapper checkpoint carries `build-deps.sh`, the sprint docs, `CLAUDE.md` and a `.gitignore`
+entry for `build-v460/` (946 MB, and the ignore list names build dirs individually, so `git add -A`
+would have tried to commit it). `config.local.sh` is gitignored and stays machine-local.
+
+**Test result at checkpoint time: 30/33** — the run above, on this exact tree. Not re-run after the
+documentation edits, which cannot affect it; `itksnap` is byte-identical to the tested state.

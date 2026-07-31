@@ -1,125 +1,122 @@
-# RESUME — ITK-SNAP 4.6.0 · Linux verification of `staging/v460`
+# RESUME — ITK-SNAP 4.6.0 · Fix the GUI test harness (W8 item 17)
 
 ## Current state (read this paragraph first)
 
-**W1 is done on macOS and completely unverified on Linux. This session is the Linux check.**
-`itksnap:staging/v460` is **pushed** to `origin` (`jilei-hao/itksnap`) at **`7cc60053`**, 18 commits
-ahead of `upstream/master`: the 12-commit `feature/cardiac-io` stack, the Linux/GCC portability fixes
-(`e2f19b56`), three test-infrastructure fixes, and the VTK floor raised to 9.5.2 (`7cc60053`). On
-macOS arm64 it builds clean (446 targets, 0 errors) against a freshly built **VTK 9.5.2** and runs
-**31/33** on `ctest`. **The Linux box has never seen any of it** — it is still on **VTK 9.3.0**, so
-`cmake` will refuse to configure until VTK is upgraded there. Wrapper `main` has **4 unpushed
-commits** (`2c65c23`, `2a6bea1`, `8a84392`, `4bda8dc`) — one of which you need before you can build
-(see the first trap). The agentic API stays out of scope on `sprint/caimi`.
+**Both build paths are now green and W1 is verified everywhere except its last three steps.**
+`itksnap:staging/v460` is pushed at **`7cc60053`**, 18 commits ahead of `upstream/master`. It builds
+clean on **macOS arm64** (446 targets) and, as of 2026-07-31, on **Linux/GCC** — 766/766 targets, 0
+errors, **with no local patches of any kind**, which is the thing the previous two sessions were
+trying to establish. Both boxes now run **VTK 9.5.2**. `ctest` is **31/33 on macOS** and **30/33 on
+Linux**, with no new failures on either; the differing totals are platform-specific known debt, not
+a regression (see the warning in §4 of `SPRINT_PLAN.md` before comparing them). Wrapper `main` has
+one unpushed checkpoint commit. The agentic API stays out of scope — it lives on `sprint/caimi` for
+the October CAIMI demo.
 
 ## The single next goal
 
-**Get `staging/v460` building and testing on Linux/GCC, with no local patches.**
+**Fix W8 item 17: the GUI test harness drives Qt from a worker thread.**
 
-That last clause is the point. Historically the Linux build needed six patches applied by hand
-(recorded in the wrapper `CLAUDE.md`); `e2f19b56` puts five of them *on the branch*, and the sixth —
-the VTK floor relax — was deliberately dropped in favour of upgrading VTK. So this should be the
-first time the Linux build works from a clean checkout. **If you still have to patch anything, that
-is the finding.**
+`class TestWorker : public QThread` runs the test script inside `run()` (`SNAPTestQt.h:27`), so every
+scripted `click()`, `setCurrentIndex()` and `trigger()` executes off the main thread. Qt does not
+support this. The fix is to marshal scripted widget calls to the main thread
+(`Qt::BlockingQueuedConnection`).
 
-In order:
+**Why this and not the next merge.** It is not the most exciting item, but it is the one everything
+else is waiting on:
 
-1. **Get the fixed `build-deps.sh`** — see trap 1. Without it the VTK upgrade silently builds the
-   wrong version.
-2. **Upgrade VTK to 9.5.2** on the Linux box. Edit `config.local.sh` there (it is gitignored, so it
-   is per-machine):
-   ```
-   VTK_VERSION=9.5
-   VTK_FULL_VERSION=9.5.2
-   VTK_DIR=/home/jileihao/dev/vtk-dev/installed/lib/cmake/vtk-9.5
-   ```
-   Then `./scripts/build-deps.sh --skip-itk --skip-qt`. **VTK must be built with
-   `RenderingExternal`** — `QtFrameBufferOpenGLWidget` uses `vtkExternalOpenGLRenderWindow`. The
-   script already passes it; verify it landed rather than assuming.
-3. **Build `staging/v460`** with **no local edits**. `scripts/build-release.sh`, or cmake directly.
-   Build the `all` target, not just `ITK-SNAP` — the CLI tools and `SSHTunnelTest` are where two of
-   the portability fixes bite.
-4. **Run the suite**: `xvfb-run -a ctest`. Compare against the expectations below.
-5. **Record the result** in `PROGRESS_LOG.md` and update `SPRINT_PLAN.md` §4's baseline with a real
-   Linux number for `staging/v460`.
+1. **W1 cannot close without it.** W1's done-criteria require "a test covers undo after a cancelled
+   async DLS interaction", and Q4 deliberately declined to write that test — async behaviour tested
+   on a thread-unsafe harness is not evidence either way. Step 6 is blocked on Q4's two `cb6f692e`
+   defects *and* on having somewhere trustworthy to test them.
+2. **It gates the new item 15d.** The Linux segfault below can only be confirmed once the harness
+   stops being a plausible alternative explanation.
+3. **It undermines every GUI number in this sprint.** It affects all 21 GUI tests and is the most
+   likely source of the suite's run-to-run instability, including `4DReplayWithMeshUpdate`.
 
-Only after Linux is green should W1 steps 6–8 be touched. **Step 6 is blocked** — not on a missing
-test, but on two real defects in `cb6f692e` (see `workstreams/merge-backlog.md` Q4).
+If it proves larger than one session, the fallback is W2 (developer docs — net-new, independent, and
+on the cut line: **W1 + W2 + W8 alone is a shippable 4.6.0**). Do not start W3–W7.
 
-## What to expect from `ctest`
+## What was just found, and what it changes
 
-macOS baseline on this exact commit: **31/33**. Two known failures, both pre-existing, neither caused
-by the merge or the VTK upgrade:
+**W8 item 15d — the use-after-free retracted in item 15 is real, and Linux proves it.**
+`RandomForestBailOut` still SEGFAULTs on Linux after `1d1fe7ea`. Live gdb backtrace:
 
-| Test | Why |
-|---|---|
-| `RemoteImageLoadTest_WorkspaceWithMesh` | Asserts **exact equality on an approximate tdigest quantile**. Byte-identical inputs give a different value every run; ~1 pass in 4. Structurally flaky, not environmental. |
-| `RandomForestBailOut` | Runs for the first time since 2018 and aborts on the worker-thread bug (W8 item 17). |
+```
+on_btnClassifyTrain_clicked [.cold]   → Classify/Train threw
+  ReportNonLethalException
+    QDialog::exec()                   → modal dialog re-enters the event loop
+      … sendPostedEvents → onQueuedEvent → dispatchEvent(EventBucket)
+        LayerInspectorRowDelegate::onModelUpdate → UpdateOverlaysMenu()
+          __dynamic_cast              → SIGSEGV
+```
 
-Two positive checks, both cheap and both meaningful:
+Faulting cast: `LayerInspectorRowDelegate.cxx:551`,
+`dynamic_cast<ImageWrapperBase*>(m_Model->GetLayer())`. **The error dialog is the trigger** — a
+non-lethal exception report opens a nested event loop that delivers a queued ITK→Qt event to a
+delegate whose layer is being torn down.
 
-- **`4DContinuousRendering` must take ~35 s.** If it passes in under a second it is not running —
-  that was the false-green bug fixed in `97285971`.
-- `RemoteImageLoadTest_Cache` failed on Linux in July but passes on macOS. Worth seeing which way it
-  goes now.
+Item 15's original reading was withdrawn in favour of a null `m_ClassificationEngine`. **Both are
+true.** The retraction was correct *for macOS*, where the run never enters RF mode (item 15c) so
+this path is unreachable. On Linux the script gets through classification and cancel, and dies where
+originally described. `1d1fe7ea` fixed a real null deref; it did not fix this. **Do not treat the
+macOS and Linux failures of this test as the same bug.**
 
-**A third failure is a genuine Linux-specific regression** and is the thing this session exists to
-find. The old "30/33" Linux figure in the wrapper `CLAUDE.md` is **not** a valid comparison — it was
-measured when missing-script tests silently passed.
+Not yet proven: that the concurrent teardown is the script's "Cancel segmentation" racing the modal
+dialog via the worker-thread harness. That is the obvious candidate — and it is another reason item
+17 comes first.
+
+Also new, all pre-existing upstream and none from the merge: **item 18** (five `-Wreturn-type` sites,
+GCC-only), **item 19** (`RESTClient.cxx` on curl APIs deprecated since 7.55/7.56), **item 20**
+(`TestLargeImageCheck` reports "0.0 GB available" on a box with free RAM).
 
 ## Files to read first (in order)
 
-1. **`SPRINT_PLAN.md`** — §2 is the dated branch/dependency snapshot; §4 holds the test baseline and
-   the warning about the superseded Linux number.
-2. **`workstreams/merge-backlog.md`** — what is on the branch and why; Q1–Q4 with their answers.
-   Q4 explains why step 6 is blocked.
-3. **`workstreams/bugfixes.md`** — W8 items 13–17, the test-infrastructure findings. Item 17 is the
-   one that matters most.
-4. **`PROGRESS_LOG.md`** — the 2026-07-31 entry for this session.
-5. **Wrapper `CLAUDE.md`** — the Linux build section: apt packages, dependency paths, and the
-   patch table (now marked superseded where `e2f19b56` covers it).
-6. **`../../SUBMODULE_SYNC.md`** — branch contract per submodule and the reachability checks before
-   any pointer bump.
+1. **`workstreams/bugfixes.md`** — item 17 is the goal; 15, 15b, 15c, 15d are its context.
+2. **`SPRINT_PLAN.md`** — §4 has both test baselines and the warning against comparing totals.
+3. **`PROGRESS_LOG.md`** — the second 2026-07-31 entry (Linux verification).
+4. **`workstreams/merge-backlog.md`** — Q4 explains precisely why step 6 is blocked.
+5. **Wrapper `CLAUDE.md`** — the Linux build section. The six-patch table is **retired**; needing to
+   patch anything now is a new finding.
 
 ## Known traps
 
-- **The fixed `scripts/build-deps.sh` is in unpushed wrapper commit `4bda8dc`.** The *old* script
-  skips the clone whenever `lib/vtk/src/.git` exists, without checking the tag — so bumping
-  `VTK_VERSION` compiles the 9.3.0 source and installs it as `vtk-9.5`. It looks like it worked;
-  the directory name lies. Either push the wrapper first or check the tag out by hand.
-- **`build_itk()` has the same clone-skip bug**, untouched. Do not bump `ITK_VERSION` on the old
-  script either.
-- **`git branch -vv`'s `[origin/master: behind 1]` describes the LOCAL checkout, not the remote.**
-  Misreading it cost wrong entries in three files. Verify with
-  `git rev-list --count origin/master..upstream/master`.
-- **`ctest | tail` returns *tail's* exit status.** It reported success over two failing tests here.
-  Redirect to a file and check `$?` directly; never pipe a command whose exit code you need.
-- **A GUI test that passes suspiciously fast is not passing.** Until `97285971`, a missing script
-  exited 0. If a test's duration drops sharply, check it still loads its script.
-- **`RandomForestBailOut` is red on purpose.** It was never weakened or skipped to get green — see
-  the test-as-ratchet rule. Do not "fix" it by reverting `4e1baa2a`.
-- **The memory-leak canary baseline in `itksnap/CLAUDE.md` is invalid** (≤600 leaks / ≤90 KB for
-  `RandomForestBailOut`) — measured on a process that loaded no script. Re-baseline only after
-  W8 item 15's follow-ups.
+- **`RandomForestBailOut` is red on purpose** and `4DContinuousRendering` takes ~35 s on purpose.
+  Neither was weakened to get green — see the test-as-ratchet rule. Do not "fix" either by reverting
+  `4e1baa2a` or `97285971`.
+- **A GUI test that passes suspiciously fast is not passing.** Until `97285971` a missing script
+  exited 0. If a duration drops sharply, check the script still loads.
+- **Do not compare `ctest` totals across platforms or dates.** Linux 30/33 (2026-07-31) and Linux
+  30/33 (2026-07-17) match by coincidence — the older run counted a test that executed nothing.
+  Linux 30 vs macOS 31 is platform-specific debt, not a regression. Compare failure *sets*.
+- **`ctest | tail` returns *tail's* exit status.** It has already reported success over failing tests
+  here. Redirect to a file; never pipe a command whose exit code you need.
+- **Build in `build-v460/`, not `build-release/`** — the latter is still cached against VTK 9.3.0
+  from July. Reconfiguring a stale cache across a dependency major version is the failure class that
+  has bitten this repo twice.
+- **`build_itk()` in `scripts/build-deps.sh` still has the clone-skip bug** that `build_vtk()` had:
+  it skips the clone whenever `lib/itk/src/.git` exists, without checking the tag. Do not bump
+  `ITK_VERSION` until it is fixed the same way.
+- **`config.local.sh` is gitignored and per-machine.** The Linux box sets `VTK_INSTALL_PREFIX` to
+  install into the shared `vtk-dev/installed`; macOS does not. Do not "sync" them.
 - **Build FOREGROUND.** `nohup &` reports success instantly while the linker is still running.
   Confirm the binary mtime advanced before testing.
 - **Never `pkill -f "<string>"` from your own shell** — the pattern matches the tool shell's own
   command line and kills it. Servers by port, GUIs by `setsid` + `kill -TERM -<pid>`.
+- **`git branch -vv`'s `[origin/master: behind 1]` describes the LOCAL checkout, not the remote.**
+  Verify with `git rev-list --count origin/master..upstream/master`.
 - **Push submodules BEFORE bumping the wrapper pointer**, and run the `SUBMODULE_SYNC.md` §3
-  reachability check — using `git branch -r --contains`, **not** `git ls-remote | grep <sha>`, which
+  reachability check with `git branch -r --contains` — **not** `git ls-remote | grep <sha>`, which
   lists only ref tips and reports healthy ancestor pointers as missing.
-- **`.gitmodules` still points `itksnap` at `sprint/caimi`.** If the wrapper should track
-  `staging/v460` now that the release is the active work, that is a deliberate edit to both
-  `.gitmodules` and `SUBMODULE_SYNC.md` — decide it, do not let it drift.
+- **The memory-leak canary baseline in `itksnap/CLAUDE.md` is invalid** (≤600 leaks / ≤90 KB for
+  `RandomForestBailOut`) — measured on a process that loaded no script. Re-baseline only after item
+  15's follow-ups.
 
 ## How to work
 
-This is a verification session, not a building one. The valuable output is a trustworthy Linux
-number and a clear answer to "does it build with no local patches" — not new features. If the build
-fails, fix it on the branch and record the fix in the patch table; if it builds, say so plainly with
-the ctest output rather than hedging.
-
-Resist starting W3–W7. W1 is nearly closed and the cut line still holds: **W1 + W2 + W8 alone is a
-shippable 4.6.0.**
+Item 17 is a real fix to shared test infrastructure, so the bar is behavioural: a scripted widget
+call must be *provably* on the main thread afterwards, and the fix must not paper over the failures
+it exposes. Expect it to change test results — some currently-passing GUI tests may start failing
+honestly. **That is a win, and it must be recorded rather than tuned away.** Re-measure both
+baselines in `SPRINT_PLAN.md` §4 when it lands.
 
 Run `/handoff` at the end rather than improvising it.

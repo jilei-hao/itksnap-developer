@@ -88,7 +88,7 @@ Branch column is authoritative for "where is this work". Tick the box when §4 i
 
 | | Workstream | Branch | Depends on | State |
 |---|---|---|---|---|
-| ☐ **W1** | [Merge the ready backlog](workstreams/merge-backlog.md) — 4D cardiac I/O, Linux/GCC portability, async DLS | `staging/v460` | — | Steps 1–5 done, Q1–Q3 answered. **Linux unverified**; step 6 blocked on Q4's two `cb6f692e` defects |
+| ☐ **W1** | [Merge the ready backlog](workstreams/merge-backlog.md) — 4D cardiac I/O, Linux/GCC portability, async DLS | `staging/v460` | — | Steps 1–5 done, Q1–Q3 answered. **Linux verified 2026-07-31** — builds with no local patches, 30/33, no new failures. Step 6 blocked on Q4's two `cb6f692e` defects |
 | ☐ **W2** | [Developer docs & governance](workstreams/developer-docs.md) — `CONTRIBUTING`, `CODE_OF_CONDUCT`, governance, dev guide | none yet | — | Not started — net-new |
 | ☐ **W3** | [itksnap-dls refactor](workstreams/dls-refactor.md) — promote modules + TotalSegmentator + segflow4d + tests to `main` | `itksnap-dls:feature/agentic-api` | segflow4d | **Largely written** — needs promotion |
 | ☐ **W4** | [Auto-segmentation UI](workstreams/auto-seg-ui.md) | none yet | W3 | Not started |
@@ -101,9 +101,9 @@ Branch column is authoritative for "where is this work". Tick the box when §4 i
 
 - [x] `staging/v460` created and pushed (2026-07-30) — keep it rebased on `upstream/master`
 - [ ] Version bumped from `4.6.0-alpha.1` to a beta, then to `4.6.0`
-- [x] **VTK floor decided** — raised to **9.5.2** (`7cc60053`), matching upstream CI. macOS upgraded
-      and verified 2026-07-31: ITK-SNAP builds clean and `ctest` shows no regressions. ⏳ **Linux box
-      still on 9.3.0 and cannot configure `staging/v460` until upgraded.**
+- [x] **VTK floor decided** — raised to **9.5.2** (`7cc60053`), matching upstream CI. **Both build
+      paths upgraded and verified 2026-07-31**: macOS arm64 (31/33) and Linux/GCC (30/33), each
+      building clean with no regressions attributable to the floor change.
 - [ ] **Workspace `FormatVersion` decision** — cardiac I/O bumps it 1→3; decide whether
       `SNAP_VERSION_LAST_COMPATIBLE_RELEASE_DATE` moves or the reader degrades
 - [ ] `ReleaseNotes.md` gains a 4.6 section, built from [change_tracking.md](change_tracking.md)
@@ -145,9 +145,29 @@ complete, the version reads `4.6.0` with no qualifier, and the PR is open with a
 > script was missing reported **Passed**. The previously documented Linux figure of 30/33 counted at
 > least one test that executed nothing. Do not compare against it.
 
-Linux headless (Xvfb + llvmpipe), 2026-07-17 on `feature/cardiac-io`, **superseded**: 30/33, failing
-`4DContinuousRenderingD`, `4DReplayWithMeshUpdate`, `RemoteImageLoadTest_Cache`. Re-measure on Linux
-against `staging/v460` before trusting any Linux number.
+**Linux/GCC (Ubuntu 24.04, Xvfb + llvmpipe), `staging/v460` @ `7cc60053`, VTK 9.5.2, measured
+2026-07-31: 30/33 — no new failures.** All three are stated debt; none is a regression from the
+merge, the VTK upgrade, or `e2f19b56`.
+
+| Test | State | Note |
+|---|---|---|
+| `RemoteImageLoadTest_Cache` | 🔴 fails | Genuinely **Linux-specific** — passes on macOS, failed here in July too. Download succeeds, `CacheMetadata.xml` is never written. W8 item 3. |
+| `RandomForestBailOut` | 🔴 SEGFAULT | Still segfaults on Linux **after `1d1fe7ea`**, on a code path macOS never reaches. Different mechanism from the one that commit fixed — see W8 item 15d. |
+| `4DReplayWithMeshUpdate` | ⚠️ flaky | llvmpipe timing; the documented cold-start mesh-build budget. W8 item 2. |
+| other 30 | ✅ | including `4DContinuousRendering` at **36.5 s** — the false-green canary genuinely runs on Linux too |
+
+Build: **766/766 targets, 0 errors, no local patches** — `git diff HEAD` empty on `staging/v460`.
+This is the first time the Linux build has worked from a clean checkout; `e2f19b56` is confirmed
+sufficient and the historical six-patch list is retired.
+
+> Linux vs macOS differ by design, not by regression: `RemoteImageLoadTest_Cache` is Linux-only,
+> `4DReplayWithMeshUpdate` needs llvmpipe to be slow, and `RemoteImageLoadTest_WorkspaceWithMesh`
+> (the ~1-in-4 tdigest flake) happened to pass here and fail on macOS. Compare failure *sets*, not
+> totals.
+
+Linux headless, 2026-07-17 on `feature/cardiac-io`, **superseded**: 30/33, failing
+`4DContinuousRenderingD`, `4DReplayWithMeshUpdate`, `RemoteImageLoadTest_Cache`. The matching total
+is a coincidence — that run counted `4DContinuousRenderingD` as a real test when it executed nothing.
 
 Counting rule: a **new** failure is a regression. The three above are stated debt, not a licence to
 ignore new red.

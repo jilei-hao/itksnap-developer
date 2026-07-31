@@ -44,7 +44,13 @@ VTK_SRC="$LIB_DIR/vtk/src"
 # cmake packages, so several versions coexist happily in one install prefix -- but
 # a single build tree reused across versions carries stale cache entries.
 VTK_BUILD="$LIB_DIR/vtk/build-${VTK_VERSION}"
-VTK_INSTALL="$LIB_DIR/vtk/install"
+# Install prefix is overridable from config.local.sh. Some machines keep a single
+# shared dependency prefix that other projects and LD_LIBRARY_PATH already point
+# at (the Linux box uses vtk-dev/installed); installing there keeps one VTK tree
+# per machine instead of a second copy the runtime loader does not know about.
+# VTK's libraries, headers and cmake packages are version-suffixed, so adding a
+# version to an existing prefix is additive and leaves older ones working.
+VTK_INSTALL="${VTK_INSTALL_PREFIX:-$LIB_DIR/vtk/install}"
 QT_INSTALL="$LIB_DIR/Qt"
 
 # --- Flags ---
@@ -116,6 +122,14 @@ qt_find_root() {
   elif [ -f "$p/Qt6/Qt6Config.cmake" ];            then echo "$(cd "$p/../.." && pwd)"; return 0
   elif [ -f "$p/Qt6Config.cmake" ];                then echo "$(cd "$p/../../.." && pwd)"; return 0
   fi
+  # Debian/Ubuntu multiarch: apt's Qt6 puts its cmake packages under
+  # lib/<triplet>/cmake/Qt6, so QT_PREFIX=/usr matches none of the layouts
+  # above. Without this branch build_vtk() aborts with "Qt not found" on any
+  # box using the distro Qt -- which is how this project builds on Linux.
+  local cfg
+  for cfg in "$p"/lib/*/cmake/Qt6/Qt6Config.cmake; do
+    [ -f "$cfg" ] && { echo "$p"; return 0; }
+  done
   return 1
 }
 

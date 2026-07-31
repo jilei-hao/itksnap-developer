@@ -3,6 +3,7 @@ build/
 build-debug/
 build-leaks/
 build-release/
+build-v460/
 build-greedy/
 build-convertmesh/
 build-cmrep/
@@ -20,4 +21,7 @@ aqtinstall.log
 
 # Leak test logs (large, generated)
 memory_leak_profiling/asan_logs/
+
+# Build/test transcripts written at the repo root by the scripts above
+*.log
 config.local.sh

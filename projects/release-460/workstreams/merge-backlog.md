@@ -89,9 +89,11 @@ The 6 agentic-API commits on `sprint/caimi` and the whole `itksnap-mcp` repo. Se
 3. ✅ Q1, Q2, Q3 resolved below — Q1 and Q3 were false alarms, Q2 narrowed to one decision.
    **Q4 still open.**
 4. ✅ Merge `feature/cardiac-io` → `staging/v460` — `594b4033`, clean, no conflicts.
-   macOS arm64 builds 212/212 with no warnings in any cardiac-io file. Linux **still pending**.
-5. ✅ Cherry-pick `ad727107` **minus** the VTK floor line — `e2f19b56`. Verified on macOS/clang;
-   the Linux/GCC build it targets is **still unverified** (needs the Linux box).
+   macOS arm64 builds 212/212 with no warnings in any cardiac-io file. **Linux/GCC 2026-07-31:
+   766/766 targets, 0 errors, and GCC emits no warnings in any cardiac-io file either.**
+5. ✅ Cherry-pick `ad727107` **minus** the VTK floor line — `e2f19b56`. **Verified on Linux/GCC
+   2026-07-31 — the build it targets now succeeds with no local patches**, which is what it was
+   written for and the one thing it could not previously claim.
 6. ⏳ Cherry-pick `cb6f692e` and `ea86df0d` — **blocked on Q4**; add the undo test first.
 7. ⏳ Re-resolve the `Submodules/{c3d,greedy}` bump against current upstream rather than replaying
    `71e2544d`.
@@ -210,4 +212,6 @@ properly needs item 17 fixed, or a model-level test against a stub server.
   does not ratchet.
 - A workspace-compatibility test covers whichever direction Q1 resolves to.
 - A test covers undo after a cancelled async DLS interaction.
-- Linux/GCC build succeeds with **no** local patches applied on top of `staging/v460`.
+- ✅ Linux/GCC build succeeds with **no** local patches applied on top of `staging/v460`.
+  *(2026-07-31: 766/766 targets, 0 errors, `git diff HEAD` empty, VTK 9.5.2, `ctest` 30/33 with no
+  new failures.)*
