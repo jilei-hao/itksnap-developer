@@ -131,15 +131,19 @@ complete, the version reads `4.6.0` with no qualifier, and the PR is open with a
 
 ### Test baseline to beat
 
-**macOS arm64, `staging/v460`, measured 2026-07-30 — this is now the authoritative baseline: 32/33,
-1 real failure.**
+**macOS arm64, `staging/v460` @ `5f2825e4`, measured 2026-07-31 — this is now the authoritative
+baseline: 31/34.** The suite gained a 34th test (`HarnessThreadSafety`, W8 item 17).
 
 | Test | State | Note |
 |---|---|---|
-| `RandomForestBailOut` | 🔴 **SEGFAULT** | Use-after-free on cancel. **Newly visible**, not new — the test had not executed since 2018. W8 item 15. |
-| `RemoteImageLoadTest_WorkspaceWithMesh` | ⚠️ flaky | Asserts exact equality on an approximate tdigest quantile; ~1 pass in 4. W8 item 3b. |
-| `4DReplayWithMeshUpdate` | ⚠️ flaky | Timing-sensitive; passed here, fails under llvmpipe. |
-| other 30 | ✅ | including `4DContinuousRendering`, which now genuinely runs (37 s, was a 0.98 s no-op) |
+| `RandomForestBailOut` | 🔴 SEGFAULT | Stated debt. W8 items 15/15c/15d. **Not re-baselined this session** — whether macOS still segfaults *after* `1d1fe7ea`, or merely fails, was not re-established against a stock build, so do not read this row as a change. |
+| `RemoteImageLoadTest_{SingleImage,WorkspaceWithMesh}` | ⚠️ flaky | **Fail only when the three remote tests run back-to-back**; each passes standalone, at the same duration, so it is not a timeout. Standalone CLI executables — unreachable from the GUI harness. W8 item 3/3b. |
+| `4DReplayWithMeshUpdate` | ⚠️ flaky | Timing-sensitive; passed in one full run today, failed in the next. W8 item 2. |
+| other 30 | ✅ | including `EdgeAttraction`, which now passes for the right reason (W8 item 21), and `4DContinuousRendering` at 38 s |
+
+> ⚠️ **Superseded: the 2026-07-30 macOS figure of 32/33.** It predates `1d1fe7ea` and the harness
+> fix, and the sprint's two records of it disagreed (32/33 here, 31/33 in the handoff). Do not
+> compare against it.
 
 > ⚠️ **The old baseline was not trustworthy.** Until `97285971` + `4e1baa2a`, any GUI test whose
 > script was missing reported **Passed**. The previously documented Linux figure of 30/33 counted at

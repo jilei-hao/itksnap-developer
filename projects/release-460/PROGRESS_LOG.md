@@ -348,3 +348,102 @@ would have tried to commit it). `config.local.sh` is gitignored and stays machin
 
 **Test result at checkpoint time: 30/33** — the run above, on this exact tree. Not re-run after the
 documentation edits, which cannot affect it; `itksnap` is byte-identical to the tested state.
+
+---
+
+## 2026-07-31 (second session, macOS) — W8 item 17 fixed; it exposed item 21
+
+**Goal:** fix the GUI test harness driving Qt from a worker thread. Done, plus the defect it
+uncovered. `staging/v460` `7cc60053` → `5f2825e4` (3 commits).
+
+### Two findings that changed the plan before any code was written
+
+The handoff's prescribed fix — "marshal scripted widget calls to the main thread
+(`Qt::BlockingQueuedConnection`)" — was right about the bug and wrong about the shape of the fix.
+
+1. **Marshalling `SNAPTestQt`'s own slots is not sufficient.** Scripts call widget methods and write
+   widget properties **directly**, on objects returned by `findChild`: 48 × `.click()`,
+   17 × `.setSelected()`, 13 × `.setCurrentIndex()`, 5 × `.setCurrentWidget()`, 6 × `.toggle()`, and
+   44 property writes (`.value =`, `.text =`, …). None of these pass through `SNAPTestQt`. Wrapping
+   its slots would have fixed a minority of the call sites and left the class of bug intact.
+
+2. **The worker thread cannot be removed** — the obvious "just run the script on the GUI thread"
+   fix. `openMainImage()` in `test_Library.js`, used by nearly every test, drives the modal
+   `ImageIOWizard` *while the GUI thread is blocked inside `QDialog::exec()`*
+   (`MainImageWindow.cxx:1884`). A main-thread script would be stuck inside the very modal loop it
+   exists to dismiss. The worker thread is load-bearing, not an accident.
+
+### What was built
+
+Scripts no longer see application objects at all. `findChild`/`findWidget` return a
+**`TestObjectProxy`**; every member hops to the target's thread first. Reads block for an answer;
+actions and property writes are posted — a scripted click can open a modal dialog, and waiting for
+one deadlocks against the script that dismisses it — each followed by a round-trip barrier so the
+step, including the queued ITK→Qt model updates it triggers, has landed before the next is sent.
+
+**No test script changed.** The proxy carries the exact members the 22 scripts use.
+
+Two things keep it fixed: the proxy is a curated surface, so reaching for an unwrapped widget method
+is a JS `TypeError`, not a silent off-thread call; and `TestObjectProxy::target()` — the single point
+where application objects become reachable — aborts unless it is on the GUI thread.
+
+`b3cf79d3` first put that assertion *inside* each marshalled block, which only proved that a hop
+that still existed had run. Deleting the hop would have deleted its assertion too. `5f2825e4` moved
+it to the dereference point, so any unmarshalled access aborts however the marshalling was lost.
+
+### Verified, not assumed
+
+- **The ratchet was tested by breaking it.** Removing the hop from `findChild` and re-running:
+  process aborts with `'TestObjectProxy::target' ran on a worker thread instead of the GUI thread`,
+  and `HarnessThreadSafety` fails. Restored, rebuilt, green. Per item 13's lesson, a new test that
+  has not been seen to fail is not a test.
+- `test_HarnessThreadSafety.js` is registered in **both** `TestingScripts.qrc` and `GUI_TESTS` —
+  the two ways items 1 and 14 went unnoticed for years.
+
+### W8 item 21 — the bug item 17 exposed, and why it had been invisible
+
+`EdgeAttraction` went red on the fixed harness. It was not flakiness and not a harness bug:
+
+`QDoubleSliderWithEditor` declares `Q_PROPERTY(double value … NOTIFY valueChanged)` but
+`setValue()` never emits it — it raises `m_IgnoreSpinnerEvent` around `ui->spinbox->setValue()`, so
+the relay that would emit returns early. The widget's only listener is the coupling system, so a
+coupled model silently kept its old value. The script sets the bubble radius to 2; the level set
+came out at −4, the default.
+
+**Its previous pass was the item-17 bug in action.** The write used to run on the script's worker
+thread, so the spinbox's `valueChanged` reached the relay as a *queued cross-thread* call —
+delivered after `m_IgnoreSpinnerEvent` had been reset to `false`. The guard was skipped by the race,
+the signal went out, and the model updated. Marshalling the write onto the GUI thread made the
+connection direct, the guard began working as written, and the notification stopped. Fixed in
+`092022fb`; emitting is safe because the coupling guards the model→widget direction with
+`m_Updating`. `EdgeAttraction` is now its regression test, and passes at 34.6 s — the stock timing,
+versus 24 s when the bubble was wrong.
+
+Method note: `EdgeAttraction` was **not** filed as an honest new failure on inspection. A stock
+build of the same tree was made and run twice (34.2 s, 33.2 s, both green) to establish that the
+change caused it, then a diagnostic script read the radius back (`before = 4`, `after write = 2`,
+level set still −4) to locate the break between widget and model. Only then was the source read.
+
+### Also found
+
+- **`RemoteImageLoadTest_{SingleImage,WorkspaceWithMesh}` fail only in a back-to-back run.** Each
+  passes standalone at the same sub-second duration, so it is not a timeout — shared cache state or
+  server-side rate limiting. Standalone CLI executables; the GUI harness cannot reach them. Folds
+  into W8 item 3/3b, which owns this test family.
+- **`printChildren(parent, className)` passed a dangling pointer** — the `QByteArray` backing it went
+  out of scope with the `if`-block. Fixed in passing.
+- **Harness teardown could delete the script engine, or a running `QThread`, out from under a live
+  script.** `m_Worker` is now a `QPointer` (it deletes itself on `finished()`), the destructor waits
+  briefly, and marshalled calls stop waiting once `application_exit()` has been queued.
+
+### Not done
+
+- **`RandomForestBailOut` was not re-baselined.** It still SEGFAULTs on macOS. Item 15 claims that
+  after `1d1fe7ea` it "no longer segfaults but still fails", which disagrees; that was not resolved,
+  because doing it honestly needs a stock-build comparison and the session's build budget went to
+  `EdgeAttraction`. **Do not record this as changed by item 17 — it is untested either way.**
+- Items 15b/15c/15d untouched. 15c ("why the test never enters RF mode") was expected to be a
+  consequence of item 17 and should be re-checked first now that the harness is fixed.
+- W1 step 6 still blocked on Q4's two `cb6f692e` defects.
+- **Linux not re-run.** The harness change alters timing on every GUI test; the Linux figures in
+  §4 predate it.
