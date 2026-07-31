@@ -39,11 +39,17 @@ git submodule update --init --recursive
 
 **Dependencies:** ITK ≥ 5.4, VTK ≥ 9.5.2, Qt6 (Widgets, OpenGL, Concurrent, Qml, LinguistTools), libcurl, libssh. CI uses ITK v5.4.0, VTK 9.5.2, Qt 6.8.1.
 
-> ⚠️ **VTK floor raised to 9.5.2 on `staging/v460` (2026-07-30, `7cc60053`).** Both dev machines are
-> still on 9.3.x (macOS `lib/vtk/install` = 9.3.1, Linux `vtk-dev/installed` = 9.3.0), so **`cmake`
-> will fail to configure against `staging/v460` until VTK is upgraded**. Existing build trees keep
-> working until they are reconfigured. `config.local.sh` and the Linux paths below need updating
-> alongside the upgrade.
+> ⚠️ **VTK floor raised to 9.5.2 on `staging/v460` (2026-07-30, `7cc60053`).**
+>
+> - **macOS: done (2026-07-31).** VTK 9.5.2 built and installed via
+>   `./scripts/build-deps.sh --skip-itk --skip-qt`. ITK-SNAP rebuilds clean against it (0 errors) and
+>   `ctest` shows no regressions — every VTK-heavy test passes. **9.3.1 is retained as a fallback:**
+>   VTK versions its libs, headers and cmake packages, so `lib/vtk/install/lib/cmake/vtk-9.3` and
+>   `…/vtk-9.5` coexist in one prefix and `VTK_DIR` selects between them.
+> - **Linux: still on 9.3.0** (`vtk-dev/installed`), so **`cmake` will fail to configure against
+>   `staging/v460` there until VTK is upgraded.** Existing build trees keep working until they are
+>   reconfigured. Update `config.local.sh` (`VTK_VERSION=9.5`, `VTK_FULL_VERSION=9.5.2`, `VTK_DIR`)
+>   and the Linux paths below alongside the upgrade.
 
 **Critical:** After cloning, initialize submodules before building:
 ```bash

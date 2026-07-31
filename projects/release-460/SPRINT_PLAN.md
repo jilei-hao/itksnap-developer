@@ -101,7 +101,9 @@ Branch column is authoritative for "where is this work". Tick the box when §4 i
 
 - [x] `staging/v460` created and pushed (2026-07-30) — keep it rebased on `upstream/master`
 - [ ] Version bumped from `4.6.0-alpha.1` to a beta, then to `4.6.0`
-- [ ] **VTK floor decided** — CI says 9.5.2 (`c480b003`), `CMake/standalone.cmake:72` says 9.3.1
+- [x] **VTK floor decided** — raised to **9.5.2** (`7cc60053`), matching upstream CI. macOS upgraded
+      and verified 2026-07-31: ITK-SNAP builds clean and `ctest` shows no regressions. ⏳ **Linux box
+      still on 9.3.0 and cannot configure `staging/v460` until upgraded.**
 - [ ] **Workspace `FormatVersion` decision** — cardiac I/O bumps it 1→3; decide whether
       `SNAP_VERSION_LAST_COMPATIBLE_RELEASE_DATE` moves or the reader degrades
 - [ ] `ReleaseNotes.md` gains a 4.6 section, built from [change_tracking.md](change_tracking.md)

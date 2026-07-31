@@ -40,7 +40,10 @@ ITK_SRC="$LIB_DIR/itk/src"
 ITK_BUILD="$LIB_DIR/itk/build"
 ITK_INSTALL="$LIB_DIR/itk/install"
 VTK_SRC="$LIB_DIR/vtk/src"
-VTK_BUILD="$LIB_DIR/vtk/build"
+# Build tree is per-version. VTK installs version-suffixed libraries, headers and
+# cmake packages, so several versions coexist happily in one install prefix -- but
+# a single build tree reused across versions carries stale cache entries.
+VTK_BUILD="$LIB_DIR/vtk/build-${VTK_VERSION}"
 VTK_INSTALL="$LIB_DIR/vtk/install"
 QT_INSTALL="$LIB_DIR/Qt"
 
@@ -360,12 +363,39 @@ build_vtk() {
     exit 1
   fi
 
-  echo "==> VTK ${VTK_FULL_VERSION}: cloning from GitHub mirror..."
+  echo "==> VTK ${VTK_FULL_VERSION}: fetching source..."
   if [ ! -d "$VTK_SRC/.git" ]; then
     git clone --depth 1 --branch "v${VTK_FULL_VERSION}" \
       https://github.com/Kitware/VTK.git "$VTK_SRC"
   else
-    echo "    Source already present at $VTK_SRC — skipping clone."
+    # The source tree outlives any single version, so it may be sitting on a
+    # different tag than the one requested. Previously this branch just skipped
+    # the clone, which meant bumping VTK_VERSION silently rebuilt whatever was
+    # already checked out and installed it under the new version's name.
+    local have
+    have="$(git -C "$VTK_SRC" describe --tags --exact-match 2>/dev/null || echo "unknown")"
+    if [ "$have" = "v${VTK_FULL_VERSION}" ]; then
+      echo "    Source already at v${VTK_FULL_VERSION}."
+    else
+      echo "    Source is at ${have}; switching to v${VTK_FULL_VERSION}..."
+      # Patches below are applied in place with sed, so the tree is usually dirty.
+      # They are re-applied after checkout (each is guarded by a grep), and the
+      # tree is a build input we own -- discarding local edits here is safe.
+      git -C "$VTK_SRC" checkout -- . 2>/dev/null || true
+      if ! git -C "$VTK_SRC" cat-file -e "v${VTK_FULL_VERSION}^{commit}" 2>/dev/null; then
+        echo "    Fetching tag v${VTK_FULL_VERSION}..."
+        git -C "$VTK_SRC" fetch --tags origin "v${VTK_FULL_VERSION}"
+      fi
+      git -C "$VTK_SRC" checkout --detach "v${VTK_FULL_VERSION}"
+    fi
+  fi
+
+  # Guard against the silent-wrong-version failure this function used to allow.
+  local actual
+  actual="$(git -C "$VTK_SRC" describe --tags --exact-match 2>/dev/null || echo "unknown")"
+  if [ "$actual" != "v${VTK_FULL_VERSION}" ]; then
+    echo "ERROR: $VTK_SRC is at ${actual}, expected v${VTK_FULL_VERSION}." >&2
+    exit 1
   fi
 
   # Patch typo in octree_node.txx (_M_chilren -> m_children)
