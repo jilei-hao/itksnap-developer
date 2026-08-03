@@ -447,3 +447,23 @@ level set still −4) to locate the break between widget and model. Only then wa
 - W1 step 6 still blocked on Q4's two `cb6f692e` defects.
 - **Linux not re-run.** The harness change alters timing on every GUI test; the Linux figures in
   §4 predate it.
+
+### Handoff checkpoint
+
+Full suite re-run on the final tree (`5f2825e4`) during handoff, because the earlier 31/34 had been
+measured at `092022fb` — before the assertion was moved in `5f2825e4`. **32/34**, failing
+`RemoteImageLoadTest_WorkspaceWithMesh` and `RandomForestBailOut`. §4 corrected; the recorded figure
+had been attributed to a commit it was not measured on.
+
+Three full runs today, and the totals move because the flakes rotate — **`RandomForestBailOut` is
+the only failure common to all three**, which is what makes it the next goal:
+
+| Run | Commit | Result | Failure set |
+|---|---|---|---|
+| 1 | `b3cf79d3` | 30/33 | `RemoteImageLoadTest_SingleImage`, `EdgeAttraction`, `RandomForestBailOut` |
+| 2 | `092022fb` | 31/34 | `RemoteImageLoadTest_SingleImage`, `4DReplayWithMeshUpdate`, `RandomForestBailOut` |
+| 3 | `5f2825e4` | 32/34 | `RemoteImageLoadTest_WorkspaceWithMesh`, `RandomForestBailOut` |
+
+`EdgeAttraction` red in run 1 is the item-21 story above, not a flake. The remote-test failure moves
+between `SingleImage` and `WorkspaceWithMesh`, which supports shared state or rate limiting over a
+defect in either test.

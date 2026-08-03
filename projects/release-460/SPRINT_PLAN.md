@@ -33,7 +33,7 @@ the demo builds on release code — but do not merge it, and do not merge `itksn
 | Branch | `staging/v460` (itksnap) |
 | Base | `upstream/master` @ `679ba76a` |
 | Purpose | Land each workstream, run integration tests, then one wholesale PR to `pyushkevich/itksnap:master` |
-| Status | pushed; at `7cc60053`, **18 commits** ahead of base (2026-07-31) |
+| Status | pushed; at `5f2825e4`, **21 commits** ahead of base (2026-07-31) |
 
 Nothing merges into `staging/v460` until its workstream row in §3 says the branch builds **and** its
 tests pass. Rebase on `upstream/master` before each merge so the final PR stays a clean fast-forward
@@ -132,14 +132,23 @@ complete, the version reads `4.6.0` with no qualifier, and the PR is open with a
 ### Test baseline to beat
 
 **macOS arm64, `staging/v460` @ `5f2825e4`, measured 2026-07-31 — this is now the authoritative
-baseline: 31/34.** The suite gained a 34th test (`HarnessThreadSafety`, W8 item 17).
+baseline: 32/34.** The suite gained a 34th test (`HarnessThreadSafety`, W8 item 17).
+
+**Only one failure is stable.** Three full runs on this tree today gave 30/33, 31/34 and 32/34; the
+totals move because the flakes rotate, so read the sets, not the numbers:
+
+| Run | Commit | Failure set |
+|---|---|---|
+| 1 | `b3cf79d3` | `RemoteImageLoadTest_SingleImage`, `EdgeAttraction`, `RandomForestBailOut` |
+| 2 | `092022fb` | `RemoteImageLoadTest_SingleImage`, `4DReplayWithMeshUpdate`, `RandomForestBailOut` |
+| 3 | `5f2825e4` | `RemoteImageLoadTest_WorkspaceWithMesh`, `RandomForestBailOut` |
 
 | Test | State | Note |
 |---|---|---|
-| `RandomForestBailOut` | 🔴 SEGFAULT | Stated debt. W8 items 15/15c/15d. **Not re-baselined this session** — whether macOS still segfaults *after* `1d1fe7ea`, or merely fails, was not re-established against a stock build, so do not read this row as a change. |
-| `RemoteImageLoadTest_{SingleImage,WorkspaceWithMesh}` | ⚠️ flaky | **Fail only when the three remote tests run back-to-back**; each passes standalone, at the same duration, so it is not a timeout. Standalone CLI executables — unreachable from the GUI harness. W8 item 3/3b. |
-| `4DReplayWithMeshUpdate` | ⚠️ flaky | Timing-sensitive; passed in one full run today, failed in the next. W8 item 2. |
-| other 30 | ✅ | including `EdgeAttraction`, which now passes for the right reason (W8 item 21), and `4DContinuousRendering` at 38 s |
+| `RandomForestBailOut` | 🔴 SEGFAULT | The only failure in all three runs. Stated debt — W8 items 15/15c/15d. **Not re-baselined this session**: whether macOS still segfaults *after* `1d1fe7ea`, or merely fails, was not re-established against a stock build, so do not read this row as a change caused by item 17. |
+| `RemoteImageLoadTest_{SingleImage,WorkspaceWithMesh}` | ⚠️ flaky | **Fail only when the three remote tests run back-to-back**, and not always the same one; each passes standalone at the same sub-second duration, so it is not a timeout. Standalone CLI executables — unreachable from the GUI harness. W8 item 3/3b. |
+| `4DReplayWithMeshUpdate` | ⚠️ flaky | Timing-sensitive; failed run 2, passed runs 1 and 3. W8 item 2. |
+| `EdgeAttraction` | ✅ | Red in run 1, and correctly so — it had been passing *because of* the item-17 bug. Green since W8 item 21, at 34.6 s, matching the stock-build timing. |
 
 > ⚠️ **Superseded: the 2026-07-30 macOS figure of 32/33.** It predates `1d1fe7ea` and the harness
 > fix, and the sprint's two records of it disagreed (32/33 here, 31/33 in the handoff). Do not

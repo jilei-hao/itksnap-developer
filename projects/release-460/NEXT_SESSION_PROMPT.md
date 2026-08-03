@@ -1,122 +1,129 @@
-# RESUME — ITK-SNAP 4.6.0 · Fix the GUI test harness (W8 item 17)
+# RESUME — ITK-SNAP 4.6.0 · Re-baseline `RandomForestBailOut`, then close W1
 
 ## Current state (read this paragraph first)
 
-**Both build paths are now green and W1 is verified everywhere except its last three steps.**
-`itksnap:staging/v460` is pushed at **`7cc60053`**, 18 commits ahead of `upstream/master`. It builds
-clean on **macOS arm64** (446 targets) and, as of 2026-07-31, on **Linux/GCC** — 766/766 targets, 0
-errors, **with no local patches of any kind**, which is the thing the previous two sessions were
-trying to establish. Both boxes now run **VTK 9.5.2**. `ctest` is **31/33 on macOS** and **30/33 on
-Linux**, with no new failures on either; the differing totals are platform-specific known debt, not
-a regression (see the warning in §4 of `SPRINT_PLAN.md` before comparing them). Wrapper `main` has
-one unpushed checkpoint commit. The agentic API stays out of scope — it lives on `sprint/caimi` for
-the October CAIMI demo.
+**The GUI test harness is fixed and the suite can now be trusted for the first time this sprint.**
+`itksnap:staging/v460` is pushed at **`5f2825e4`**, 21 commits ahead of `upstream/master`. Scripted
+Qt access is marshalled to the GUI thread (W8 item 17, three commits), and the one production bug
+that fix exposed is fixed too (W8 item 21). macOS is **32/34** — the suite gained a 34th test,
+`HarnessThreadSafety` — and across three full runs today **`RandomForestBailOut` is the only failure
+that appears every time**; the rest rotate between two known flakes. Both build paths were green as
+of the previous session, but **Linux has not been re-run since the harness change**, which alters
+timing on every GUI test. Wrapper `main` is pushed at `c430a7b`. The agentic API stays out of scope —
+it lives on `sprint/caimi` for the October CAIMI demo.
 
 ## The single next goal
 
-**Fix W8 item 17: the GUI test harness drives Qt from a worker thread.**
+**Re-baseline `RandomForestBailOut` on macOS against a stock build, and settle the item 15 / 15d
+contradiction.**
 
-`class TestWorker : public QThread` runs the test script inside `run()` (`SNAPTestQt.h:27`), so every
-scripted `click()`, `setCurrentIndex()` and `trigger()` executes off the main thread. Qt does not
-support this. The fix is to marshal scripted widget calls to the main thread
-(`Qt::BlockingQueuedConnection`).
+It still SEGFAULTs on macOS at `5f2825e4`. W8 item 15 claims that after `1d1fe7ea` it "no longer
+segfaults but still fails". Those disagree, and last session deliberately did **not** resolve it —
+doing it honestly needs a stock-build comparison and the build budget went to `EdgeAttraction`.
+**The row in `SPRINT_PLAN.md` §4 is marked "not re-baselined" for exactly this reason. Do not read
+it as changed by item 17; it is untested either way.**
 
-**Why this and not the next merge.** It is not the most exciting item, but it is the one everything
-else is waiting on:
+Why this first, and why it is now cheap:
 
-1. **W1 cannot close without it.** W1's done-criteria require "a test covers undo after a cancelled
-   async DLS interaction", and Q4 deliberately declined to write that test — async behaviour tested
-   on a thread-unsafe harness is not evidence either way. Step 6 is blocked on Q4's two `cb6f692e`
-   defects *and* on having somewhere trustworthy to test them.
-2. **It gates the new item 15d.** The Linux segfault below can only be confirmed once the harness
-   stops being a plausible alternative explanation.
-3. **It undermines every GUI number in this sprint.** It affects all 21 GUI tests and is the most
-   likely source of the suite's run-to-run instability, including `4DReplayWithMeshUpdate`.
+1. **It is the last untrusted number in the sprint.** Everything else in §4 has been measured on the
+   fixed harness. This one has not, and it is the only 🔴 that is not a known flake.
+2. **Item 17 was the stated blocker.** Item 15d's central inference — that the concurrent teardown is
+   the script's "Cancel segmentation" racing the modal dialog *because the harness drove Qt from a
+   worker thread* — is now testable. The harness is no longer a plausible alternative explanation.
+3. **Item 15c is likely already resolved.** "Why the test never enters RF mode" was recorded as
+   "likely a consequence of item 17". Check it first — it may cost one run.
 
-If it proves larger than one session, the fallback is W2 (developer docs — net-new, independent, and
-on the cut line: **W1 + W2 + W8 alone is a shippable 4.6.0**). Do not start W3–W7.
+Method that worked last session and should be repeated: **build the stock tree and measure it,
+before attributing anything.** `git stash push -u`, rebuild (~1 min, only the harness files change),
+run, `git stash pop`. Do not reason about a failure's cause from source alone.
 
-## What was just found, and what it changes
+After that, W1 step 6 is the next target — it needs Q4's two `cb6f692e` defects addressed, and it
+now has a trustworthy harness to be tested on, which is what it was waiting for.
 
-**W8 item 15d — the use-after-free retracted in item 15 is real, and Linux proves it.**
-`RandomForestBailOut` still SEGFAULTs on Linux after `1d1fe7ea`. Live gdb backtrace:
+## What changed last session, and what it means
 
-```
-on_btnClassifyTrain_clicked [.cold]   → Classify/Train threw
-  ReportNonLethalException
-    QDialog::exec()                   → modal dialog re-enters the event loop
-      … sendPostedEvents → onQueuedEvent → dispatchEvent(EventBucket)
-        LayerInspectorRowDelegate::onModelUpdate → UpdateOverlaysMenu()
-          __dynamic_cast              → SIGSEGV
-```
+**Two findings invalidated the previous handoff's prescribed fix before any code was written.** They
+are worth internalising because both were only visible by surveying the *scripts*, not the harness:
 
-Faulting cast: `LayerInspectorRowDelegate.cxx:551`,
-`dynamic_cast<ImageWrapperBase*>(m_Model->GetLayer())`. **The error dialog is the trigger** — a
-non-lethal exception report opens a nested event loop that delivers a queued ITK→Qt event to a
-delegate whose layer is being torn down.
+1. **Marshalling `SNAPTestQt`'s own slots would have fixed a minority of the call sites.** Scripts
+   call widget methods and write widget properties **directly**, on objects `findChild` returns —
+   48 × `.click()`, 17 × `.setSelected()`, 13 × `.setCurrentIndex()`, 44 property writes. None of
+   those pass through `SNAPTestQt`.
+2. **The worker thread is load-bearing and cannot be removed.** `openMainImage()` in
+   `test_Library.js`, used by nearly every test, drives the modal `ImageIOWizard` while the GUI
+   thread is blocked inside `QDialog::exec()` (`MainImageWindow.cxx:1884`). A main-thread script
+   would be stuck inside the very modal loop it exists to dismiss.
 
-Item 15's original reading was withdrawn in favour of a null `m_ClassificationEngine`. **Both are
-true.** The retraction was correct *for macOS*, where the run never enters RF mode (item 15c) so
-this path is unreachable. On Linux the script gets through classification and cancel, and dies where
-originally described. `1d1fe7ea` fixed a real null deref; it did not fix this. **Do not treat the
-macOS and Linux failures of this test as the same bug.**
+The fix: scripts never see application objects. `findChild`/`findWidget` return a
+**`TestObjectProxy`**; every member hops to the target's thread first. Reads block; actions and
+property writes are posted (a scripted click can open a modal dialog, and waiting for one deadlocks
+against the script that dismisses it), each followed by a round-trip barrier. **No test script
+changed.**
 
-Not yet proven: that the concurrent teardown is the script's "Cancel segmentation" racing the modal
-dialog via the worker-thread harness. That is the obvious candidate — and it is another reason item
-17 comes first.
+**W8 item 21, and the reason it matters more than its size.** `QDoubleSliderWithEditor` declares
+`Q_PROPERTY(double value … NOTIFY valueChanged)` but `setValue()` never emitted it. Its only listener
+is the coupling system, so a coupled model silently kept its old value on any programmatic write.
+`EdgeAttraction` had been passing **because of** the item-17 bug: the old off-thread write made the
+spinbox's relay a *queued cross-thread* call, delivered after the suppression flag had been reset, so
+the guard was skipped and the signal went out. Fixing the thread bug made the connection direct and
+the notification stopped.
 
-Also new, all pre-existing upstream and none from the merge: **item 18** (five `-Wreturn-type` sites,
-GCC-only), **item 19** (`RESTClient.cxx` on curl APIs deprecated since 7.55/7.56), **item 20**
-(`TestLargeImageCheck` reports "0.0 GB available" on a box with free RAM).
+Take the lesson generally: **a test that passed on the old harness is not evidence of correct
+behaviour.** If another test goes red on a future harness-adjacent change, check whether it was
+passing for a real reason before assuming a regression.
 
 ## Files to read first (in order)
 
-1. **`workstreams/bugfixes.md`** — item 17 is the goal; 15, 15b, 15c, 15d are its context.
-2. **`SPRINT_PLAN.md`** — §4 has both test baselines and the warning against comparing totals.
-3. **`PROGRESS_LOG.md`** — the second 2026-07-31 entry (Linux verification).
-4. **`workstreams/merge-backlog.md`** — Q4 explains precisely why step 6 is blocked.
-5. **Wrapper `CLAUDE.md`** — the Linux build section. The six-patch table is **retired**; needing to
-   patch anything now is a new finding.
+1. **`workstreams/bugfixes.md`** — items 15, 15b, 15c, 15d are the goal; 17 and 21 are the context
+   for why 15d is now testable.
+2. **`SPRINT_PLAN.md`** §4 — the current macOS baseline and the warning on the `RandomForestBailOut`
+   row.
+3. **`PROGRESS_LOG.md`** — the second 2026-07-31 entry.
+4. **`itksnap/Testing/GUI/Qt/SNAPTestQt.h`** — the `TestObjectProxy` class comment states the whole
+   contract in one place.
+5. **`workstreams/merge-backlog.md`** — Q4, for W1 step 6 afterwards.
 
 ## Known traps
 
-- **`RandomForestBailOut` is red on purpose** and `4DContinuousRendering` takes ~35 s on purpose.
-  Neither was weakened to get green — see the test-as-ratchet rule. Do not "fix" either by reverting
-  `4e1baa2a` or `97285971`.
-- **A GUI test that passes suspiciously fast is not passing.** Until `97285971` a missing script
-  exited 0. If a duration drops sharply, check the script still loads.
-- **Do not compare `ctest` totals across platforms or dates.** Linux 30/33 (2026-07-31) and Linux
-  30/33 (2026-07-17) match by coincidence — the older run counted a test that executed nothing.
-  Linux 30 vs macOS 31 is platform-specific debt, not a regression. Compare failure *sets*.
-- **`ctest | tail` returns *tail's* exit status.** It has already reported success over failing tests
-  here. Redirect to a file; never pipe a command whose exit code you need.
-- **Build in `build-v460/`, not `build-release/`** — the latter is still cached against VTK 9.3.0
-  from July. Reconfiguring a stale cache across a dependency major version is the failure class that
-  has bitten this repo twice.
-- **`build_itk()` in `scripts/build-deps.sh` still has the clone-skip bug** that `build_vtk()` had:
-  it skips the clone whenever `lib/itk/src/.git` exists, without checking the tag. Do not bump
-  `ITK_VERSION` until it is fixed the same way.
-- **`config.local.sh` is gitignored and per-machine.** The Linux box sets `VTK_INSTALL_PREFIX` to
-  install into the shared `vtk-dev/installed`; macOS does not. Do not "sync" them.
+- **Adding a scripted widget call may need a proxy member.** Scripts can only reach what
+  `TestObjectProxy` declares; anything else is a JS `TypeError`. That is deliberate — it is what
+  stops off-thread access creeping back. Add the member, do not unwrap the widget.
+- **`TestObjectProxy::target()` aborts off the GUI thread.** If a run dies with `'…::target' ran on
+  a worker thread`, a marshalling hop was lost — that is the assertion working, not a flake.
+- **A GUI test that passes suspiciously fast is not passing** (item 13). `HarnessThreadSafety`
+  legitimately takes ~1.8 s: it has no blank lines, and blank lines are what `readScript` turns into
+  `engine.sleep(500)`.
+- **Register a new test script in BOTH `TestingScripts.qrc` and `GUI_TESTS`.** Missing either is how
+  items 1 and 14 hid for years.
+- **Do not compare `ctest` totals across platforms or dates — compare failure *sets*.** The suite is
+  34 tests now, not 33. The 2026-07-30 macOS figure (32/33) is superseded and the sprint's two
+  records of it disagreed.
+- **`RemoteImageLoadTest_*` fail only when the three run back-to-back**; each passes standalone at
+  the same sub-second duration. Not a timeout — shared cache state or rate limiting. W8 item 3/3b.
+- **`ctest | tail` returns *tail's* exit status.** Redirect to a file; never pipe a command whose
+  exit code you need.
+- **Use an absolute `--testdir`** when running `ITK-SNAP --test` by hand. A relative path silently
+  produces a wrong-looking failure that reads like a regression. `--test` also accepts a path to a
+  scratch `.js` file, which is the fastest way to get a diagnostic.
+- **Build in `build-release/` on macOS** — it is current (VTK 9.5.2). The "use `build-v460/`" trap in
+  the previous handoff was Linux-specific; that tree does not exist on macOS.
 - **Build FOREGROUND.** `nohup &` reports success instantly while the linker is still running.
-  Confirm the binary mtime advanced before testing.
 - **Never `pkill -f "<string>"` from your own shell** — the pattern matches the tool shell's own
-  command line and kills it. Servers by port, GUIs by `setsid` + `kill -TERM -<pid>`.
+  command line and kills it.
 - **`git branch -vv`'s `[origin/master: behind 1]` describes the LOCAL checkout, not the remote.**
-  Verify with `git rev-list --count origin/master..upstream/master`.
 - **Push submodules BEFORE bumping the wrapper pointer**, and run the `SUBMODULE_SYNC.md` §3
-  reachability check with `git branch -r --contains` — **not** `git ls-remote | grep <sha>`, which
-  lists only ref tips and reports healthy ancestor pointers as missing.
-- **The memory-leak canary baseline in `itksnap/CLAUDE.md` is invalid** (≤600 leaks / ≤90 KB for
-  `RandomForestBailOut`) — measured on a process that loaded no script. Re-baseline only after item
-  15's follow-ups.
+  reachability check with `git branch -r --contains` — **not** `git ls-remote | grep <sha>`.
+- **The memory-leak canary baseline in `itksnap/CLAUDE.md` is invalid** (item 16) and is now doubly
+  stale: the harness allocates a `TestObjectProxy` per wrapped object. They are parented to
+  `m_ProxyOwner` and freed in `~SNAPTestQt`, so they should not leak — but re-measure rather than
+  assume when item 16 is picked up.
+- **`config.local.sh` is gitignored and per-machine.** Do not "sync" macOS and Linux.
 
 ## How to work
 
-Item 17 is a real fix to shared test infrastructure, so the bar is behavioural: a scripted widget
-call must be *provably* on the main thread afterwards, and the fix must not paper over the failures
-it exposes. Expect it to change test results — some currently-passing GUI tests may start failing
-honestly. **That is a win, and it must be recorded rather than tuned away.** Re-measure both
-baselines in `SPRINT_PLAN.md` §4 when it lands.
+The bar last session was behavioural, and it should stay there: the new test was verified by
+**breaking the code and watching it fail**, then restoring. Per item 13's lesson, a test that has not
+been seen to fail is not a test. Expect the same standard for whatever `RandomForestBailOut` turns
+out to be — and if it is fixed, the fix needs a test that fails without it.
 
 Run `/handoff` at the end rather than improvising it.
