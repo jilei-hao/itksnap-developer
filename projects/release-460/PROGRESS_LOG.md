@@ -603,3 +603,14 @@ lenses produced more findings than were verified (9, 13, 9 and 7 unverified).
 Items 26 and 27 are the highest-value follow-ups (both crashes, both with deterministic repros).
 The harness-fidelity cluster (31–34) is small individually and would materially raise the value of
 every future green run.
+
+### Addendum — a fifth signature, found by the audit itself
+
+Four new crash reports were generated *during* this session's work. Three are the deliberate
+`postKeyEventInternal` probe (item 25) reproducing on demand. The fourth, at 10:05, is a **signature
+not present in the original corpus**: SIGSEGV at `0x0` in `InitializeToWrapper` ←
+`AddBlankSegmentation` ← `ResetSNAPSegmentationImage`, driven by a scripted wizard-button click.
+Two `assert()`-only guards on one path (`IRISApplication.cxx:429`, `GenericImageData.cxx:511`, the
+latter dereferencing the pointer it checks). Filed as item 35 — the third confirmed instance of the
+item-15b pattern. Worth noting how it surfaced: an agent driving the app found a crash that no test
+in the suite reaches.
