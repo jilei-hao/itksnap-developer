@@ -1,0 +1,1742 @@
+-------------------------------------
+Translated Report (Full Report Below)
+-------------------------------------
+Process:             ITK-SNAP [35426]
+Path:                /Users/USER/*/ITK-SNAP
+Identifier:          org.itksnap
+Version:             4.6.0-alpha.1 (59)
+Code Type:           ARM-64 (Native)
+Role:                Background
+Parent Process:      Exited process [35425]
+Coalition:           com.anthropic.claudefordesktop [145474]
+Responsible Process: claude [32374]
+User ID:             501
+
+Date/Time:           2026-08-05 00:50:31.1701 -0400
+Launch Time:         2026-08-05 00:49:45.8017 -0400
+Hardware Model:      Mac15,3
+OS Version:          macOS 26.5.2 (25F84)
+Release Type:        User
+
+Crash Reporter Key:  60FEC3EF-28B1-D901-348E-5682B1B024E6
+Incident Identifier: 48BDFCED-946B-47CA-A552-35F1EBC94516
+
+Sleep/Wake UUID:       DDE7D52C-F2AD-45DD-86B4-92667D42A49C
+
+Time Awake Since Boot: 1200000 seconds
+Time Since Wake:       7144 seconds
+
+System Integrity Protection: enabled
+
+Triggered by Thread: 0, Dispatch Queue: com.apple.main-thread
+
+Exception Type:    EXC_BAD_ACCESS (SIGSEGV)
+Exception Subtype: KERN_INVALID_ADDRESS at 0x0000000000000058
+Exception Codes:   0x0000000000000001, 0x0000000000000058
+
+Termination Reason:  Namespace SIGNAL, Code 11, Segmentation fault: 11
+Terminating Process: exc handler [35426]
+
+
+VM Region Info: 0x58 is not in any region.  Bytes before following region: 4334714792
+      REGION TYPE                    START - END         [ VSIZE] PRT/MAX SHRMOD  REGION DETAIL
+      UNUSED SPACE AT START
+--->  
+      __TEXT                      1025e8000-105204000    [ 44.1M] r-x/r-x SM=COW  /Users/USER/*/ITK-SNAP
+
+Thread 0 Crashed::  Dispatch queue: com.apple.main-thread
+0   ITK-SNAP                      	       0x1031783f0 WrapperBase::GetUniqueId() const + 0
+1   ITK-SNAP                      	       0x1028f41a4 MeshLayerTableRowModel::UpdateRoleInfo() + 32
+2   ITK-SNAP                      	       0x1028f15c4 AbstractLayerTableRowModel::OnUpdate() + 192
+3   ITK-SNAP                      	       0x1029a874c AbstractModel::Update() + 300
+4   ITK-SNAP                      	       0x1027b60ec <deduplicated_symbol> + 36
+5   ITK-SNAP                      	       0x102815670 NumericPropertyToggleAdaptor<AbstractPropertyModel<int, NumericValueRange<int>>>::GetValueAndDomain(bool&, TrivialDomain*) + 52
+6   ITK-SNAP                      	       0x10260c9ac PropertyModelToWidgetDataMapping<AbstractPropertyModel<bool, TrivialDomain>, QAbstractButton*, DefaultWidgetValueTraits<bool, QAbstractButton, void>, DefaultWidgetDomainTraits<TrivialDomain, QAbstractButton>>::UpdateWidgetFromModel(EventBucket const&) + 156
+7   QtCore                        	       0x110b0539c void doActivate<false>(QObject*, int, void**) + 1480
+8   ITK-SNAP                      	       0x10279d788 LatentITKEventNotifierHelper::dispatchEvent(EventBucket const&) + 52
+9   ITK-SNAP                      	       0x102644714 LatentITKEventNotifierHelper::onQueuedEvent() + 708
+10  QtCore                        	       0x110afcc14 QObject::event(QEvent*) + 324
+11  QtWidgets                     	       0x10c864758 QApplicationPrivate::notify_helper(QObject*, QEvent*) + 336
+12  QtWidgets                     	       0x10c8657d8 QApplication::notify(QObject*, QEvent*) + 468
+13  QtCore                        	       0x110ab3d84 QCoreApplicationPrivate::sendPostedEvents(QObject*, int, QThreadData*) + 628
+14  libqcocoa.dylib               	       0x112812a08 QCocoaEventDispatcherPrivate::processPostedEvents() + 380
+15  libqcocoa.dylib               	       0x112813cc0 QCocoaEventDispatcherPrivate::postedEventsSourceCallback(void*) + 516
+16  CoreFoundation                	       0x185e2ef30 __CFRUNLOOP_IS_CALLING_OUT_TO_A_SOURCE0_PERFORM_FUNCTION__ + 28
+17  CoreFoundation                	       0x185e2eec4 __CFRunLoopDoSource0 + 172
+18  CoreFoundation                	       0x185e2ec94 __CFRunLoopDoSources0 + 332
+19  CoreFoundation                	       0x185e2d854 __CFRunLoopRun + 820
+20  CoreFoundation                	       0x185f001c4 _CFRunLoopRunSpecificWithOptions + 532
+21  HIToolbox                     	       0x192c13560 RunCurrentEventLoopInMode + 320
+22  HIToolbox                     	       0x192c168bc ReceiveNextEventCommon + 488
+23  HIToolbox                     	       0x192da014c _BlockUntilNextEventMatchingListInMode + 48
+24  AppKit                        	       0x18a90835c _DPSBlockUntilNextEventMatchingListInMode + 228
+25  AppKit                        	       0x18a25c084 _DPSNextEvent + 576
+26  AppKit                        	       0x18adf18b0 -[NSApplication(NSEventRouting) _nextEventMatchingEventMask:untilDate:inMode:dequeue:] + 688
+27  AppKit                        	       0x18adf15bc -[NSApplication(NSEventRouting) nextEventMatchingMask:untilDate:inMode:dequeue:] + 72
+28  AppKit                        	       0x18a24f13c -[NSApplication run] + 368
+29  libqcocoa.dylib               	       0x1128114ec QCocoaEventDispatcher::processEvents(QFlags<QEventLoop::ProcessEventsFlag>) + 2152
+30  QtCore                        	       0x110abc608 QEventLoop::exec(QFlags<QEventLoop::ProcessEventsFlag>) + 588
+31  QtCore                        	       0x110ab3198 QCoreApplication::exec() + 228
+32  ITK-SNAP                      	       0x1026041cc main + 6856
+33  dyld                          	       0x1859b3e00 start + 6992
+
+Thread 1:
+
+Thread 2:
+
+Thread 3:
+
+Thread 4:: com.apple.NSEventThread
+0   libsystem_kernel.dylib        	       0x185d2dc34 mach_msg2_trap + 8
+1   libsystem_kernel.dylib        	       0x185d40574 mach_msg2_internal + 76
+2   libsystem_kernel.dylib        	       0x185d369c0 mach_msg_overwrite + 480
+3   libsystem_kernel.dylib        	       0x185d2dfc0 mach_msg + 24
+4   CoreFoundation                	       0x185e2f0d8 __CFRunLoopServiceMachPort + 160
+5   CoreFoundation                	       0x185e2d9c4 __CFRunLoopRun + 1188
+6   CoreFoundation                	       0x185f001c4 _CFRunLoopRunSpecificWithOptions + 532
+7   AppKit                        	       0x18a37dc7c _NSEventThread + 184
+8   libsystem_pthread.dylib       	       0x185d71c58 _pthread_start + 136
+9   libsystem_pthread.dylib       	       0x185d6cc1c thread_start + 8
+
+Thread 5:
+0   libsystem_kernel.dylib        	       0x185d3150c __psynch_cvwait + 8
+1   libsystem_pthread.dylib       	       0x185d72128 _pthread_cond_wait + 980
+2   libc++.1.dylib                	       0x185c87858 std::__1::condition_variable::wait(std::__1::unique_lock<std::__1::mutex>&) + 32
+3   ITK-SNAP                      	       0x104764438 itk::ThreadPool::ThreadExecute() + 192
+4   ITK-SNAP                      	       0x104765174 void* std::__1::__thread_proxy[abi:ne200100]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)()>>(void*) + 52
+5   libsystem_pthread.dylib       	       0x185d71c58 _pthread_start + 136
+6   libsystem_pthread.dylib       	       0x185d6cc1c thread_start + 8
+
+Thread 6:
+0   libsystem_kernel.dylib        	       0x185d3150c __psynch_cvwait + 8
+1   libsystem_pthread.dylib       	       0x185d72128 _pthread_cond_wait + 980
+2   libc++.1.dylib                	       0x185c87858 std::__1::condition_variable::wait(std::__1::unique_lock<std::__1::mutex>&) + 32
+3   ITK-SNAP                      	       0x104764438 itk::ThreadPool::ThreadExecute() + 192
+4   ITK-SNAP                      	       0x104765174 void* std::__1::__thread_proxy[abi:ne200100]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)()>>(void*) + 52
+5   libsystem_pthread.dylib       	       0x185d71c58 _pthread_start + 136
+6   libsystem_pthread.dylib       	       0x185d6cc1c thread_start + 8
+
+Thread 7:
+0   libsystem_kernel.dylib        	       0x185d3150c __psynch_cvwait + 8
+1   libsystem_pthread.dylib       	       0x185d72128 _pthread_cond_wait + 980
+2   libc++.1.dylib                	       0x185c87858 std::__1::condition_variable::wait(std::__1::unique_lock<std::__1::mutex>&) + 32
+3   ITK-SNAP                      	       0x104764438 itk::ThreadPool::ThreadExecute() + 192
+4   ITK-SNAP                      	       0x104765174 void* std::__1::__thread_proxy[abi:ne200100]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)()>>(void*) + 52
+5   libsystem_pthread.dylib       	       0x185d71c58 _pthread_start + 136
+6   libsystem_pthread.dylib       	       0x185d6cc1c thread_start + 8
+
+Thread 8:
+0   libsystem_kernel.dylib        	       0x185d3150c __psynch_cvwait + 8
+1   libsystem_pthread.dylib       	       0x185d72128 _pthread_cond_wait + 980
+2   libc++.1.dylib                	       0x185c87858 std::__1::condition_variable::wait(std::__1::unique_lock<std::__1::mutex>&) + 32
+3   ITK-SNAP                      	       0x104764438 itk::ThreadPool::ThreadExecute() + 192
+4   ITK-SNAP                      	       0x104765174 void* std::__1::__thread_proxy[abi:ne200100]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)()>>(void*) + 52
+5   libsystem_pthread.dylib       	       0x185d71c58 _pthread_start + 136
+6   libsystem_pthread.dylib       	       0x185d6cc1c thread_start + 8
+
+Thread 9:
+0   libsystem_kernel.dylib        	       0x185d3150c __psynch_cvwait + 8
+1   libsystem_pthread.dylib       	       0x185d72128 _pthread_cond_wait + 980
+2   libc++.1.dylib                	       0x185c87858 std::__1::condition_variable::wait(std::__1::unique_lock<std::__1::mutex>&) + 32
+3   ITK-SNAP                      	       0x104764438 itk::ThreadPool::ThreadExecute() + 192
+4   ITK-SNAP                      	       0x104765174 void* std::__1::__thread_proxy[abi:ne200100]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)()>>(void*) + 52
+5   libsystem_pthread.dylib       	       0x185d71c58 _pthread_start + 136
+6   libsystem_pthread.dylib       	       0x185d6cc1c thread_start + 8
+
+Thread 10:
+0   libsystem_kernel.dylib        	       0x185d3150c __psynch_cvwait + 8
+1   libsystem_pthread.dylib       	       0x185d72128 _pthread_cond_wait + 980
+2   libc++.1.dylib                	       0x185c87858 std::__1::condition_variable::wait(std::__1::unique_lock<std::__1::mutex>&) + 32
+3   ITK-SNAP                      	       0x104764438 itk::ThreadPool::ThreadExecute() + 192
+4   ITK-SNAP                      	       0x104765174 void* std::__1::__thread_proxy[abi:ne200100]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)()>>(void*) + 52
+5   libsystem_pthread.dylib       	       0x185d71c58 _pthread_start + 136
+6   libsystem_pthread.dylib       	       0x185d6cc1c thread_start + 8
+
+Thread 11:
+0   libsystem_kernel.dylib        	       0x185d3150c __psynch_cvwait + 8
+1   libsystem_pthread.dylib       	       0x185d72128 _pthread_cond_wait + 980
+2   libc++.1.dylib                	       0x185c87858 std::__1::condition_variable::wait(std::__1::unique_lock<std::__1::mutex>&) + 32
+3   ITK-SNAP                      	       0x104764438 itk::ThreadPool::ThreadExecute() + 192
+4   ITK-SNAP                      	       0x104765174 void* std::__1::__thread_proxy[abi:ne200100]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)()>>(void*) + 52
+5   libsystem_pthread.dylib       	       0x185d71c58 _pthread_start + 136
+6   libsystem_pthread.dylib       	       0x185d6cc1c thread_start + 8
+
+Thread 12:
+0   libsystem_kernel.dylib        	       0x185d3150c __psynch_cvwait + 8
+1   libsystem_pthread.dylib       	       0x185d72128 _pthread_cond_wait + 980
+2   libc++.1.dylib                	       0x185c87858 std::__1::condition_variable::wait(std::__1::unique_lock<std::__1::mutex>&) + 32
+3   ITK-SNAP                      	       0x104764438 itk::ThreadPool::ThreadExecute() + 192
+4   ITK-SNAP                      	       0x104765174 void* std::__1::__thread_proxy[abi:ne200100]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)()>>(void*) + 52
+5   libsystem_pthread.dylib       	       0x185d71c58 _pthread_start + 136
+6   libsystem_pthread.dylib       	       0x185d6cc1c thread_start + 8
+
+Thread 13:: TestWorker
+0   libsystem_kernel.dylib        	       0x185d31308 __semwait_signal + 8
+1   libsystem_c.dylib             	       0x185c0dcc0 nanosleep + 220
+2   QtCore                        	       0x110c47884 QThread::msleep(unsigned long) + 96
+3   ITK-SNAP                      	       0x1027aa4bc SNAPTestQt::qt_metacall(QMetaObject::Call, int, void**) + 104
+4   QtQml                         	       0x10d04d554 QV4::CallMethod(QQmlObjectOrGadget const&, int, QMetaType, int, QMetaType const*, QV4::ExecutionEngine*, QV4::CallData*, QMetaObject::Call) + 5940
+5   QtQml                         	       0x10d04b390 QV4::QObjectMethod::callPrecise(QQmlObjectOrGadget const&, QQmlPropertyData const&, QV4::ExecutionEngine*, QV4::CallData*, QMetaObject::Call) + 792
+6   QtQml                         	       0x10d051130 QV4::QObjectMethod::callInternal(QV4::Value const*, QV4::Value const*, int) const + 1936
+7   QtQml                         	       0x10d071728 QV4::Runtime::CallProperty::call(QV4::ExecutionEngine*, QV4::Value const&, int, QV4::Value*, int) + 904
+8   QtQml                         	       0x10d0aab1c QV4::Moth::VME::interpret(QV4::JSTypesStackFrame*, QV4::ExecutionEngine*, char const*) + 4480
+9   QtQml                         	       0x10d0a9918 QV4::Moth::VME::exec(QV4::JSTypesStackFrame*, QV4::ExecutionEngine*) + 332
+10  QtQml                         	       0x10d004bb8 QV4::doCall(QV4::Function*, QV4::Value const*, QV4::Value const*, int, QV4::ExecutionContext*) + 324
+11  QtQml                         	       0x10d075ab4 QV4::Script::run(QV4::Value const*) + 172
+12  QtQml                         	       0x10cfaca4c QJSEngine::evaluate(QString const&, QString const&, int, QList<QString>*) + 368
+13  ITK-SNAP                      	       0x102797958 TestWorker::source(QString) + 644
+14  ITK-SNAP                      	       0x1027975b0 TestWorker::run() + 344
+15  QtCore                        	       0x110c472cc QThreadPrivate::start(void*) + 392
+16  libsystem_pthread.dylib       	       0x185d71c58 _pthread_start + 136
+17  libsystem_pthread.dylib       	       0x185d6cc1c thread_start + 8
+
+Thread 14:: Thread (pooled)
+0   libsystem_kernel.dylib        	       0x185d3150c __psynch_cvwait + 8
+1   libsystem_pthread.dylib       	       0x185d72128 _pthread_cond_wait + 980
+2   QtCore                        	       0x110c4fde8 QWaitConditionPrivate::wait(QDeadlineTimer) + 236
+3   QtCore                        	       0x110c4fc94 QWaitCondition::wait(QMutex*, QDeadlineTimer) + 108
+4   QtCore                        	       0x110baf2bc QThreadPoolThread::run() + 932
+5   QtCore                        	       0x110c472cc QThreadPrivate::start(void*) + 392
+6   libsystem_pthread.dylib       	       0x185d71c58 _pthread_start + 136
+7   libsystem_pthread.dylib       	       0x185d6cc1c thread_start + 8
+
+Thread 15:: Thread (pooled)
+0   libsystem_kernel.dylib        	       0x185d3150c __psynch_cvwait + 8
+1   libsystem_pthread.dylib       	       0x185d72128 _pthread_cond_wait + 980
+2   QtCore                        	       0x110c4fde8 QWaitConditionPrivate::wait(QDeadlineTimer) + 236
+3   QtCore                        	       0x110c4fc94 QWaitCondition::wait(QMutex*, QDeadlineTimer) + 108
+4   QtCore                        	       0x110baf2bc QThreadPoolThread::run() + 932
+5   QtCore                        	       0x110c472cc QThreadPrivate::start(void*) + 392
+6   libsystem_pthread.dylib       	       0x185d71c58 _pthread_start + 136
+7   libsystem_pthread.dylib       	       0x185d6cc1c thread_start + 8
+
+Thread 16:: Thread (pooled)
+0   libsystem_kernel.dylib        	       0x185d3150c __psynch_cvwait + 8
+1   libsystem_pthread.dylib       	       0x185d72128 _pthread_cond_wait + 980
+2   QtCore                        	       0x110c4fde8 QWaitConditionPrivate::wait(QDeadlineTimer) + 236
+3   QtCore                        	       0x110c4fc94 QWaitCondition::wait(QMutex*, QDeadlineTimer) + 108
+4   QtCore                        	       0x110baf2bc QThreadPoolThread::run() + 932
+5   QtCore                        	       0x110c472cc QThreadPrivate::start(void*) + 392
+6   libsystem_pthread.dylib       	       0x185d71c58 _pthread_start + 136
+7   libsystem_pthread.dylib       	       0x185d6cc1c thread_start + 8
+
+Thread 17:: Thread (pooled)
+0   libsystem_kernel.dylib        	       0x185d3150c __psynch_cvwait + 8
+1   libsystem_pthread.dylib       	       0x185d72128 _pthread_cond_wait + 980
+2   QtCore                        	       0x110c4fde8 QWaitConditionPrivate::wait(QDeadlineTimer) + 236
+3   QtCore                        	       0x110c4fc94 QWaitCondition::wait(QMutex*, QDeadlineTimer) + 108
+4   QtCore                        	       0x110baf2bc QThreadPoolThread::run() + 932
+5   QtCore                        	       0x110c472cc QThreadPrivate::start(void*) + 392
+6   libsystem_pthread.dylib       	       0x185d71c58 _pthread_start + 136
+7   libsystem_pthread.dylib       	       0x185d6cc1c thread_start + 8
+
+Thread 18:: Thread (pooled)
+0   libsystem_kernel.dylib        	       0x185d3150c __psynch_cvwait + 8
+1   libsystem_pthread.dylib       	       0x185d72128 _pthread_cond_wait + 980
+2   QtCore                        	       0x110c4fde8 QWaitConditionPrivate::wait(QDeadlineTimer) + 236
+3   QtCore                        	       0x110c4fc94 QWaitCondition::wait(QMutex*, QDeadlineTimer) + 108
+4   QtCore                        	       0x110baf2bc QThreadPoolThread::run() + 932
+5   QtCore                        	       0x110c472cc QThreadPrivate::start(void*) + 392
+6   libsystem_pthread.dylib       	       0x185d71c58 _pthread_start + 136
+7   libsystem_pthread.dylib       	       0x185d6cc1c thread_start + 8
+
+Thread 19:
+
+
+Thread 0 crashed with ARM Thread State (64-bit):
+    x0: 0x0000000000000000   x1: 0x0000000959ee1a50   x2: 0x00000000000120a8   x3: 0x0000000105218800
+    x4: 0x0000000000000000   x5: 0x0000000000000000   x6: 0x0000000000000000   x7: 0x00000000000001c0
+    x8: 0x0000000000000010   x9: 0x0000000000000000  x10: 0x0000000000000002  x11: 0x00000000fffffffd
+   x12: 0x0000000000000000  x13: 0x0000000000000000  x14: 0x0000000000000000  x15: 0x0000000000000000
+   x16: 0x0000000000000002  x17: 0x00000001f35b95c8  x18: 0x0000000000000000  x19: 0x000000095ac60d20
+   x20: 0x0000000000000001  x21: 0x000000095cb6bb60  x22: 0x00000001f1f79d80  x23: 0x0000000956f65d00
+   x24: 0x000000095d0d2d60  x25: 0x000000095764c220  x26: 0x0000000000000000  x27: 0x00000001f1f79d80
+   x28: 0x0000000000000004   fp: 0x000000016d8145d0   lr: 0x00000001028f41a4
+    sp: 0x000000016d8145c0   pc: 0x00000001031783f0 cpsr: 0x60001000
+   far: 0x0000000000000058  esr: 0x92000006 (Data Abort) byte read Translation fault
+
+Binary Images:
+       0x1025e8000 -        0x105203fff org.itksnap (4.6.0-alpha.1) <a1be125f-7c53-3e20-9c39-161c97593976> /Users/USER/*/ITK-SNAP
+       0x107708000 -        0x107887fff libvtkChartsCore-9.5.9.5.dylib (*) <3572c801-d84b-33b7-a761-0878c7bc3c92> /Users/USER/*/libvtkChartsCore-9.5.9.5.dylib
+       0x107510000 -        0x107583fff libvtkIOExport-9.5.9.5.dylib (*) <bc265c77-07c4-3c4f-9d0a-6354ee9dab94> /Users/USER/*/libvtkIOExport-9.5.9.5.dylib
+       0x107ad4000 -        0x107c2bfff libvtkIOGeometry-9.5.9.5.dylib (*) <c1d585c5-e6ee-3e5a-9789-9865fc4054b1> /Users/USER/*/libvtkIOGeometry-9.5.9.5.dylib
+       0x107490000 -        0x1074a3fff libvtkIOPLY-9.5.9.5.dylib (*) <f5fcec67-a007-335c-98fa-b3f9eade8cef> /Users/USER/*/libvtkIOPLY-9.5.9.5.dylib
+       0x1075b8000 -        0x1075dbfff libvtkRenderingContextOpenGL2-9.5.9.5.dylib (*) <551b156a-e20a-3785-9622-0f8f0d79d28b> /Users/USER/*/libvtkRenderingContextOpenGL2-9.5.9.5.dylib
+       0x1074b8000 -        0x1074c7fff libvtkRenderingExternal-9.5.9.5.dylib (*) <166bffc3-ac15-32c8-9b88-5f86716f3b6d> /Users/USER/*/libvtkRenderingExternal-9.5.9.5.dylib
+       0x1074e4000 -        0x1074effff libvtkRenderingLOD-9.5.9.5.dylib (*) <7def9f4f-e26f-3b81-9349-fdb32b0c1810> /Users/USER/*/libvtkRenderingLOD-9.5.9.5.dylib
+       0x1078f8000 -        0x10795bfff libvtkRenderingVolumeOpenGL2-9.5.9.5.dylib (*) <f0dc6b34-b417-3f90-92d5-4154107420c6> /Users/USER/*/libvtkRenderingVolumeOpenGL2-9.5.9.5.dylib
+       0x1075f8000 -        0x107607fff libvtkRenderingGL2PSOpenGL2-9.5.9.5.dylib (*) <14961390-8adb-3208-89b4-886aa2a1ac0f> /Users/USER/*/libvtkRenderingGL2PSOpenGL2-9.5.9.5.dylib
+       0x107618000 -        0x107623fff libvtkViewsContext2D-9.5.9.5.dylib (*) <01eb0748-edd0-3a99-a13f-8971c0e98f22> /Users/USER/*/libvtkViewsContext2D-9.5.9.5.dylib
+       0x107a18000 -        0x107a53fff libvtkGUISupportQt-9.5.9.5.dylib (*) <197a9043-bea2-3417-abed-3cb0d45f0ae2> /Users/USER/*/libvtkGUISupportQt-9.5.9.5.dylib
+       0x107cb0000 -        0x107d0ffff libssh.4.11.0.dylib (*) <67d17072-b9fa-39d1-8f39-c0e0c1ae1620> /opt/homebrew/*/libssh.4.11.0.dylib
+       0x107634000 -        0x10764bfff libvtkRenderingVtkJS-9.5.9.5.dylib (*) <fa6bb74e-b693-3448-8ee2-f66edfe6e08e> /Users/USER/*/libvtkRenderingVtkJS-9.5.9.5.dylib
+       0x107660000 -        0x10766ffff libvtkRenderingSceneGraph-9.5.9.5.dylib (*) <27a8074d-6b1f-345a-a8ac-81a19be52d9f> /Users/USER/*/libvtkRenderingSceneGraph-9.5.9.5.dylib
+       0x1079d4000 -        0x1079fbfff libvtkjsoncpp-9.5.9.5.dylib (*) <2fcd933b-b2f5-3894-a5b9-1b01824ce074> /Users/USER/*/libvtkjsoncpp-9.5.9.5.dylib
+       0x107d80000 -        0x107db3fff libvtkImagingMath-9.5.9.5.dylib (*) <fbe9edf3-4891-34e3-8df8-1d8ca396ec96> /Users/USER/*/libvtkImagingMath-9.5.9.5.dylib
+       0x107994000 -        0x1079a7fff libvtkViewsCore-9.5.9.5.dylib (*) <a2bfda86-2695-3d8b-a47d-a7f8b63eab02> /Users/USER/*/libvtkViewsCore-9.5.9.5.dylib
+       0x108040000 -        0x1081a7fff libvtkInteractionWidgets-9.5.9.5.dylib (*) <944759fa-a31b-3f6a-a6d5-9600bdc84502> /Users/USER/*/libvtkInteractionWidgets-9.5.9.5.dylib
+       0x107e8c000 -        0x107f1bfff libvtkImagingGeneral-9.5.9.5.dylib (*) <e62de79a-99e8-3505-a2d5-3806eb73ed9b> /Users/USER/*/libvtkImagingGeneral-9.5.9.5.dylib
+       0x107dd0000 -        0x107deffff libvtkInteractionStyle-9.5.9.5.dylib (*) <1581288f-e411-3841-a866-b16aa7782424> /Users/USER/*/libvtkInteractionStyle-9.5.9.5.dylib
+       0x1082b0000 -        0x108333fff libvtkRenderingAnnotation-9.5.9.5.dylib (*) <f9d6f442-15e0-3d3a-bf97-7d8d1bd393aa> /Users/USER/*/libvtkRenderingAnnotation-9.5.9.5.dylib
+       0x1085d0000 -        0x1087a7fff libvtkRenderingVolume-9.5.9.5.dylib (*) <e5b25ccf-7ca4-3af1-b17c-20c4a3bbf17e> /Users/USER/*/libvtkRenderingVolume-9.5.9.5.dylib
+       0x108484000 -        0x10850bfff libvtkFiltersModeling-9.5.9.5.dylib (*) <e1e7239c-7224-32ee-b158-b596fe8f2ddd> /Users/USER/*/libvtkFiltersModeling-9.5.9.5.dylib
+       0x107e14000 -        0x107e33fff libvtkRenderingContext2D-9.5.9.5.dylib (*) <858cf559-2e0e-3845-8de8-140bb0f3f4fd> /Users/USER/*/libvtkRenderingContext2D-9.5.9.5.dylib
+       0x108c70000 -        0x108e23fff libvtkRenderingOpenGL2-9.5.9.5.dylib (*) <b7f6b447-455e-3c59-9b79-edfec5638df1> /Users/USER/*/libvtkRenderingOpenGL2-9.5.9.5.dylib
+       0x108f08000 -        0x10903ffff libvtkIOImage-9.5.9.5.dylib (*) <58f4b099-681c-3744-83c4-f3a63a6fc9c0> /Users/USER/*/libvtkIOImage-9.5.9.5.dylib
+       0x107680000 -        0x10768bfff libvtkRenderingUI-9.5.9.5.dylib (*) <caa43b7b-3f2e-3931-ae97-baf9dc515177> /Users/USER/*/libvtkRenderingUI-9.5.9.5.dylib
+       0x10838c000 -        0x1083b3fff libvtkRenderingFreeType-9.5.9.5.dylib (*) <1ad7b9c6-b431-3b16-be5b-0f88115e2b4b> /Users/USER/*/libvtkRenderingFreeType-9.5.9.5.dylib
+       0x1089d8000 -        0x108a53fff libfreetype.6.dylib (*) <0a7e6c59-803b-3a5a-8f9b-240d7b3025ca> /opt/homebrew/*/libfreetype.6.dylib
+       0x107a9c000 -        0x107aa7fff libvtkRenderingHyperTreeGrid-9.5.9.5.dylib (*) <912dde12-1331-37af-ba8b-df4391d11f4b> /Users/USER/*/libvtkRenderingHyperTreeGrid-9.5.9.5.dylib
+       0x109094000 -        0x1091b3fff libvtkRenderingCore-9.5.9.5.dylib (*) <251a0bba-ffa6-3c23-88c9-0ccd15f896f6> /Users/USER/*/libvtkRenderingCore-9.5.9.5.dylib
+       0x108a74000 -        0x108adffff libvtkFiltersSources-9.5.9.5.dylib (*) <581d422d-3afb-3495-a66f-0649a8ba9fef> /Users/USER/*/libvtkFiltersSources-9.5.9.5.dylib
+       0x1094e0000 -        0x1096d3fff libvtkImagingCore-9.5.9.5.dylib (*) <5ac1d9ae-e987-3cdb-ae9b-253c56c2761c> /Users/USER/*/libvtkImagingCore-9.5.9.5.dylib
+       0x108b2c000 -        0x108b83fff libvtkglad-9.5.9.5.dylib (*) <6e70e41b-71d6-3b42-8057-f17479346760> /Users/USER/*/libvtkglad-9.5.9.5.dylib
+       0x107d34000 -        0x107d3ffff org.qt-project.QtOpenGLWidgets (6.10) <b9efe023-2ee5-3c6c-a2fb-70f11ec0c933> /opt/homebrew/*/QtOpenGLWidgets.framework/Versions/A/QtOpenGLWidgets
+       0x109dd4000 -        0x10a173fff libvtkFiltersGeneral-9.5.9.5.dylib (*) <20471a15-f740-36dd-b391-01a8a3867981> /Users/USER/*/libvtkFiltersGeneral-9.5.9.5.dylib
+       0x107f4c000 -        0x107f5ffff libvtkCommonComputationalGeometry-9.5.9.5.dylib (*) <ba63d89c-89c0-3f21-90f9-22633e4cdd37> /Users/USER/*/libvtkCommonComputationalGeometry-9.5.9.5.dylib
+       0x109740000 -        0x10982ffff libvtkFiltersGeometry-9.5.9.5.dylib (*) <07724f02-a7d1-3bfb-8026-ac54f9c03811> /Users/USER/*/libvtkFiltersGeometry-9.5.9.5.dylib
+       0x10937c000 -        0x109407fff libvtkIOXML-9.5.9.5.dylib (*) <051ed36f-35ff-3898-ab83-fa5c691caa03> /Users/USER/*/libvtkIOXML-9.5.9.5.dylib
+       0x107d54000 -        0x107d63fff libvtkIOXMLParser-9.5.9.5.dylib (*) <70c532ea-1ec7-3c54-aed9-b794c1e73608> /Users/USER/*/libvtkIOXMLParser-9.5.9.5.dylib
+       0x109284000 -        0x1092fbfff libvtkIOLegacy-9.5.9.5.dylib (*) <21dc2876-efe4-3b87-a898-14e626b91d8c> /Users/USER/*/libvtkIOLegacy-9.5.9.5.dylib
+       0x108bd0000 -        0x108c23fff libvtkIOCellGrid-9.5.9.5.dylib (*) <1f54b0f1-713d-3fc6-b122-acb458bc97f7> /Users/USER/*/libvtkIOCellGrid-9.5.9.5.dylib
+       0x1098fc000 -        0x109943fff libvtkIOCore-9.5.9.5.dylib (*) <1766b45f-f8c3-35c1-a340-b25292cc4d17> /Users/USER/*/libvtkIOCore-9.5.9.5.dylib
+       0x109acc000 -        0x109b8bfff libvtkFiltersCellGrid-9.5.9.5.dylib (*) <e1a6b28f-4658-3b4b-a3ad-487379aef2c0> /Users/USER/*/libvtkFiltersCellGrid-9.5.9.5.dylib
+       0x10b038000 -        0x10b6a3fff libvtkFiltersCore-9.5.9.5.dylib (*) <5c222075-7e18-3262-9945-5c8e3797f935> /Users/USER/*/libvtkFiltersCore-9.5.9.5.dylib
+       0x109c1c000 -        0x109c9ffff libvtkCommonExecutionModel-9.5.9.5.dylib (*) <f4ad3b7b-81b0-3bf4-a623-229931e75acf> /Users/USER/*/libvtkCommonExecutionModel-9.5.9.5.dylib
+       0x10aa14000 -        0x10ad6bfff libvtkCommonDataModel-9.5.9.5.dylib (*) <c73064fc-6a9e-373c-b064-c3bf394aed15> /Users/USER/*/libvtkCommonDataModel-9.5.9.5.dylib
+       0x107fcc000 -        0x107feffff libvtkCommonTransforms-9.5.9.5.dylib (*) <41bffb15-e541-31d6-ac29-988bcb59c09c> /Users/USER/*/libvtkCommonTransforms-9.5.9.5.dylib
+       0x10bc1c000 -        0x10be37fff libvtkCommonMisc-9.5.9.5.dylib (*) <fee1dc29-bf74-3880-b518-f9cbee66f9bf> /Users/USER/*/libvtkCommonMisc-9.5.9.5.dylib
+       0x107f80000 -        0x107f97fff libvtkCommonMath-9.5.9.5.dylib (*) <56568170-3c2e-33b3-84ea-6c24ec1fee4b> /Users/USER/*/libvtkCommonMath-9.5.9.5.dylib
+       0x107474000 -        0x107477fff libvtkkissfft-9.5.9.5.dylib (*) <2ede7ef8-5ca5-314b-bb0c-91caa248905b> /Users/USER/*/libvtkkissfft-9.5.9.5.dylib
+       0x10e5cc000 -        0x10f4cbfff libvtkCommonCore-9.5.9.5.dylib (*) <55081a38-4dd6-3895-9959-90e0563cf927> /Users/USER/*/libvtkCommonCore-9.5.9.5.dylib
+       0x108438000 -        0x108447fff libvtktoken-9.5.9.5.dylib (*) <b1cccf7b-6f9a-32b0-b55f-d75bc6d8287a> /Users/USER/*/libvtktoken-9.5.9.5.dylib
+       0x109478000 -        0x1094a7fff libvtksys-9.5.9.5.dylib (*) <4110d26f-670a-318d-9355-4a82aca2f28d> /Users/USER/*/libvtksys-9.5.9.5.dylib
+       0x10c858000 -        0x10ccc3fff org.qt-project.QtWidgets (6.10) <04173f0f-2551-3e77-bc96-c5163a6f0bf8> /opt/homebrew/*/QtWidgets.framework/Versions/A/QtWidgets
+       0x10a468000 -        0x10a4cffff org.qt-project.QtOpenGL (6.10) <89229113-9e9a-382e-9426-6bebdf8bba8c> /opt/homebrew/*/QtOpenGL.framework/Versions/A/QtOpenGL
+       0x10d76c000 -        0x10dd0ffff org.qt-project.QtGui (6.10) <9dc3ca19-ffb7-36f3-aa97-26ab7011f5f9> /opt/homebrew/*/QtGui.framework/Versions/A/QtGui
+       0x107ab8000 -        0x107abbfff org.qt-project.QtConcurrent (6.10) <ed38e238-315b-3db0-84a4-49d9d491a1c3> /opt/homebrew/*/QtConcurrent.framework/Versions/A/QtConcurrent
+       0x10cf34000 -        0x10d2ebfff org.qt-project.QtQml (6.10) <c02f49ee-edb2-3e27-926a-6e17d3f70c0b> /opt/homebrew/*/QtQml.framework/Versions/A/QtQml
+       0x10a728000 -        0x10a85ffff org.qt-project.QtNetwork (6.10) <f28a78aa-942b-3e25-874e-0fd6279a48ca> /opt/homebrew/*/QtNetwork.framework/Versions/A/QtNetwork
+       0x110a18000 -        0x110e93fff org.qt-project.QtCore (6.10) <7b81919f-943f-3509-bb16-dbf146c4aac1> /opt/homebrew/*/QtCore.framework/Versions/A/QtCore
+       0x10a518000 -        0x10a593fff libvtkInfovisCore-9.5.9.5.dylib (*) <3c42dd6f-24d3-3fe9-964f-30b05f4d8064> /Users/USER/*/libvtkInfovisCore-9.5.9.5.dylib
+       0x10997c000 -        0x1099a7fff libvtkImagingSources-9.5.9.5.dylib (*) <183d940b-83a7-3395-90ea-d685e6018e7d> /Users/USER/*/libvtkImagingSources-9.5.9.5.dylib
+       0x107fac000 -        0x107fbbfff libvtkCommonColor-9.5.9.5.dylib (*) <d37a5d33-3907-386f-b39c-da29988cc432> /Users/USER/*/libvtkCommonColor-9.5.9.5.dylib
+       0x10857c000 -        0x10858ffff libvtkCommonSystem-9.5.9.5.dylib (*) <858b8d78-b046-36f5-b170-dd093d64334e> /Users/USER/*/libvtkCommonSystem-9.5.9.5.dylib
+       0x1099c0000 -        0x1099e3fff libvtkpugixml-9.5.9.5.dylib (*) <42e37759-2c2b-3b65-a45e-fd96ff670f19> /Users/USER/*/libvtkpugixml-9.5.9.5.dylib
+       0x107e70000 -        0x107e7ffff libvtkdoubleconversion-9.5.9.5.dylib (*) <a86fd617-8b0a-3011-9366-7ed1a0d877e8> /Users/USER/*/libvtkdoubleconversion-9.5.9.5.dylib
+       0x108460000 -        0x10846bfff libvtkloguru-9.5.9.5.dylib (*) <1a8f879a-2dbf-3c2f-bed5-3461a1aa4c05> /Users/USER/*/libvtkloguru-9.5.9.5.dylib
+       0x109a44000 -        0x109a67fff libvtkFiltersVerdict-9.5.9.5.dylib (*) <74f76aa4-36d5-3311-b49c-2905915e30e4> /Users/USER/*/libvtkFiltersVerdict-9.5.9.5.dylib
+       0x109340000 -        0x109357fff libvtkfmt-9.5.9.5.dylib (*) <2191a6cb-e958-3fc2-bda2-185026d31189> /Users/USER/*/libvtkfmt-9.5.9.5.dylib
+       0x109a8c000 -        0x109aabfff libvtkverdict-9.5.9.5.dylib (*) <65b4f2b9-5343-3b11-99bd-b8bb61254900> /Users/USER/*/libvtkverdict-9.5.9.5.dylib
+       0x10c378000 -        0x10c487fff libvtkFiltersReduction-9.5.9.5.dylib (*) <4fddb4bc-9816-34ca-a3a3-88eeaf1cadb4> /Users/USER/*/libvtkFiltersReduction-9.5.9.5.dylib
+       0x109d40000 -        0x109d63fff libpng16.16.dylib (*) <68cbdb4a-d121-3925-a2ab-fa1a7598b757> /opt/homebrew/*/libpng16.16.dylib
+       0x10c574000 -        0x10c613fff libvtkFiltersExtraction-9.5.9.5.dylib (*) <53ad6c07-17bf-32f2-8818-7d7010579f71> /Users/USER/*/libvtkFiltersExtraction-9.5.9.5.dylib
+       0x1085a4000 -        0x1085b7fff libvtkDICOMParser-9.5.9.5.dylib (*) <b2a26df1-abab-3756-bb6a-68c3cf09b3f1> /Users/USER/*/libvtkDICOMParser-9.5.9.5.dylib
+       0x10a5e0000 -        0x10a62ffff libvtkjpeg-9.5.9.5.dylib (*) <d736baaa-1f4d-34cf-acb2-cafb94ef4bdd> /Users/USER/*/libvtkjpeg-9.5.9.5.dylib
+       0x10a93c000 -        0x10a9affff libvtkmetaio-9.5.9.5.dylib (*) <16a4374f-f7e5-3d52-a748-ea6d78835793> /Users/USER/*/libvtkmetaio-9.5.9.5.dylib
+       0x10c180000 -        0x10c1e7fff libtiff.6.dylib (*) <04e855be-8431-36cc-9436-6579aeb77d1d> /opt/homebrew/*/libtiff.6.dylib
+       0x10c204000 -        0x10c28bfff libzstd.1.5.7.dylib (*) <1ce1197a-4a2b-3036-984e-95599210332b> /opt/homebrew/*/libzstd.1.5.7.dylib
+       0x109d74000 -        0x109d93fff liblzma.5.dylib (*) <43c01aff-c040-33ff-bb38-5e1ec42d9e75> /opt/homebrew/*/liblzma.5.dylib
+       0x10c2a8000 -        0x10c307fff libjpeg.8.3.2.dylib (*) <233ce9ad-1aca-349a-ad3d-2af310c97ed4> /opt/homebrew/*/libjpeg.8.3.2.dylib
+       0x10c6cc000 -        0x10c713fff libvtkFiltersHyperTree-9.5.9.5.dylib (*) <fd5cc1fd-0e5a-3279-8812-4192d5970c40> /Users/USER/*/libvtkFiltersHyperTree-9.5.9.5.dylib
+       0x10d550000 -        0x10d5ebfff libvtkFiltersStatistics-9.5.9.5.dylib (*) <9bc3edf6-19e5-3afb-9000-c253be14bb5a> /Users/USER/*/libvtkFiltersStatistics-9.5.9.5.dylib
+       0x10e114000 -        0x10e1dbfff libvtkParallelDIY-9.5.9.5.dylib (*) <4090f9cf-eda7-337a-ab44-617bb73d673a> /Users/USER/*/libvtkParallelDIY-9.5.9.5.dylib
+       0x10a69c000 -        0x10a6dbfff libvtkParallelCore-9.5.9.5.dylib (*) <f64fb6ad-e3af-3ef8-8bc3-b5a2cba50cec> /Users/USER/*/libvtkParallelCore-9.5.9.5.dylib
+       0x109da4000 -        0x109dc3fff liblz4.1.10.0.dylib (*) <88b25dd4-c1ab-3a03-86d7-2b1595bb49d1> /opt/homebrew/*/liblz4.1.10.0.dylib
+       0x10a63c000 -        0x10a65bfff libvtkexpat-9.5.9.5.dylib (*) <80e54eed-ab82-3d65-82e9-f1976199bcef> /Users/USER/*/libvtkexpat-9.5.9.5.dylib
+       0x10afc4000 -        0x10afe7fff libvtkDomainsChemistry-9.5.9.5.dylib (*) <57c4294f-2a4a-3291-b82c-14d0b482cd80> /Users/USER/*/libvtkDomainsChemistry-9.5.9.5.dylib
+       0x10d64c000 -        0x10d6ebfff libvtkFiltersHybrid-9.5.9.5.dylib (*) <ccc00838-11f6-30c3-9ba1-6186cbb7973e> /Users/USER/*/libvtkFiltersHybrid-9.5.9.5.dylib
+       0x1099fc000 -        0x109a13fff libvtkgl2ps-9.5.9.5.dylib (*) <256c3733-6ef7-3f72-8857-c2c1ce6d6318> /Users/USER/*/libvtkgl2ps-9.5.9.5.dylib
+       0x109a20000 -        0x109a2ffff libvtkFiltersTexture-9.5.9.5.dylib (*) <3350c897-157b-361a-8b21-68a490e13fce> /Users/USER/*/libvtkFiltersTexture-9.5.9.5.dylib
+       0x10dfb0000 -        0x10e003fff libvtkImagingHybrid-9.5.9.5.dylib (*) <f9e49fc9-8025-3bad-a953-244d319be729> /Users/USER/*/libvtkImagingHybrid-9.5.9.5.dylib
+       0x10c750000 -        0x10c78bfff libvtkImagingColor-9.5.9.5.dylib (*) <a7c3a710-d451-30a4-998a-5a5f002fe779> /Users/USER/*/libvtkImagingColor-9.5.9.5.dylib
+       0x10e3c8000 -        0x10e4c3fff libglib-2.0.0.dylib (*) <a8225889-e14c-3808-bea5-1e02ce39579b> /opt/homebrew/*/libglib-2.0.0.dylib
+       0x1110b0000 -        0x111133fff org.qt-project.QtDBus (6.10) <fe58b971-337a-3204-91f6-c7bdfd3d623c> /opt/homebrew/*/QtDBus.framework/Versions/A/QtDBus
+       0x1111ac000 -        0x111267fff libharfbuzz.0.dylib (*) <67cf7c00-9bfe-3fc6-b4d1-769ffc46bc68> /opt/homebrew/*/libharfbuzz.0.dylib
+       0x10801c000 -        0x108027fff libmd4c.0.5.2.dylib (*) <1a08cf60-8d8b-3f61-bcbd-ab86aee61bc3> /opt/homebrew/*/libmd4c.0.5.2.dylib
+       0x107500000 -        0x107503fff libgthread-2.0.0.dylib (*) <220d4378-e95b-396d-91f1-1761e7570e47> /opt/homebrew/*/libgthread-2.0.0.dylib
+       0x10c320000 -        0x10c347fff libintl.8.dylib (*) <9ef58f71-571d-352e-bb98-6e9754d6b30b> /opt/homebrew/*/libintl.8.dylib
+       0x10e04c000 -        0x10e0c3fff libpcre2-8.0.dylib (*) <ac59ae27-0884-3df1-baf1-38015aa7768b> /opt/homebrew/*/libpcre2-8.0.dylib
+       0x10c7f8000 -        0x10c827fff libdbus-1.3.dylib (*) <d67bd0e2-713d-3b96-8916-513463708577> /opt/homebrew/*/libdbus-1.3.dylib
+       0x1115e0000 -        0x111793fff libicui18n.78.2.dylib (*) <77f6958d-ee70-3616-83b8-cda8cee757c8> /opt/homebrew/*/libicui18n.78.2.dylib
+       0x1118e8000 -        0x111a27fff libicuuc.78.2.dylib (*) <a8753081-d7ad-32f7-afa2-c5367f4d30ee> /opt/homebrew/*/libicuuc.78.2.dylib
+       0x113a60000 -        0x1159f3fff libicudata.78.2.dylib (*) <43c65598-8d23-3a63-95c7-17ec6d829426> /opt/homebrew/*/libicudata.78.2.dylib
+       0x10a668000 -        0x10a673fff libdouble-conversion.3.4.0.dylib (*) <a37dddd2-a19d-363b-b32a-90da247139e4> /opt/homebrew/*/libdouble-conversion.3.4.0.dylib
+       0x1094c8000 -        0x1094cffff libb2.1.dylib (*) <cdb9743e-4399-33d0-a9af-8667f7f00478> /opt/homebrew/*/libb2.1.dylib
+       0x10e300000 -        0x10e36ffff libpcre2-16.0.dylib (*) <d4323c04-d0c2-3f9f-a6fc-0975d7c7501f> /opt/homebrew/*/libpcre2-16.0.dylib
+       0x10a9dc000 -        0x10a9effff libgraphite2.3.2.1.dylib (*) <481f6d39-27e3-3c77-a203-99ddb4e2de7f> /opt/homebrew/*/libgraphite2.3.2.1.dylib
+       0x111f54000 -        0x112293fff libcrypto.3.dylib (*) <73c02ad5-a80c-3620-beb7-8a6e51366b7c> /opt/homebrew/*/libcrypto.3.dylib
+       0x10a684000 -        0x10a68ffff libbrotlidec.1.2.0.dylib (*) <c7d658ec-f84b-33a4-9ad7-b31c103fb593> /opt/homebrew/*/libbrotlidec.1.2.0.dylib
+       0x1113b4000 -        0x111447fff libssl.3.dylib (*) <5699d44c-cc20-3420-861f-ef110af1e1fa> /opt/homebrew/*/libssl.3.dylib
+       0x10b00c000 -        0x10b02bfff libbrotlicommon.1.2.0.dylib (*) <ebf79aec-78a4-3105-884d-0a459c69a38c> /opt/homebrew/*/libbrotlicommon.1.2.0.dylib
+       0x1127fc000 -        0x1128abfff libqcocoa.dylib (*) <89a6e714-1289-3ef8-89c8-00c715dd9b78> /opt/homebrew/*/libqcocoa.dylib
+       0x10aa00000 -        0x10aa0bfff libobjc-trampolines.dylib (*) <ca58aa96-b997-3a6d-9132-19d49be4b3e9> /usr/lib/libobjc-trampolines.dylib
+       0x1114f0000 -        0x111513fff libqmacstyle.dylib (*) <66b5c8c7-892d-39af-96c1-9059bfa9757a> /opt/homebrew/*/libqmacstyle.dylib
+       0x10e100000 -        0x10e107fff libqgif.dylib (*) <99a6034d-44ea-3a7e-b361-e9caa189d804> /opt/homebrew/*/libqgif.dylib
+       0x12cda4000 -        0x12d61bfff com.apple.AGXMetalG15G-C0 (351.2) <8aa82648-7fb1-3827-86de-2f143d411c2b> /System/Library/Extensions/AGXMetalG15G_C0.bundle/Contents/MacOS/AGXMetalG15G_C0
+       0x111534000 -        0x111597fff com.apple.AppleMetalOpenGLRenderer (1.0) <ed97217d-dbc3-3bd9-a531-e874ea072aa6> /System/Library/Extensions/AppleMetalOpenGLRenderer.bundle/Contents/MacOS/AppleMetalOpenGLRenderer
+       0x185db1000 -        0x18630f31f com.apple.CoreFoundation (6.9) <4bbd0da8-c600-3f3a-a38b-6664652fa04a> /System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation
+       0x192b56000 -        0x192e5111f com.apple.HIToolbox (2.1.1) <8716490e-acc2-3688-8c2f-5ca42b4c9da9> /System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/HIToolbox.framework/Versions/A/HIToolbox
+       0x18a223000 -        0x18b945f9f com.apple.AppKit (6.9) <c92cc156-d767-322b-b79b-433f56e72561> /System/Library/Frameworks/AppKit.framework/Versions/C/AppKit
+       0x185994000 -        0x185a3a217 dyld (*) <f924bdd3-4365-3466-9580-8b1b3fa8f857> /usr/lib/dyld
+               0x0 - 0xffffffffffffffff ??? (*) <00000000-0000-0000-0000-000000000000> ???
+       0x185d2d000 -        0x185d6a2af libsystem_kernel.dylib (*) <fca53b98-3d6a-38b2-a0ec-df0f7e05f171> /usr/lib/system/libsystem_kernel.dylib
+       0x185d6b000 -        0x185d77b3b libsystem_pthread.dylib (*) <4f33683c-18c8-39a1-800b-2e3bd43bcc13> /usr/lib/system/libsystem_pthread.dylib
+       0x185c81000 -        0x185d11ae7 libc++.1.dylib (*) <5013c0f8-84a9-3b56-9feb-c353816a750f> /usr/lib/libc++.1.dylib
+       0x185c00000 -        0x185c80d9f libsystem_c.dylib (*) <694b7881-1bf3-3d0f-8f19-b50ae4e8ef8a> /usr/lib/system/libsystem_c.dylib
+
+External Modification Summary:
+  Calls made by other processes targeting this process:
+    task_for_pid: 0
+    thread_create: 0
+    thread_set_state: 0
+  Calls made by this process:
+    task_for_pid: 0
+    thread_create: 0
+    thread_set_state: 0
+  Calls made by all processes on this machine:
+    task_for_pid: 20
+    thread_create: 0
+    thread_set_state: 236
+
+VM Region Summary:
+ReadOnly portion of Libraries: Total=2.0G resident=0K(0%) swapped_out_or_unallocated=2.0G(100%)
+Writable regions: Total=351.3M written=3425K(1%) resident=913K(0%) swapped_out=2896K(1%) unallocated=347.6M(99%)
+
+                                VIRTUAL   REGION 
+REGION TYPE                        SIZE    COUNT (non-coalesced) 
+===========                     =======  ======= 
+Accelerate framework               128K        1 
+Activity Tracing                   256K        1 
+AttributeGraph Data               1024K        1 
+CG image                          5104K        5 
+CG raster data                    3296K        7 
+ColorSync                           48K        3 
+CoreAnimation                      912K       43 
+CoreGraphics                        48K        3 
+CoreUI image data                  400K        3 
+Dispatch continuations            64.0M        1 
+Foundation                          16K        1 
+JS VM Gigacage                    4096K        1 
+JS VM Isolated Heap               4416K        5 
+JS VM Isolated Heap (reserved)    2048K        1         reserved VM address space (unallocated)
+Kernel Alloc Once                   32K        1 
+MALLOC                           181.0M       55 
+MALLOC guard page                 3568K        4 
+Memory Tag 22                     64.0M        1 
+OpenGL GLSL                        256K        3 
+STACK GUARD                       56.3M       20 
+Stack                             18.1M       20 
+VM_ALLOCATE                       2768K      165 
+__AUTH                            5959K      627 
+__AUTH_CONST                      88.6M     1014 
+__CTF                               824        1 
+__DATA                            38.4M     1073 
+__DATA_CONST                      45.8M     1136 
+__DATA_DIRTY                      8315K      871 
+__FONT_DATA                        2352        1 
+__GLSLBUILTINS                    5176K        1 
+__LINKEDIT                       667.3M      120 
+__OBJC_RO                         79.1M        1 
+__OBJC_RW                         2598K        1 
+__TEXT                             1.4G     1159 
+__TPRO_CONST                       128K        2 
+dyld private memory               1024K        7 
+mapped file                      266.9M       35 
+page table in kernel               913K        1 
+shared memory                      880K       14 
+===========                     =======  ======= 
+TOTAL                              2.9G     6409 
+TOTAL, minus reserved VM space     2.9G     6409 
+
+
+-----------
+Full Report
+-----------
+
+{"app_name":"ITK-SNAP","timestamp":"2026-08-05 00:50:35.00 -0400","app_version":"4.6.0-alpha.1","slice_uuid":"a1be125f-7c53-3e20-9c39-161c97593976","build_version":"59","platform":1,"bundleID":"org.itksnap","share_with_app_devs":1,"is_first_party":1,"bug_type":"309","os_version":"macOS 26.5.2 (25F84)","roots_installed":0,"name":"ITK-SNAP","incident_id":"48BDFCED-946B-47CA-A552-35F1EBC94516"}
+{
+  "uptime" : 1200000,
+  "procRole" : "Background",
+  "version" : 2,
+  "userID" : 501,
+  "deployVersion" : 210,
+  "modelCode" : "Mac15,3",
+  "coalitionID" : 145474,
+  "osVersion" : {
+    "train" : "macOS 26.5.2",
+    "build" : "25F84",
+    "releaseType" : "User"
+  },
+  "captureTime" : "2026-08-05 00:50:31.1701 -0400",
+  "codeSigningMonitor" : 2,
+  "incident" : "48BDFCED-946B-47CA-A552-35F1EBC94516",
+  "pid" : 35426,
+  "translated" : false,
+  "cpuType" : "ARM-64",
+  "procLaunch" : "2026-08-05 00:49:45.8017 -0400",
+  "procStartAbsTime" : 30612932518935,
+  "procExitAbsTime" : 30614019199525,
+  "procName" : "ITK-SNAP",
+  "procPath" : "\/Users\/USER\/*\/ITK-SNAP",
+  "bundleInfo" : {"CFBundleShortVersionString":"4.6.0-alpha.1","CFBundleVersion":"59","CFBundleIdentifier":"org.itksnap"},
+  "parentProc" : "Exited process",
+  "parentPid" : 35425,
+  "coalitionName" : "com.anthropic.claudefordesktop",
+  "crashReporterKey" : "60FEC3EF-28B1-D901-348E-5682B1B024E6",
+  "appleIntelligenceStatus" : {"state":"available"},
+  "developerMode" : 1,
+  "bootProgressRegister" : "0x2f000000",
+  "responsiblePid" : 32374,
+  "responsibleProc" : "claude",
+  "codeSigningID" : "ITK-SNAP",
+  "codeSigningTeamID" : "",
+  "codeSigningFlags" : 570556929,
+  "codeSigningValidationCategory" : 10,
+  "codeSigningTrustLevel" : 4294967295,
+  "codeSigningAuxiliaryInfo" : 0,
+  "instructionByteStream" : {"beforePC":"+F9BqfpnxajAA1\/WoB5A+f17RKn0T0Op9ldCqfhfQan6Z8WowANf1g==","atPC":"ACxA+cADX9b\/AwLR\/G8CqfpnA6n4XwSp9lcFqfRPBqn9ewep\/cMBkQ=="},
+  "bootSessionUUID" : "75999650-D8A4-4184-B2D2-FBEA91B53528",
+  "wakeTime" : 7144,
+  "sleepWakeUUID" : "DDE7D52C-F2AD-45DD-86B4-92667D42A49C",
+  "sip" : "enabled",
+  "vmRegionInfo" : "0x58 is not in any region.  Bytes before following region: 4334714792\n      REGION TYPE                    START - END         [ VSIZE] PRT\/MAX SHRMOD  REGION DETAIL\n      UNUSED SPACE AT START\n--->  \n      __TEXT                      1025e8000-105204000    [ 44.1M] r-x\/r-x SM=COW  \/Users\/USER\/*\/ITK-SNAP",
+  "exception" : {"codes":"0x0000000000000001, 0x0000000000000058","rawCodes":[1,88],"type":"EXC_BAD_ACCESS","signal":"SIGSEGV","subtype":"KERN_INVALID_ADDRESS at 0x0000000000000058"},
+  "termination" : {"flags":0,"code":11,"namespace":"SIGNAL","indicator":"Segmentation fault: 11","byProc":"exc handler","byPid":35426},
+  "vmregioninfo" : "0x58 is not in any region.  Bytes before following region: 4334714792\n      REGION TYPE                    START - END         [ VSIZE] PRT\/MAX SHRMOD  REGION DETAIL\n      UNUSED SPACE AT START\n--->  \n      __TEXT                      1025e8000-105204000    [ 44.1M] r-x\/r-x SM=COW  \/Users\/USER\/*\/ITK-SNAP",
+  "extMods" : {"caller":{"thread_create":0,"thread_set_state":0,"task_for_pid":0},"system":{"thread_create":0,"thread_set_state":236,"task_for_pid":20},"targeted":{"thread_create":0,"thread_set_state":0,"task_for_pid":0},"warnings":0},
+  "faultingThread" : 0,
+  "threads" : [{"triggered":true,"id":16585538,"threadState":{"x":[{"value":0},{"value":40163482192},{"value":73896},{"value":4381050880,"symbolLocation":0,"symbol":"typeinfo for LayerChangeEvent"},{"value":0},{"value":0},{"value":0},{"value":448},{"value":16},{"value":0},{"value":2},{"value":4294967293},{"value":0},{"value":0},{"value":0},{"value":0},{"value":2},{"value":8377832904},{"value":0},{"value":40177634592},{"value":1},{"value":40210185056},{"value":8354504064,"symbolLocation":0,"symbol":"_main_thread"},{"value":40113691904},{"value":40215850336},{"value":40120926752},{"value":0},{"value":8354504064,"symbolLocation":0,"symbol":"_main_thread"},{"value":4}],"flavor":"ARM_THREAD_STATE64","lr":{"value":4337910180},"cpsr":{"value":1610616832},"fp":{"value":6132155856},"sp":{"value":6132155840},"esr":{"value":2449473542,"description":"(Data Abort) byte read Translation fault"},"pc":{"value":4346840048,"matchesCrashFrame":1},"far":{"value":88}},"queue":"com.apple.main-thread","frames":[{"imageOffset":12125168,"symbol":"WrapperBase::GetUniqueId() const","symbolLocation":0,"imageIndex":0},{"imageOffset":3195300,"symbol":"MeshLayerTableRowModel::UpdateRoleInfo()","symbolLocation":32,"imageIndex":0},{"imageOffset":3184068,"symbol":"AbstractLayerTableRowModel::OnUpdate()","symbolLocation":192,"imageIndex":0},{"imageOffset":3934028,"symbol":"AbstractModel::Update()","symbolLocation":300,"imageIndex":0},{"imageOffset":1892588,"symbol":"<deduplicated_symbol>","symbolLocation":36,"imageIndex":0},{"imageOffset":2283120,"symbol":"NumericPropertyToggleAdaptor<AbstractPropertyModel<int, NumericValueRange<int>>>::GetValueAndDomain(bool&, TrivialDomain*)","symbolLocation":52,"imageIndex":0},{"imageOffset":149932,"symbol":"PropertyModelToWidgetDataMapping<AbstractPropertyModel<bool, TrivialDomain>, QAbstractButton*, DefaultWidgetValueTraits<bool, QAbstractButton, void>, DefaultWidgetDomainTraits<TrivialDomain, QAbstractButton>>::UpdateWidgetFromModel(EventBucket const&)","symbolLocation":156,"imageIndex":0},{"imageOffset":971676,"symbol":"void doActivate<false>(QObject*, int, void**)","symbolLocation":1480,"imageIndex":61},{"imageOffset":1791880,"symbol":"LatentITKEventNotifierHelper::dispatchEvent(EventBucket const&)","symbolLocation":52,"imageIndex":0},{"imageOffset":378644,"symbol":"LatentITKEventNotifierHelper::onQueuedEvent()","symbolLocation":708,"imageIndex":0},{"imageOffset":936980,"symbol":"QObject::event(QEvent*)","symbolLocation":324,"imageIndex":61},{"imageOffset":51032,"symbol":"QApplicationPrivate::notify_helper(QObject*, QEvent*)","symbolLocation":336,"imageIndex":55},{"imageOffset":55256,"symbol":"QApplication::notify(QObject*, QEvent*)","symbolLocation":468,"imageIndex":55},{"imageOffset":638340,"symbol":"QCoreApplicationPrivate::sendPostedEvents(QObject*, int, QThreadData*)","symbolLocation":628,"imageIndex":61},{"imageOffset":92680,"symbol":"QCocoaEventDispatcherPrivate::processPostedEvents()","symbolLocation":380,"imageIndex":113},{"imageOffset":97472,"symbol":"QCocoaEventDispatcherPrivate::postedEventsSourceCallback(void*)","symbolLocation":516,"imageIndex":113},{"imageOffset":515888,"symbol":"__CFRUNLOOP_IS_CALLING_OUT_TO_A_SOURCE0_PERFORM_FUNCTION__","symbolLocation":28,"imageIndex":119},{"imageOffset":515780,"symbol":"__CFRunLoopDoSource0","symbolLocation":172,"imageIndex":119},{"imageOffset":515220,"symbol":"__CFRunLoopDoSources0","symbolLocation":332,"imageIndex":119},{"imageOffset":510036,"symbol":"__CFRunLoopRun","symbolLocation":820,"imageIndex":119},{"imageOffset":1372612,"symbol":"_CFRunLoopRunSpecificWithOptions","symbolLocation":532,"imageIndex":119},{"imageOffset":775520,"symbol":"RunCurrentEventLoopInMode","symbolLocation":320,"imageIndex":120},{"imageOffset":788668,"symbol":"ReceiveNextEventCommon","symbolLocation":488,"imageIndex":120},{"imageOffset":2400588,"symbol":"_BlockUntilNextEventMatchingListInMode","symbolLocation":48,"imageIndex":120},{"imageOffset":7230300,"symbol":"_DPSBlockUntilNextEventMatchingListInMode","symbolLocation":228,"imageIndex":121},{"imageOffset":233604,"symbol":"_DPSNextEvent","symbolLocation":576,"imageIndex":121},{"imageOffset":12380336,"symbol":"-[NSApplication(NSEventRouting) _nextEventMatchingEventMask:untilDate:inMode:dequeue:]","symbolLocation":688,"imageIndex":121},{"imageOffset":12379580,"symbol":"-[NSApplication(NSEventRouting) nextEventMatchingMask:untilDate:inMode:dequeue:]","symbolLocation":72,"imageIndex":121},{"imageOffset":180540,"symbol":"-[NSApplication run]","symbolLocation":368,"imageIndex":121},{"imageOffset":87276,"symbol":"QCocoaEventDispatcher::processEvents(QFlags<QEventLoop::ProcessEventsFlag>)","symbolLocation":2152,"imageIndex":113},{"imageOffset":673288,"symbol":"QEventLoop::exec(QFlags<QEventLoop::ProcessEventsFlag>)","symbolLocation":588,"imageIndex":61},{"imageOffset":635288,"symbol":"QCoreApplication::exec()","symbolLocation":228,"imageIndex":61},{"imageOffset":115148,"symbol":"main","symbolLocation":6856,"imageIndex":0},{"imageOffset":130560,"symbol":"start","symbolLocation":6992,"imageIndex":122}]},{"id":16585641,"frames":[],"threadState":{"x":[{"value":6132723712},{"value":4867},{"value":6132187136},{"value":0},{"value":409604},{"value":18446744073709551615},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":0},"cpsr":{"value":4096},"fp":{"value":0},"sp":{"value":6132723712},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":6540413960},"far":{"value":0}}},{"id":16585658,"frames":[],"threadState":{"x":[{"value":6133870592},{"value":30723},{"value":6133334016},{"value":0},{"value":409604},{"value":18446744073709551615},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":0},"cpsr":{"value":4096},"fp":{"value":0},"sp":{"value":6133870592},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":6540413960},"far":{"value":0}}},{"id":16585660,"frames":[],"threadState":{"x":[{"value":6135017472},{"value":73795},{"value":6134480896},{"value":0},{"value":409604},{"value":18446744073709551615},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":0},"cpsr":{"value":4096},"fp":{"value":0},"sp":{"value":6135017472},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":6540413960},"far":{"value":0}}},{"id":16585661,"name":"com.apple.NSEventThread","threadState":{"x":[{"value":268451845},{"value":21592279046},{"value":8589934592,"objc-selector":""},{"value":127556233723904},{"value":0},{"value":127556233723904},{"value":2},{"value":4294967295},{"value":0},{"value":17179869184},{"value":0},{"value":2},{"value":0},{"value":0},{"value":29699},{"value":0},{"value":18446744073709551569},{"value":8377825176},{"value":0},{"value":4294967295},{"value":2},{"value":127556233723904},{"value":0},{"value":127556233723904},{"value":21592279046},{"value":6135586952},{"value":8589934592,"objc-selector":""},{"value":18446744073709550527},{"value":4412409862}],"flavor":"ARM_THREAD_STATE64","lr":{"value":6540232052},"cpsr":{"value":4096},"fp":{"value":6135586800},"sp":{"value":6135586720},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":6540155956},"far":{"value":0}},"frames":[{"imageOffset":3124,"symbol":"mach_msg2_trap","symbolLocation":8,"imageIndex":124},{"imageOffset":79220,"symbol":"mach_msg2_internal","symbolLocation":76,"imageIndex":124},{"imageOffset":39360,"symbol":"mach_msg_overwrite","symbolLocation":480,"imageIndex":124},{"imageOffset":4032,"symbol":"mach_msg","symbolLocation":24,"imageIndex":124},{"imageOffset":516312,"symbol":"__CFRunLoopServiceMachPort","symbolLocation":160,"imageIndex":119},{"imageOffset":510404,"symbol":"__CFRunLoopRun","symbolLocation":1188,"imageIndex":119},{"imageOffset":1372612,"symbol":"_CFRunLoopRunSpecificWithOptions","symbolLocation":532,"imageIndex":119},{"imageOffset":1420412,"symbol":"_NSEventThread","symbolLocation":184,"imageIndex":121},{"imageOffset":27736,"symbol":"_pthread_start","symbolLocation":136,"imageIndex":125},{"imageOffset":7196,"symbol":"thread_start","symbolLocation":8,"imageIndex":125}]},{"id":16585669,"frames":[{"imageOffset":17676,"symbol":"__psynch_cvwait","symbolLocation":8,"imageIndex":124},{"imageOffset":28968,"symbol":"_pthread_cond_wait","symbolLocation":980,"imageIndex":125},{"imageOffset":26712,"symbol":"std::__1::condition_variable::wait(std::__1::unique_lock<std::__1::mutex>&)","symbolLocation":32,"imageIndex":126},{"imageOffset":35111992,"symbol":"itk::ThreadPool::ThreadExecute()","symbolLocation":192,"imageIndex":0},{"imageOffset":35115380,"symbol":"void* std::__1::__thread_proxy[abi:ne200100]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)()>>(void*)","symbolLocation":52,"imageIndex":0},{"imageOffset":27736,"symbol":"_pthread_start","symbolLocation":136,"imageIndex":125},{"imageOffset":7196,"symbol":"thread_start","symbolLocation":8,"imageIndex":125}],"threadState":{"x":[{"value":4},{"value":0},{"value":103680},{"value":0},{"value":0},{"value":160},{"value":0},{"value":0},{"value":6136163960},{"value":0},{"value":46336},{"value":199011604673794},{"value":199011604673794},{"value":46336},{"value":0},{"value":199011604673792},{"value":305},{"value":8377823296},{"value":0},{"value":40181625888},{"value":40183001776},{"value":6136164576},{"value":0},{"value":0},{"value":103680},{"value":103680},{"value":105472},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":6540435752},"cpsr":{"value":1610616832},"fp":{"value":6136164080},"sp":{"value":6136163936},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":6540170508},"far":{"value":0}}},{"id":16585670,"frames":[{"imageOffset":17676,"symbol":"__psynch_cvwait","symbolLocation":8,"imageIndex":124},{"imageOffset":28968,"symbol":"_pthread_cond_wait","symbolLocation":980,"imageIndex":125},{"imageOffset":26712,"symbol":"std::__1::condition_variable::wait(std::__1::unique_lock<std::__1::mutex>&)","symbolLocation":32,"imageIndex":126},{"imageOffset":35111992,"symbol":"itk::ThreadPool::ThreadExecute()","symbolLocation":192,"imageIndex":0},{"imageOffset":35115380,"symbol":"void* std::__1::__thread_proxy[abi:ne200100]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)()>>(void*)","symbolLocation":52,"imageIndex":0},{"imageOffset":27736,"symbol":"_pthread_start","symbolLocation":136,"imageIndex":125},{"imageOffset":7196,"symbol":"thread_start","symbolLocation":8,"imageIndex":125}],"threadState":{"x":[{"value":4},{"value":0},{"value":103680},{"value":0},{"value":0},{"value":160},{"value":0},{"value":0},{"value":6136737400},{"value":0},{"value":46336},{"value":199011604673794},{"value":199011604673794},{"value":46336},{"value":0},{"value":199011604673792},{"value":305},{"value":8377823296},{"value":0},{"value":40181625888},{"value":40183001776},{"value":6136738016},{"value":0},{"value":0},{"value":103680},{"value":103680},{"value":105728},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":6540435752},"cpsr":{"value":1610616832},"fp":{"value":6136737520},"sp":{"value":6136737376},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":6540170508},"far":{"value":0}}},{"id":16585671,"frames":[{"imageOffset":17676,"symbol":"__psynch_cvwait","symbolLocation":8,"imageIndex":124},{"imageOffset":28968,"symbol":"_pthread_cond_wait","symbolLocation":980,"imageIndex":125},{"imageOffset":26712,"symbol":"std::__1::condition_variable::wait(std::__1::unique_lock<std::__1::mutex>&)","symbolLocation":32,"imageIndex":126},{"imageOffset":35111992,"symbol":"itk::ThreadPool::ThreadExecute()","symbolLocation":192,"imageIndex":0},{"imageOffset":35115380,"symbol":"void* std::__1::__thread_proxy[abi:ne200100]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)()>>(void*)","symbolLocation":52,"imageIndex":0},{"imageOffset":27736,"symbol":"_pthread_start","symbolLocation":136,"imageIndex":125},{"imageOffset":7196,"symbol":"thread_start","symbolLocation":8,"imageIndex":125}],"threadState":{"x":[{"value":4},{"value":0},{"value":103680},{"value":0},{"value":0},{"value":160},{"value":0},{"value":0},{"value":6137310840},{"value":0},{"value":46336},{"value":199011604673794},{"value":199011604673794},{"value":46336},{"value":0},{"value":199011604673792},{"value":305},{"value":8377823296},{"value":0},{"value":40181625888},{"value":40183001776},{"value":6137311456},{"value":0},{"value":0},{"value":103680},{"value":103680},{"value":104192},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":6540435752},"cpsr":{"value":1610616832},"fp":{"value":6137310960},"sp":{"value":6137310816},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":6540170508},"far":{"value":0}}},{"id":16585672,"frames":[{"imageOffset":17676,"symbol":"__psynch_cvwait","symbolLocation":8,"imageIndex":124},{"imageOffset":28968,"symbol":"_pthread_cond_wait","symbolLocation":980,"imageIndex":125},{"imageOffset":26712,"symbol":"std::__1::condition_variable::wait(std::__1::unique_lock<std::__1::mutex>&)","symbolLocation":32,"imageIndex":126},{"imageOffset":35111992,"symbol":"itk::ThreadPool::ThreadExecute()","symbolLocation":192,"imageIndex":0},{"imageOffset":35115380,"symbol":"void* std::__1::__thread_proxy[abi:ne200100]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)()>>(void*)","symbolLocation":52,"imageIndex":0},{"imageOffset":27736,"symbol":"_pthread_start","symbolLocation":136,"imageIndex":125},{"imageOffset":7196,"symbol":"thread_start","symbolLocation":8,"imageIndex":125}],"threadState":{"x":[{"value":4},{"value":0},{"value":103680},{"value":0},{"value":0},{"value":160},{"value":0},{"value":0},{"value":6137884280},{"value":0},{"value":46336},{"value":199011604673794},{"value":199011604673794},{"value":46336},{"value":0},{"value":199011604673792},{"value":305},{"value":8377823296},{"value":0},{"value":40181625888},{"value":40183001776},{"value":6137884896},{"value":0},{"value":0},{"value":103680},{"value":103680},{"value":105216},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":6540435752},"cpsr":{"value":1610616832},"fp":{"value":6137884400},"sp":{"value":6137884256},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":6540170508},"far":{"value":0}}},{"id":16585673,"frames":[{"imageOffset":17676,"symbol":"__psynch_cvwait","symbolLocation":8,"imageIndex":124},{"imageOffset":28968,"symbol":"_pthread_cond_wait","symbolLocation":980,"imageIndex":125},{"imageOffset":26712,"symbol":"std::__1::condition_variable::wait(std::__1::unique_lock<std::__1::mutex>&)","symbolLocation":32,"imageIndex":126},{"imageOffset":35111992,"symbol":"itk::ThreadPool::ThreadExecute()","symbolLocation":192,"imageIndex":0},{"imageOffset":35115380,"symbol":"void* std::__1::__thread_proxy[abi:ne200100]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)()>>(void*)","symbolLocation":52,"imageIndex":0},{"imageOffset":27736,"symbol":"_pthread_start","symbolLocation":136,"imageIndex":125},{"imageOffset":7196,"symbol":"thread_start","symbolLocation":8,"imageIndex":125}],"threadState":{"x":[{"value":4},{"value":0},{"value":103680},{"value":0},{"value":0},{"value":160},{"value":0},{"value":0},{"value":6138457720},{"value":0},{"value":46336},{"value":199011604673794},{"value":199011604673794},{"value":46336},{"value":0},{"value":199011604673792},{"value":305},{"value":8377823296},{"value":0},{"value":40181625888},{"value":40183001776},{"value":6138458336},{"value":0},{"value":0},{"value":103680},{"value":103681},{"value":103936},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":6540435752},"cpsr":{"value":1610616832},"fp":{"value":6138457840},"sp":{"value":6138457696},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":6540170508},"far":{"value":0}}},{"id":16585674,"frames":[{"imageOffset":17676,"symbol":"__psynch_cvwait","symbolLocation":8,"imageIndex":124},{"imageOffset":28968,"symbol":"_pthread_cond_wait","symbolLocation":980,"imageIndex":125},{"imageOffset":26712,"symbol":"std::__1::condition_variable::wait(std::__1::unique_lock<std::__1::mutex>&)","symbolLocation":32,"imageIndex":126},{"imageOffset":35111992,"symbol":"itk::ThreadPool::ThreadExecute()","symbolLocation":192,"imageIndex":0},{"imageOffset":35115380,"symbol":"void* std::__1::__thread_proxy[abi:ne200100]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)()>>(void*)","symbolLocation":52,"imageIndex":0},{"imageOffset":27736,"symbol":"_pthread_start","symbolLocation":136,"imageIndex":125},{"imageOffset":7196,"symbol":"thread_start","symbolLocation":8,"imageIndex":125}],"threadState":{"x":[{"value":4},{"value":0},{"value":103680},{"value":0},{"value":0},{"value":160},{"value":0},{"value":0},{"value":6139031160},{"value":0},{"value":46336},{"value":199011604673794},{"value":199011604673794},{"value":46336},{"value":0},{"value":199011604673792},{"value":305},{"value":8377823296},{"value":0},{"value":40181625888},{"value":40183001776},{"value":6139031776},{"value":0},{"value":0},{"value":103680},{"value":103680},{"value":104448},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":6540435752},"cpsr":{"value":1610616832},"fp":{"value":6139031280},"sp":{"value":6139031136},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":6540170508},"far":{"value":0}}},{"id":16585675,"frames":[{"imageOffset":17676,"symbol":"__psynch_cvwait","symbolLocation":8,"imageIndex":124},{"imageOffset":28968,"symbol":"_pthread_cond_wait","symbolLocation":980,"imageIndex":125},{"imageOffset":26712,"symbol":"std::__1::condition_variable::wait(std::__1::unique_lock<std::__1::mutex>&)","symbolLocation":32,"imageIndex":126},{"imageOffset":35111992,"symbol":"itk::ThreadPool::ThreadExecute()","symbolLocation":192,"imageIndex":0},{"imageOffset":35115380,"symbol":"void* std::__1::__thread_proxy[abi:ne200100]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)()>>(void*)","symbolLocation":52,"imageIndex":0},{"imageOffset":27736,"symbol":"_pthread_start","symbolLocation":136,"imageIndex":125},{"imageOffset":7196,"symbol":"thread_start","symbolLocation":8,"imageIndex":125}],"threadState":{"x":[{"value":4},{"value":0},{"value":103680},{"value":0},{"value":0},{"value":160},{"value":0},{"value":0},{"value":6139604600},{"value":0},{"value":46336},{"value":199011604673794},{"value":199011604673794},{"value":46336},{"value":0},{"value":199011604673792},{"value":305},{"value":8377823296},{"value":0},{"value":40181625888},{"value":40183001776},{"value":6139605216},{"value":0},{"value":0},{"value":103680},{"value":103680},{"value":104704},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":6540435752},"cpsr":{"value":1610616832},"fp":{"value":6139604720},"sp":{"value":6139604576},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":6540170508},"far":{"value":0}}},{"id":16585676,"frames":[{"imageOffset":17676,"symbol":"__psynch_cvwait","symbolLocation":8,"imageIndex":124},{"imageOffset":28968,"symbol":"_pthread_cond_wait","symbolLocation":980,"imageIndex":125},{"imageOffset":26712,"symbol":"std::__1::condition_variable::wait(std::__1::unique_lock<std::__1::mutex>&)","symbolLocation":32,"imageIndex":126},{"imageOffset":35111992,"symbol":"itk::ThreadPool::ThreadExecute()","symbolLocation":192,"imageIndex":0},{"imageOffset":35115380,"symbol":"void* std::__1::__thread_proxy[abi:ne200100]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)()>>(void*)","symbolLocation":52,"imageIndex":0},{"imageOffset":27736,"symbol":"_pthread_start","symbolLocation":136,"imageIndex":125},{"imageOffset":7196,"symbol":"thread_start","symbolLocation":8,"imageIndex":125}],"threadState":{"x":[{"value":260},{"value":0},{"value":103680},{"value":0},{"value":0},{"value":160},{"value":0},{"value":0},{"value":6140178040},{"value":0},{"value":46336},{"value":199011604673794},{"value":199011604673794},{"value":46336},{"value":0},{"value":199011604673792},{"value":305},{"value":8377823296},{"value":0},{"value":40181625888},{"value":40183001776},{"value":6140178656},{"value":0},{"value":0},{"value":103680},{"value":103680},{"value":104960},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":6540435752},"cpsr":{"value":1610616832},"fp":{"value":6140178160},"sp":{"value":6140178016},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":6540170508},"far":{"value":0}}},{"id":16585757,"name":"TestWorker","threadState":{"x":[{"value":4},{"value":0},{"value":1},{"value":1},{"value":1},{"value":0},{"value":52},{"value":0},{"value":8354545880,"symbolLocation":0,"symbol":"clock_sem"},{"value":16387},{"value":17},{"value":283},{"value":53},{"value":52},{"value":123526656138524379},{"value":9},{"value":334},{"value":8377823416},{"value":0},{"value":6140748280},{"value":6140748280},{"value":17},{"value":2},{"value":1},{"value":0},{"value":6140749480},{"value":4578774400,"symbolLocation":0,"symbol":"QtPrivate::QMetaTypeInterfaceWrapper<int>::metaType"},{"value":5089281512},{"value":6140748776}],"flavor":"ARM_THREAD_STATE64","lr":{"value":6538976448},"cpsr":{"value":1610616832},"fp":{"value":6140748256},"sp":{"value":6140748208},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":6540169992},"far":{"value":0}},"frames":[{"imageOffset":17160,"symbol":"__semwait_signal","symbolLocation":8,"imageIndex":124},{"imageOffset":56512,"symbol":"nanosleep","symbolLocation":220,"imageIndex":127},{"imageOffset":2291844,"symbol":"QThread::msleep(unsigned long)","symbolLocation":96,"imageIndex":61},{"imageOffset":1844412,"symbol":"SNAPTestQt::qt_metacall(QMetaObject::Call, int, void**)","symbolLocation":104,"imageIndex":0},{"imageOffset":1152340,"symbol":"QV4::CallMethod(QQmlObjectOrGadget const&, int, QMetaType, int, QMetaType const*, QV4::ExecutionEngine*, QV4::CallData*, QMetaObject::Call)","symbolLocation":5940,"imageIndex":59},{"imageOffset":1143696,"symbol":"QV4::QObjectMethod::callPrecise(QQmlObjectOrGadget const&, QQmlPropertyData const&, QV4::ExecutionEngine*, QV4::CallData*, QMetaObject::Call)","symbolLocation":792,"imageIndex":59},{"imageOffset":1167664,"symbol":"QV4::QObjectMethod::callInternal(QV4::Value const*, QV4::Value const*, int) const","symbolLocation":1936,"imageIndex":59},{"imageOffset":1300264,"symbol":"QV4::Runtime::CallProperty::call(QV4::ExecutionEngine*, QV4::Value const&, int, QV4::Value*, int)","symbolLocation":904,"imageIndex":59},{"imageOffset":1534748,"symbol":"QV4::Moth::VME::interpret(QV4::JSTypesStackFrame*, QV4::ExecutionEngine*, char const*)","symbolLocation":4480,"imageIndex":59},{"imageOffset":1530136,"symbol":"QV4::Moth::VME::exec(QV4::JSTypesStackFrame*, QV4::ExecutionEngine*)","symbolLocation":332,"imageIndex":59},{"imageOffset":854968,"symbol":"QV4::doCall(QV4::Function*, QV4::Value const*, QV4::Value const*, int, QV4::ExecutionContext*)","symbolLocation":324,"imageIndex":59},{"imageOffset":1317556,"symbol":"QV4::Script::run(QV4::Value const*)","symbolLocation":172,"imageIndex":59},{"imageOffset":494156,"symbol":"QJSEngine::evaluate(QString const&, QString const&, int, QList<QString>*)","symbolLocation":368,"imageIndex":59},{"imageOffset":1767768,"symbol":"TestWorker::source(QString)","symbolLocation":644,"imageIndex":0},{"imageOffset":1766832,"symbol":"TestWorker::run()","symbolLocation":344,"imageIndex":0},{"imageOffset":2290380,"symbol":"QThreadPrivate::start(void*)","symbolLocation":392,"imageIndex":61},{"imageOffset":27736,"symbol":"_pthread_start","symbolLocation":136,"imageIndex":125},{"imageOffset":7196,"symbol":"thread_start","symbolLocation":8,"imageIndex":125}]},{"id":16585758,"name":"Thread (pooled)","threadState":{"x":[{"value":260},{"value":0},{"value":1536},{"value":0},{"value":0},{"value":160},{"value":29},{"value":999997000},{"value":6141324664},{"value":0},{"value":0},{"value":2},{"value":2},{"value":0},{"value":0},{"value":0},{"value":305},{"value":8377823296},{"value":0},{"value":40204089216},{"value":40204089280},{"value":6141325536},{"value":999997000},{"value":29},{"value":1536},{"value":1537},{"value":1792},{"value":1},{"value":40205485632}],"flavor":"ARM_THREAD_STATE64","lr":{"value":6540435752},"cpsr":{"value":1610616832},"fp":{"value":6141324784},"sp":{"value":6141324640},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":6540170508},"far":{"value":0}},"frames":[{"imageOffset":17676,"symbol":"__psynch_cvwait","symbolLocation":8,"imageIndex":124},{"imageOffset":28968,"symbol":"_pthread_cond_wait","symbolLocation":980,"imageIndex":125},{"imageOffset":2325992,"symbol":"QWaitConditionPrivate::wait(QDeadlineTimer)","symbolLocation":236,"imageIndex":61},{"imageOffset":2325652,"symbol":"QWaitCondition::wait(QMutex*, QDeadlineTimer)","symbolLocation":108,"imageIndex":61},{"imageOffset":1667772,"symbol":"QThreadPoolThread::run()","symbolLocation":932,"imageIndex":61},{"imageOffset":2290380,"symbol":"QThreadPrivate::start(void*)","symbolLocation":392,"imageIndex":61},{"imageOffset":27736,"symbol":"_pthread_start","symbolLocation":136,"imageIndex":125},{"imageOffset":7196,"symbol":"thread_start","symbolLocation":8,"imageIndex":125}]},{"id":16585767,"name":"Thread (pooled)","threadState":{"x":[{"value":260},{"value":0},{"value":93440},{"value":0},{"value":0},{"value":160},{"value":29},{"value":999999000},{"value":6141898104},{"value":0},{"value":1024},{"value":4398046512130},{"value":4398046512130},{"value":1024},{"value":0},{"value":4398046512128},{"value":305},{"value":8377823296},{"value":0},{"value":40206575360},{"value":40206575424},{"value":6141898976},{"value":999999000},{"value":29},{"value":93440},{"value":93441},{"value":93696},{"value":1},{"value":40193379776}],"flavor":"ARM_THREAD_STATE64","lr":{"value":6540435752},"cpsr":{"value":1610616832},"fp":{"value":6141898224},"sp":{"value":6141898080},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":6540170508},"far":{"value":0}},"frames":[{"imageOffset":17676,"symbol":"__psynch_cvwait","symbolLocation":8,"imageIndex":124},{"imageOffset":28968,"symbol":"_pthread_cond_wait","symbolLocation":980,"imageIndex":125},{"imageOffset":2325992,"symbol":"QWaitConditionPrivate::wait(QDeadlineTimer)","symbolLocation":236,"imageIndex":61},{"imageOffset":2325652,"symbol":"QWaitCondition::wait(QMutex*, QDeadlineTimer)","symbolLocation":108,"imageIndex":61},{"imageOffset":1667772,"symbol":"QThreadPoolThread::run()","symbolLocation":932,"imageIndex":61},{"imageOffset":2290380,"symbol":"QThreadPrivate::start(void*)","symbolLocation":392,"imageIndex":61},{"imageOffset":27736,"symbol":"_pthread_start","symbolLocation":136,"imageIndex":125},{"imageOffset":7196,"symbol":"thread_start","symbolLocation":8,"imageIndex":125}]},{"id":16585768,"name":"Thread (pooled)","threadState":{"x":[{"value":260},{"value":0},{"value":92160},{"value":0},{"value":0},{"value":160},{"value":29},{"value":999999000},{"value":6142471544},{"value":0},{"value":1792},{"value":7696581396226},{"value":7696581396226},{"value":1792},{"value":0},{"value":7696581396224},{"value":305},{"value":8377823296},{"value":0},{"value":40206579584},{"value":40206579648},{"value":6142472416},{"value":999999000},{"value":29},{"value":92160},{"value":92161},{"value":92416},{"value":1},{"value":40193379776}],"flavor":"ARM_THREAD_STATE64","lr":{"value":6540435752},"cpsr":{"value":1610616832},"fp":{"value":6142471664},"sp":{"value":6142471520},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":6540170508},"far":{"value":0}},"frames":[{"imageOffset":17676,"symbol":"__psynch_cvwait","symbolLocation":8,"imageIndex":124},{"imageOffset":28968,"symbol":"_pthread_cond_wait","symbolLocation":980,"imageIndex":125},{"imageOffset":2325992,"symbol":"QWaitConditionPrivate::wait(QDeadlineTimer)","symbolLocation":236,"imageIndex":61},{"imageOffset":2325652,"symbol":"QWaitCondition::wait(QMutex*, QDeadlineTimer)","symbolLocation":108,"imageIndex":61},{"imageOffset":1667772,"symbol":"QThreadPoolThread::run()","symbolLocation":932,"imageIndex":61},{"imageOffset":2290380,"symbol":"QThreadPrivate::start(void*)","symbolLocation":392,"imageIndex":61},{"imageOffset":27736,"symbol":"_pthread_start","symbolLocation":136,"imageIndex":125},{"imageOffset":7196,"symbol":"thread_start","symbolLocation":8,"imageIndex":125}]},{"id":16585769,"name":"Thread (pooled)","threadState":{"x":[{"value":260},{"value":0},{"value":92416},{"value":0},{"value":0},{"value":160},{"value":29},{"value":999998000},{"value":6143044984},{"value":0},{"value":1792},{"value":7696581396226},{"value":7696581396226},{"value":1792},{"value":0},{"value":7696581396224},{"value":305},{"value":8377823296},{"value":0},{"value":40206569344},{"value":40206569408},{"value":6143045856},{"value":999998000},{"value":29},{"value":92416},{"value":92417},{"value":92672},{"value":1},{"value":40193379776}],"flavor":"ARM_THREAD_STATE64","lr":{"value":6540435752},"cpsr":{"value":1610616832},"fp":{"value":6143045104},"sp":{"value":6143044960},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":6540170508},"far":{"value":0}},"frames":[{"imageOffset":17676,"symbol":"__psynch_cvwait","symbolLocation":8,"imageIndex":124},{"imageOffset":28968,"symbol":"_pthread_cond_wait","symbolLocation":980,"imageIndex":125},{"imageOffset":2325992,"symbol":"QWaitConditionPrivate::wait(QDeadlineTimer)","symbolLocation":236,"imageIndex":61},{"imageOffset":2325652,"symbol":"QWaitCondition::wait(QMutex*, QDeadlineTimer)","symbolLocation":108,"imageIndex":61},{"imageOffset":1667772,"symbol":"QThreadPoolThread::run()","symbolLocation":932,"imageIndex":61},{"imageOffset":2290380,"symbol":"QThreadPrivate::start(void*)","symbolLocation":392,"imageIndex":61},{"imageOffset":27736,"symbol":"_pthread_start","symbolLocation":136,"imageIndex":125},{"imageOffset":7196,"symbol":"thread_start","symbolLocation":8,"imageIndex":125}]},{"id":16585770,"name":"Thread (pooled)","threadState":{"x":[{"value":260},{"value":0},{"value":94464},{"value":0},{"value":0},{"value":160},{"value":29},{"value":999999000},{"value":6143618424},{"value":0},{"value":2304},{"value":9895604652290},{"value":9895604652290},{"value":2304},{"value":0},{"value":9895604652288},{"value":305},{"value":8377823296},{"value":0},{"value":40209250432},{"value":40209250496},{"value":6143619296},{"value":999999000},{"value":29},{"value":94464},{"value":94465},{"value":94720},{"value":1},{"value":40193379776}],"flavor":"ARM_THREAD_STATE64","lr":{"value":6540435752},"cpsr":{"value":1610616832},"fp":{"value":6143618544},"sp":{"value":6143618400},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":6540170508},"far":{"value":0}},"frames":[{"imageOffset":17676,"symbol":"__psynch_cvwait","symbolLocation":8,"imageIndex":124},{"imageOffset":28968,"symbol":"_pthread_cond_wait","symbolLocation":980,"imageIndex":125},{"imageOffset":2325992,"symbol":"QWaitConditionPrivate::wait(QDeadlineTimer)","symbolLocation":236,"imageIndex":61},{"imageOffset":2325652,"symbol":"QWaitCondition::wait(QMutex*, QDeadlineTimer)","symbolLocation":108,"imageIndex":61},{"imageOffset":1667772,"symbol":"QThreadPoolThread::run()","symbolLocation":932,"imageIndex":61},{"imageOffset":2290380,"symbol":"QThreadPrivate::start(void*)","symbolLocation":392,"imageIndex":61},{"imageOffset":27736,"symbol":"_pthread_start","symbolLocation":136,"imageIndex":125},{"imageOffset":7196,"symbol":"thread_start","symbolLocation":8,"imageIndex":125}]},{"id":16586084,"frames":[],"threadState":{"x":[{"value":6144192512},{"value":0},{"value":6143655936},{"value":0},{"value":278532},{"value":18446744073709551615},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":0},"cpsr":{"value":4096},"fp":{"value":0},"sp":{"value":6144192512},"esr":{"value":0},"pc":{"value":6540413960},"far":{"value":0}}}],
+  "usedImages" : [
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4334714880,
+    "CFBundleShortVersionString" : "4.6.0-alpha.1",
+    "CFBundleIdentifier" : "org.itksnap",
+    "size" : 46252032,
+    "uuid" : "a1be125f-7c53-3e20-9c39-161c97593976",
+    "path" : "\/Users\/USER\/*\/ITK-SNAP",
+    "name" : "ITK-SNAP",
+    "CFBundleVersion" : "59"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4419780608,
+    "size" : 1572864,
+    "uuid" : "3572c801-d84b-33b7-a761-0878c7bc3c92",
+    "path" : "\/Users\/USER\/*\/libvtkChartsCore-9.5.9.5.dylib",
+    "name" : "libvtkChartsCore-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4417716224,
+    "size" : 475136,
+    "uuid" : "bc265c77-07c4-3c4f-9d0a-6354ee9dab94",
+    "path" : "\/Users\/USER\/*\/libvtkIOExport-9.5.9.5.dylib",
+    "name" : "libvtkIOExport-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4423761920,
+    "size" : 1409024,
+    "uuid" : "c1d585c5-e6ee-3e5a-9789-9865fc4054b1",
+    "path" : "\/Users\/USER\/*\/libvtkIOGeometry-9.5.9.5.dylib",
+    "name" : "libvtkIOGeometry-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4417191936,
+    "size" : 81920,
+    "uuid" : "f5fcec67-a007-335c-98fa-b3f9eade8cef",
+    "path" : "\/Users\/USER\/*\/libvtkIOPLY-9.5.9.5.dylib",
+    "name" : "libvtkIOPLY-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4418404352,
+    "size" : 147456,
+    "uuid" : "551b156a-e20a-3785-9622-0f8f0d79d28b",
+    "path" : "\/Users\/USER\/*\/libvtkRenderingContextOpenGL2-9.5.9.5.dylib",
+    "name" : "libvtkRenderingContextOpenGL2-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4417355776,
+    "size" : 65536,
+    "uuid" : "166bffc3-ac15-32c8-9b88-5f86716f3b6d",
+    "path" : "\/Users\/USER\/*\/libvtkRenderingExternal-9.5.9.5.dylib",
+    "name" : "libvtkRenderingExternal-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4417536000,
+    "size" : 49152,
+    "uuid" : "7def9f4f-e26f-3b81-9349-fdb32b0c1810",
+    "path" : "\/Users\/USER\/*\/libvtkRenderingLOD-9.5.9.5.dylib",
+    "name" : "libvtkRenderingLOD-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4421812224,
+    "size" : 409600,
+    "uuid" : "f0dc6b34-b417-3f90-92d5-4154107420c6",
+    "path" : "\/Users\/USER\/*\/libvtkRenderingVolumeOpenGL2-9.5.9.5.dylib",
+    "name" : "libvtkRenderingVolumeOpenGL2-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4418666496,
+    "size" : 65536,
+    "uuid" : "14961390-8adb-3208-89b4-886aa2a1ac0f",
+    "path" : "\/Users\/USER\/*\/libvtkRenderingGL2PSOpenGL2-9.5.9.5.dylib",
+    "name" : "libvtkRenderingGL2PSOpenGL2-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4418797568,
+    "size" : 49152,
+    "uuid" : "01eb0748-edd0-3a99-a13f-8971c0e98f22",
+    "path" : "\/Users\/USER\/*\/libvtkViewsContext2D-9.5.9.5.dylib",
+    "name" : "libvtkViewsContext2D-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4422991872,
+    "size" : 245760,
+    "uuid" : "197a9043-bea2-3417-abed-3cb0d45f0ae2",
+    "path" : "\/Users\/USER\/*\/libvtkGUISupportQt-9.5.9.5.dylib",
+    "name" : "libvtkGUISupportQt-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4425711616,
+    "size" : 393216,
+    "uuid" : "67d17072-b9fa-39d1-8f39-c0e0c1ae1620",
+    "path" : "\/opt\/homebrew\/*\/libssh.4.11.0.dylib",
+    "name" : "libssh.4.11.0.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4418912256,
+    "size" : 98304,
+    "uuid" : "fa6bb74e-b693-3448-8ee2-f66edfe6e08e",
+    "path" : "\/Users\/USER\/*\/libvtkRenderingVtkJS-9.5.9.5.dylib",
+    "name" : "libvtkRenderingVtkJS-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4419092480,
+    "size" : 65536,
+    "uuid" : "27a8074d-6b1f-345a-a8ac-81a19be52d9f",
+    "path" : "\/Users\/USER\/*\/libvtkRenderingSceneGraph-9.5.9.5.dylib",
+    "name" : "libvtkRenderingSceneGraph-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4422713344,
+    "size" : 163840,
+    "uuid" : "2fcd933b-b2f5-3894-a5b9-1b01824ce074",
+    "path" : "\/Users\/USER\/*\/libvtkjsoncpp-9.5.9.5.dylib",
+    "name" : "libvtkjsoncpp-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4426563584,
+    "size" : 212992,
+    "uuid" : "fbe9edf3-4891-34e3-8df8-1d8ca396ec96",
+    "path" : "\/Users\/USER\/*\/libvtkImagingMath-9.5.9.5.dylib",
+    "name" : "libvtkImagingMath-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4422451200,
+    "size" : 81920,
+    "uuid" : "a2bfda86-2695-3d8b-a47d-a7f8b63eab02",
+    "path" : "\/Users\/USER\/*\/libvtkViewsCore-9.5.9.5.dylib",
+    "name" : "libvtkViewsCore-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4429447168,
+    "size" : 1474560,
+    "uuid" : "944759fa-a31b-3f6a-a6d5-9600bdc84502",
+    "path" : "\/Users\/USER\/*\/libvtkInteractionWidgets-9.5.9.5.dylib",
+    "name" : "libvtkInteractionWidgets-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4427661312,
+    "size" : 589824,
+    "uuid" : "e62de79a-99e8-3505-a2d5-3806eb73ed9b",
+    "path" : "\/Users\/USER\/*\/libvtkImagingGeneral-9.5.9.5.dylib",
+    "name" : "libvtkImagingGeneral-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4426891264,
+    "size" : 131072,
+    "uuid" : "1581288f-e411-3841-a866-b16aa7782424",
+    "path" : "\/Users\/USER\/*\/libvtkInteractionStyle-9.5.9.5.dylib",
+    "name" : "libvtkInteractionStyle-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4432003072,
+    "size" : 540672,
+    "uuid" : "f9d6f442-15e0-3d3a-bf97-7d8d1bd393aa",
+    "path" : "\/Users\/USER\/*\/libvtkRenderingAnnotation-9.5.9.5.dylib",
+    "name" : "libvtkRenderingAnnotation-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4435279872,
+    "size" : 1933312,
+    "uuid" : "e5b25ccf-7ca4-3af1-b17c-20c4a3bbf17e",
+    "path" : "\/Users\/USER\/*\/libvtkRenderingVolume-9.5.9.5.dylib",
+    "name" : "libvtkRenderingVolume-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4433920000,
+    "size" : 557056,
+    "uuid" : "e1e7239c-7224-32ee-b158-b596fe8f2ddd",
+    "path" : "\/Users\/USER\/*\/libvtkFiltersModeling-9.5.9.5.dylib",
+    "name" : "libvtkFiltersModeling-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4427169792,
+    "size" : 131072,
+    "uuid" : "858cf559-2e0e-3845-8de8-140bb0f3f4fd",
+    "path" : "\/Users\/USER\/*\/libvtkRenderingContext2D-9.5.9.5.dylib",
+    "name" : "libvtkRenderingContext2D-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4442226688,
+    "size" : 1785856,
+    "uuid" : "b7f6b447-455e-3c59-9b79-edfec5638df1",
+    "path" : "\/Users\/USER\/*\/libvtkRenderingOpenGL2-9.5.9.5.dylib",
+    "name" : "libvtkRenderingOpenGL2-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4444946432,
+    "size" : 1277952,
+    "uuid" : "58f4b099-681c-3744-83c4-f3a63a6fc9c0",
+    "path" : "\/Users\/USER\/*\/libvtkIOImage-9.5.9.5.dylib",
+    "name" : "libvtkIOImage-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4419223552,
+    "size" : 49152,
+    "uuid" : "caa43b7b-3f2e-3931-ae97-baf9dc515177",
+    "path" : "\/Users\/USER\/*\/libvtkRenderingUI-9.5.9.5.dylib",
+    "name" : "libvtkRenderingUI-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4432904192,
+    "size" : 163840,
+    "uuid" : "1ad7b9c6-b431-3b16-be5b-0f88115e2b4b",
+    "path" : "\/Users\/USER\/*\/libvtkRenderingFreeType-9.5.9.5.dylib",
+    "name" : "libvtkRenderingFreeType-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4439506944,
+    "size" : 507904,
+    "uuid" : "0a7e6c59-803b-3a5a-8f9b-240d7b3025ca",
+    "path" : "\/opt\/homebrew\/*\/libfreetype.6.dylib",
+    "name" : "libfreetype.6.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4423532544,
+    "size" : 49152,
+    "uuid" : "912dde12-1331-37af-ba8b-df4391d11f4b",
+    "path" : "\/Users\/USER\/*\/libvtkRenderingHyperTreeGrid-9.5.9.5.dylib",
+    "name" : "libvtkRenderingHyperTreeGrid-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4446568448,
+    "size" : 1179648,
+    "uuid" : "251a0bba-ffa6-3c23-88c9-0ccd15f896f6",
+    "path" : "\/Users\/USER\/*\/libvtkRenderingCore-9.5.9.5.dylib",
+    "name" : "libvtkRenderingCore-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4440145920,
+    "size" : 442368,
+    "uuid" : "581d422d-3afb-3495-a66f-0649a8ba9fef",
+    "path" : "\/Users\/USER\/*\/libvtkFiltersSources-9.5.9.5.dylib",
+    "name" : "libvtkFiltersSources-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4451074048,
+    "size" : 2048000,
+    "uuid" : "5ac1d9ae-e987-3cdb-ae9b-253c56c2761c",
+    "path" : "\/Users\/USER\/*\/libvtkImagingCore-9.5.9.5.dylib",
+    "name" : "libvtkImagingCore-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4440899584,
+    "size" : 360448,
+    "uuid" : "6e70e41b-71d6-3b42-8057-f17479346760",
+    "path" : "\/Users\/USER\/*\/libvtkglad-9.5.9.5.dylib",
+    "name" : "libvtkglad-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4426252288,
+    "CFBundleShortVersionString" : "6.10",
+    "CFBundleIdentifier" : "org.qt-project.QtOpenGLWidgets",
+    "size" : 49152,
+    "uuid" : "b9efe023-2ee5-3c6c-a2fb-70f11ec0c933",
+    "path" : "\/opt\/homebrew\/*\/QtOpenGLWidgets.framework\/Versions\/A\/QtOpenGLWidgets",
+    "name" : "QtOpenGLWidgets",
+    "CFBundleVersion" : "6.10.2"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4460462080,
+    "size" : 3801088,
+    "uuid" : "20471a15-f740-36dd-b391-01a8a3867981",
+    "path" : "\/Users\/USER\/*\/libvtkFiltersGeneral-9.5.9.5.dylib",
+    "name" : "libvtkFiltersGeneral-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4428447744,
+    "size" : 81920,
+    "uuid" : "ba63d89c-89c0-3f21-90f9-22633e4cdd37",
+    "path" : "\/Users\/USER\/*\/libvtkCommonComputationalGeometry-9.5.9.5.dylib",
+    "name" : "libvtkCommonComputationalGeometry-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4453564416,
+    "size" : 983040,
+    "uuid" : "07724f02-a7d1-3bfb-8026-ac54f9c03811",
+    "path" : "\/Users\/USER\/*\/libvtkFiltersGeometry-9.5.9.5.dylib",
+    "name" : "libvtkFiltersGeometry-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4449615872,
+    "size" : 573440,
+    "uuid" : "051ed36f-35ff-3898-ab83-fa5c691caa03",
+    "path" : "\/Users\/USER\/*\/libvtkIOXML-9.5.9.5.dylib",
+    "name" : "libvtkIOXML-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4426383360,
+    "size" : 65536,
+    "uuid" : "70c532ea-1ec7-3c54-aed9-b794c1e73608",
+    "path" : "\/Users\/USER\/*\/libvtkIOXMLParser-9.5.9.5.dylib",
+    "name" : "libvtkIOXMLParser-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4448600064,
+    "size" : 491520,
+    "uuid" : "21dc2876-efe4-3b87-a898-14e626b91d8c",
+    "path" : "\/Users\/USER\/*\/libvtkIOLegacy-9.5.9.5.dylib",
+    "name" : "libvtkIOLegacy-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4441571328,
+    "size" : 344064,
+    "uuid" : "1f54b0f1-713d-3fc6-b122-acb458bc97f7",
+    "path" : "\/Users\/USER\/*\/libvtkIOCellGrid-9.5.9.5.dylib",
+    "name" : "libvtkIOCellGrid-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4455383040,
+    "size" : 294912,
+    "uuid" : "1766b45f-f8c3-35c1-a340-b25292cc4d17",
+    "path" : "\/Users\/USER\/*\/libvtkIOCore-9.5.9.5.dylib",
+    "name" : "libvtkIOCore-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4457283584,
+    "size" : 786432,
+    "uuid" : "e1a6b28f-4658-3b4b-a3ad-487379aef2c0",
+    "path" : "\/Users\/USER\/*\/libvtkFiltersCellGrid-9.5.9.5.dylib",
+    "name" : "libvtkFiltersCellGrid-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4479746048,
+    "size" : 6733824,
+    "uuid" : "5c222075-7e18-3262-9945-5c8e3797f935",
+    "path" : "\/Users\/USER\/*\/libvtkFiltersCore-9.5.9.5.dylib",
+    "name" : "libvtkFiltersCore-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4458659840,
+    "size" : 540672,
+    "uuid" : "f4ad3b7b-81b0-3bf4-a623-229931e75acf",
+    "path" : "\/Users\/USER\/*\/libvtkCommonExecutionModel-9.5.9.5.dylib",
+    "name" : "libvtkCommonExecutionModel-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4473307136,
+    "size" : 3506176,
+    "uuid" : "c73064fc-6a9e-373c-b064-c3bf394aed15",
+    "path" : "\/Users\/USER\/*\/libvtkCommonDataModel-9.5.9.5.dylib",
+    "name" : "libvtkCommonDataModel-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4428972032,
+    "size" : 147456,
+    "uuid" : "41bffb15-e541-31d6-ac29-988bcb59c09c",
+    "path" : "\/Users\/USER\/*\/libvtkCommonTransforms-9.5.9.5.dylib",
+    "name" : "libvtkCommonTransforms-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4492214272,
+    "size" : 2211840,
+    "uuid" : "fee1dc29-bf74-3880-b518-f9cbee66f9bf",
+    "path" : "\/Users\/USER\/*\/libvtkCommonMisc-9.5.9.5.dylib",
+    "name" : "libvtkCommonMisc-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4428660736,
+    "size" : 98304,
+    "uuid" : "56568170-3c2e-33b3-84ea-6c24ec1fee4b",
+    "path" : "\/Users\/USER\/*\/libvtkCommonMath-9.5.9.5.dylib",
+    "name" : "libvtkCommonMath-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4417077248,
+    "size" : 16384,
+    "uuid" : "2ede7ef8-5ca5-314b-bb0c-91caa248905b",
+    "path" : "\/Users\/USER\/*\/libvtkkissfft-9.5.9.5.dylib",
+    "name" : "libvtkkissfft-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4535926784,
+    "size" : 15728640,
+    "uuid" : "55081a38-4dd6-3895-9959-90e0563cf927",
+    "path" : "\/Users\/USER\/*\/libvtkCommonCore-9.5.9.5.dylib",
+    "name" : "libvtkCommonCore-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4433608704,
+    "size" : 65536,
+    "uuid" : "b1cccf7b-6f9a-32b0-b55f-d75bc6d8287a",
+    "path" : "\/Users\/USER\/*\/libvtktoken-9.5.9.5.dylib",
+    "name" : "libvtktoken-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4450648064,
+    "size" : 196608,
+    "uuid" : "4110d26f-670a-318d-9355-4a82aca2f28d",
+    "path" : "\/Users\/USER\/*\/libvtksys-9.5.9.5.dylib",
+    "name" : "libvtksys-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4505042944,
+    "CFBundleShortVersionString" : "6.10",
+    "CFBundleIdentifier" : "org.qt-project.QtWidgets",
+    "size" : 4636672,
+    "uuid" : "04173f0f-2551-3e77-bc96-c5163a6f0bf8",
+    "path" : "\/opt\/homebrew\/*\/QtWidgets.framework\/Versions\/A\/QtWidgets",
+    "name" : "QtWidgets",
+    "CFBundleVersion" : "6.10.2"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4467359744,
+    "CFBundleShortVersionString" : "6.10",
+    "CFBundleIdentifier" : "org.qt-project.QtOpenGL",
+    "size" : 425984,
+    "uuid" : "89229113-9e9a-382e-9426-6bebdf8bba8c",
+    "path" : "\/opt\/homebrew\/*\/QtOpenGL.framework\/Versions\/A\/QtOpenGL",
+    "name" : "QtOpenGL",
+    "CFBundleVersion" : "6.10.2"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4520853504,
+    "CFBundleShortVersionString" : "6.10",
+    "CFBundleIdentifier" : "org.qt-project.QtGui",
+    "size" : 5914624,
+    "uuid" : "9dc3ca19-ffb7-36f3-aa97-26ab7011f5f9",
+    "path" : "\/opt\/homebrew\/*\/QtGui.framework\/Versions\/A\/QtGui",
+    "name" : "QtGui",
+    "CFBundleVersion" : "6.10.2"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4423647232,
+    "CFBundleShortVersionString" : "6.10",
+    "CFBundleIdentifier" : "org.qt-project.QtConcurrent",
+    "size" : 16384,
+    "uuid" : "ed38e238-315b-3db0-84a4-49d9d491a1c3",
+    "path" : "\/opt\/homebrew\/*\/QtConcurrent.framework\/Versions\/A\/QtConcurrent",
+    "name" : "QtConcurrent",
+    "CFBundleVersion" : "6.10.2"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4512235520,
+    "CFBundleShortVersionString" : "6.10",
+    "CFBundleIdentifier" : "org.qt-project.QtQml",
+    "size" : 3899392,
+    "uuid" : "c02f49ee-edb2-3e27-926a-6e17d3f70c0b",
+    "path" : "\/opt\/homebrew\/*\/QtQml.framework\/Versions\/A\/QtQml",
+    "name" : "QtQml",
+    "CFBundleVersion" : "6.10.2"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4470243328,
+    "CFBundleShortVersionString" : "6.10",
+    "CFBundleIdentifier" : "org.qt-project.QtNetwork",
+    "size" : 1277952,
+    "uuid" : "f28a78aa-942b-3e25-874e-0fd6279a48ca",
+    "path" : "\/opt\/homebrew\/*\/QtNetwork.framework\/Versions\/A\/QtNetwork",
+    "name" : "QtNetwork",
+    "CFBundleVersion" : "6.10.2"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4573986816,
+    "CFBundleShortVersionString" : "6.10",
+    "CFBundleIdentifier" : "org.qt-project.QtCore",
+    "size" : 4702208,
+    "uuid" : "7b81919f-943f-3509-bb16-dbf146c4aac1",
+    "path" : "\/opt\/homebrew\/*\/QtCore.framework\/Versions\/A\/QtCore",
+    "name" : "QtCore",
+    "CFBundleVersion" : "6.10.2"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4468080640,
+    "size" : 507904,
+    "uuid" : "3c42dd6f-24d3-3fe9-964f-30b05f4d8064",
+    "path" : "\/Users\/USER\/*\/libvtkInfovisCore-9.5.9.5.dylib",
+    "name" : "libvtkInfovisCore-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4455907328,
+    "size" : 180224,
+    "uuid" : "183d940b-83a7-3395-90ea-d685e6018e7d",
+    "path" : "\/Users\/USER\/*\/libvtkImagingSources-9.5.9.5.dylib",
+    "name" : "libvtkImagingSources-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4428840960,
+    "size" : 65536,
+    "uuid" : "d37a5d33-3907-386f-b39c-da29988cc432",
+    "path" : "\/Users\/USER\/*\/libvtkCommonColor-9.5.9.5.dylib",
+    "name" : "libvtkCommonColor-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4434935808,
+    "size" : 81920,
+    "uuid" : "858b8d78-b046-36f5-b170-dd093d64334e",
+    "path" : "\/Users\/USER\/*\/libvtkCommonSystem-9.5.9.5.dylib",
+    "name" : "libvtkCommonSystem-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4456185856,
+    "size" : 147456,
+    "uuid" : "42e37759-2c2b-3b65-a45e-fd96ff670f19",
+    "path" : "\/Users\/USER\/*\/libvtkpugixml-9.5.9.5.dylib",
+    "name" : "libvtkpugixml-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4427546624,
+    "size" : 65536,
+    "uuid" : "a86fd617-8b0a-3011-9366-7ed1a0d877e8",
+    "path" : "\/Users\/USER\/*\/libvtkdoubleconversion-9.5.9.5.dylib",
+    "name" : "libvtkdoubleconversion-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4433772544,
+    "size" : 49152,
+    "uuid" : "1a8f879a-2dbf-3c2f-bed5-3461a1aa4c05",
+    "path" : "\/Users\/USER\/*\/libvtkloguru-9.5.9.5.dylib",
+    "name" : "libvtkloguru-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4456726528,
+    "size" : 147456,
+    "uuid" : "74f76aa4-36d5-3311-b49c-2905915e30e4",
+    "path" : "\/Users\/USER\/*\/libvtkFiltersVerdict-9.5.9.5.dylib",
+    "name" : "libvtkFiltersVerdict-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4449370112,
+    "size" : 98304,
+    "uuid" : "2191a6cb-e958-3fc2-bda2-185026d31189",
+    "path" : "\/Users\/USER\/*\/libvtkfmt-9.5.9.5.dylib",
+    "name" : "libvtkfmt-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4457021440,
+    "size" : 131072,
+    "uuid" : "65b4f2b9-5343-3b11-99bd-b8bb61254900",
+    "path" : "\/Users\/USER\/*\/libvtkverdict-9.5.9.5.dylib",
+    "name" : "libvtkverdict-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4499931136,
+    "size" : 1114112,
+    "uuid" : "4fddb4bc-9816-34ca-a3a3-88eeaf1cadb4",
+    "path" : "\/Users\/USER\/*\/libvtkFiltersReduction-9.5.9.5.dylib",
+    "name" : "libvtkFiltersReduction-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4459855872,
+    "size" : 147456,
+    "uuid" : "68cbdb4a-d121-3925-a2ab-fa1a7598b757",
+    "path" : "\/opt\/homebrew\/*\/libpng16.16.dylib",
+    "name" : "libpng16.16.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4502011904,
+    "size" : 655360,
+    "uuid" : "53ad6c07-17bf-32f2-8818-7d7010579f71",
+    "path" : "\/Users\/USER\/*\/libvtkFiltersExtraction-9.5.9.5.dylib",
+    "name" : "libvtkFiltersExtraction-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4435099648,
+    "size" : 81920,
+    "uuid" : "b2a26df1-abab-3756-bb6a-68c3cf09b3f1",
+    "path" : "\/Users\/USER\/*\/libvtkDICOMParser-9.5.9.5.dylib",
+    "name" : "libvtkDICOMParser-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4468899840,
+    "size" : 327680,
+    "uuid" : "d736baaa-1f4d-34cf-acb2-cafb94ef4bdd",
+    "path" : "\/Users\/USER\/*\/libvtkjpeg-9.5.9.5.dylib",
+    "name" : "libvtkjpeg-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4472422400,
+    "size" : 475136,
+    "uuid" : "16a4374f-f7e5-3d52-a748-ea6d78835793",
+    "path" : "\/Users\/USER\/*\/libvtkmetaio-9.5.9.5.dylib",
+    "name" : "libvtkmetaio-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4497866752,
+    "size" : 425984,
+    "uuid" : "04e855be-8431-36cc-9436-6579aeb77d1d",
+    "path" : "\/opt\/homebrew\/*\/libtiff.6.dylib",
+    "name" : "libtiff.6.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4498407424,
+    "size" : 557056,
+    "uuid" : "1ce1197a-4a2b-3036-984e-95599210332b",
+    "path" : "\/opt\/homebrew\/*\/libzstd.1.5.7.dylib",
+    "name" : "libzstd.1.5.7.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4460068864,
+    "size" : 131072,
+    "uuid" : "43c01aff-c040-33ff-bb38-5e1ec42d9e75",
+    "path" : "\/opt\/homebrew\/*\/liblzma.5.dylib",
+    "name" : "liblzma.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4499079168,
+    "size" : 393216,
+    "uuid" : "233ce9ad-1aca-349a-ad3d-2af310c97ed4",
+    "path" : "\/opt\/homebrew\/*\/libjpeg.8.3.2.dylib",
+    "name" : "libjpeg.8.3.2.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4503420928,
+    "size" : 294912,
+    "uuid" : "fd5cc1fd-0e5a-3279-8812-4192d5970c40",
+    "path" : "\/Users\/USER\/*\/libvtkFiltersHyperTree-9.5.9.5.dylib",
+    "name" : "libvtkFiltersHyperTree-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4518641664,
+    "size" : 638976,
+    "uuid" : "9bc3edf6-19e5-3afb-9000-c253be14bb5a",
+    "path" : "\/Users\/USER\/*\/libvtkFiltersStatistics-9.5.9.5.dylib",
+    "name" : "libvtkFiltersStatistics-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4530978816,
+    "size" : 819200,
+    "uuid" : "4090f9cf-eda7-337a-ab44-617bb73d673a",
+    "path" : "\/Users\/USER\/*\/libvtkParallelDIY-9.5.9.5.dylib",
+    "name" : "libvtkParallelDIY-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4469669888,
+    "size" : 262144,
+    "uuid" : "f64fb6ad-e3af-3ef8-8bc3-b5a2cba50cec",
+    "path" : "\/Users\/USER\/*\/libvtkParallelCore-9.5.9.5.dylib",
+    "name" : "libvtkParallelCore-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4460265472,
+    "size" : 131072,
+    "uuid" : "88b25dd4-c1ab-3a03-86d7-2b1595bb49d1",
+    "path" : "\/opt\/homebrew\/*\/liblz4.1.10.0.dylib",
+    "name" : "liblz4.1.10.0.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4469276672,
+    "size" : 131072,
+    "uuid" : "80e54eed-ab82-3d65-82e9-f1976199bcef",
+    "path" : "\/Users\/USER\/*\/libvtkexpat-9.5.9.5.dylib",
+    "name" : "libvtkexpat-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4479270912,
+    "size" : 147456,
+    "uuid" : "57c4294f-2a4a-3291-b82c-14d0b482cd80",
+    "path" : "\/Users\/USER\/*\/libvtkDomainsChemistry-9.5.9.5.dylib",
+    "name" : "libvtkDomainsChemistry-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4519673856,
+    "size" : 655360,
+    "uuid" : "ccc00838-11f6-30c3-9ba1-6186cbb7973e",
+    "path" : "\/Users\/USER\/*\/libvtkFiltersHybrid-9.5.9.5.dylib",
+    "name" : "libvtkFiltersHybrid-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4456431616,
+    "size" : 98304,
+    "uuid" : "256c3733-6ef7-3f72-8857-c2c1ce6d6318",
+    "path" : "\/Users\/USER\/*\/libvtkgl2ps-9.5.9.5.dylib",
+    "name" : "libvtkgl2ps-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4456579072,
+    "size" : 65536,
+    "uuid" : "3350c897-157b-361a-8b21-68a490e13fce",
+    "path" : "\/Users\/USER\/*\/libvtkFiltersTexture-9.5.9.5.dylib",
+    "name" : "libvtkFiltersTexture-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4529520640,
+    "size" : 344064,
+    "uuid" : "f9e49fc9-8025-3bad-a953-244d319be729",
+    "path" : "\/Users\/USER\/*\/libvtkImagingHybrid-9.5.9.5.dylib",
+    "name" : "libvtkImagingHybrid-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4503961600,
+    "size" : 245760,
+    "uuid" : "a7c3a710-d451-30a4-998a-5a5f002fe779",
+    "path" : "\/Users\/USER\/*\/libvtkImagingColor-9.5.9.5.dylib",
+    "name" : "libvtkImagingColor-9.5.9.5.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4533813248,
+    "size" : 1032192,
+    "uuid" : "a8225889-e14c-3808-bea5-1e02ce39579b",
+    "path" : "\/opt\/homebrew\/*\/libglib-2.0.0.dylib",
+    "name" : "libglib-2.0.0.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4580900864,
+    "CFBundleShortVersionString" : "6.10",
+    "CFBundleIdentifier" : "org.qt-project.QtDBus",
+    "size" : 540672,
+    "uuid" : "fe58b971-337a-3204-91f6-c7bdfd3d623c",
+    "path" : "\/opt\/homebrew\/*\/QtDBus.framework\/Versions\/A\/QtDBus",
+    "name" : "QtDBus",
+    "CFBundleVersion" : "6.10.2"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4581933056,
+    "size" : 770048,
+    "uuid" : "67cf7c00-9bfe-3fc6-b4d1-769ffc46bc68",
+    "path" : "\/opt\/homebrew\/*\/libharfbuzz.0.dylib",
+    "name" : "libharfbuzz.0.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4429299712,
+    "size" : 49152,
+    "uuid" : "1a08cf60-8d8b-3f61-bcbd-ab86aee61bc3",
+    "path" : "\/opt\/homebrew\/*\/libmd4c.0.5.2.dylib",
+    "name" : "libmd4c.0.5.2.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4417650688,
+    "size" : 16384,
+    "uuid" : "220d4378-e95b-396d-91f1-1761e7570e47",
+    "path" : "\/opt\/homebrew\/*\/libgthread-2.0.0.dylib",
+    "name" : "libgthread-2.0.0.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4499570688,
+    "size" : 163840,
+    "uuid" : "9ef58f71-571d-352e-bb98-6e9754d6b30b",
+    "path" : "\/opt\/homebrew\/*\/libintl.8.dylib",
+    "name" : "libintl.8.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4530159616,
+    "size" : 491520,
+    "uuid" : "ac59ae27-0884-3df1-baf1-38015aa7768b",
+    "path" : "\/opt\/homebrew\/*\/libpcre2-8.0.dylib",
+    "name" : "libpcre2-8.0.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4504649728,
+    "size" : 196608,
+    "uuid" : "d67bd0e2-713d-3b96-8916-513463708577",
+    "path" : "\/opt\/homebrew\/*\/libdbus-1.3.dylib",
+    "name" : "libdbus-1.3.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4586340352,
+    "size" : 1785856,
+    "uuid" : "77f6958d-ee70-3616-83b8-cda8cee757c8",
+    "path" : "\/opt\/homebrew\/*\/libicui18n.78.2.dylib",
+    "name" : "libicui18n.78.2.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4589518848,
+    "size" : 1310720,
+    "uuid" : "a8753081-d7ad-32f7-afa2-c5367f4d30ee",
+    "path" : "\/opt\/homebrew\/*\/libicuuc.78.2.dylib",
+    "name" : "libicuuc.78.2.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4624613376,
+    "size" : 33112064,
+    "uuid" : "43c65598-8d23-3a63-95c7-17ec6d829426",
+    "path" : "\/opt\/homebrew\/*\/libicudata.78.2.dylib",
+    "name" : "libicudata.78.2.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4469456896,
+    "size" : 49152,
+    "uuid" : "a37dddd2-a19d-363b-b32a-90da247139e4",
+    "path" : "\/opt\/homebrew\/*\/libdouble-conversion.3.4.0.dylib",
+    "name" : "libdouble-conversion.3.4.0.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4450975744,
+    "size" : 32768,
+    "uuid" : "cdb9743e-4399-33d0-a9af-8667f7f00478",
+    "path" : "\/opt\/homebrew\/*\/libb2.1.dylib",
+    "name" : "libb2.1.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4532994048,
+    "size" : 458752,
+    "uuid" : "d4323c04-d0c2-3f9f-a6fc-0975d7c7501f",
+    "path" : "\/opt\/homebrew\/*\/libpcre2-16.0.dylib",
+    "name" : "libpcre2-16.0.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4473077760,
+    "size" : 81920,
+    "uuid" : "481f6d39-27e3-3c77-a203-99ddb4e2de7f",
+    "path" : "\/opt\/homebrew\/*\/libgraphite2.3.2.1.dylib",
+    "name" : "libgraphite2.3.2.1.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4596252672,
+    "size" : 3407872,
+    "uuid" : "73c02ad5-a80c-3620-beb7-8a6e51366b7c",
+    "path" : "\/opt\/homebrew\/*\/libcrypto.3.dylib",
+    "name" : "libcrypto.3.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4469571584,
+    "size" : 49152,
+    "uuid" : "c7d658ec-f84b-33a4-9ad7-b31c103fb593",
+    "path" : "\/opt\/homebrew\/*\/libbrotlidec.1.2.0.dylib",
+    "name" : "libbrotlidec.1.2.0.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4584062976,
+    "size" : 606208,
+    "uuid" : "5699d44c-cc20-3420-861f-ef110af1e1fa",
+    "path" : "\/opt\/homebrew\/*\/libssl.3.dylib",
+    "name" : "libssl.3.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4479565824,
+    "size" : 131072,
+    "uuid" : "ebf79aec-78a4-3105-884d-0a459c69a38c",
+    "path" : "\/opt\/homebrew\/*\/libbrotlicommon.1.2.0.dylib",
+    "name" : "libbrotlicommon.1.2.0.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4605329408,
+    "size" : 720896,
+    "uuid" : "89a6e714-1289-3ef8-89c8-00c715dd9b78",
+    "path" : "\/opt\/homebrew\/*\/libqcocoa.dylib",
+    "name" : "libqcocoa.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64e",
+    "base" : 4473225216,
+    "size" : 49152,
+    "uuid" : "ca58aa96-b997-3a6d-9132-19d49be4b3e9",
+    "path" : "\/usr\/lib\/libobjc-trampolines.dylib",
+    "name" : "libobjc-trampolines.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4585357312,
+    "size" : 147456,
+    "uuid" : "66b5c8c7-892d-39af-96c1-9059bfa9757a",
+    "path" : "\/opt\/homebrew\/*\/libqmacstyle.dylib",
+    "name" : "libqmacstyle.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4530896896,
+    "size" : 32768,
+    "uuid" : "99a6034d-44ea-3a7e-b361-e9caa189d804",
+    "path" : "\/opt\/homebrew\/*\/libqgif.dylib",
+    "name" : "libqgif.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64e",
+    "base" : 5047468032,
+    "CFBundleShortVersionString" : "351.2",
+    "CFBundleIdentifier" : "com.apple.AGXMetalG15G-C0",
+    "size" : 8880128,
+    "uuid" : "8aa82648-7fb1-3827-86de-2f143d411c2b",
+    "path" : "\/System\/Library\/Extensions\/AGXMetalG15G_C0.bundle\/Contents\/MacOS\/AGXMetalG15G_C0",
+    "name" : "AGXMetalG15G_C0",
+    "CFBundleVersion" : "351.2"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64e",
+    "base" : 4585635840,
+    "CFBundleShortVersionString" : "1.0",
+    "CFBundleIdentifier" : "com.apple.AppleMetalOpenGLRenderer",
+    "size" : 409600,
+    "uuid" : "ed97217d-dbc3-3bd9-a531-e874ea072aa6",
+    "path" : "\/System\/Library\/Extensions\/AppleMetalOpenGLRenderer.bundle\/Contents\/MacOS\/AppleMetalOpenGLRenderer",
+    "name" : "AppleMetalOpenGLRenderer",
+    "CFBundleVersion" : "1"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64e",
+    "base" : 6540693504,
+    "CFBundleShortVersionString" : "6.9",
+    "CFBundleIdentifier" : "com.apple.CoreFoundation",
+    "size" : 5628704,
+    "uuid" : "4bbd0da8-c600-3f3a-a38b-6664652fa04a",
+    "path" : "\/System\/Library\/Frameworks\/CoreFoundation.framework\/Versions\/A\/CoreFoundation",
+    "name" : "CoreFoundation",
+    "CFBundleVersion" : "5026.5.4.1.402"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64e",
+    "base" : 6756327424,
+    "CFBundleShortVersionString" : "2.1.1",
+    "CFBundleIdentifier" : "com.apple.HIToolbox",
+    "size" : 3125536,
+    "uuid" : "8716490e-acc2-3688-8c2f-5ca42b4c9da9",
+    "path" : "\/System\/Library\/Frameworks\/Carbon.framework\/Versions\/A\/Frameworks\/HIToolbox.framework\/Versions\/A\/HIToolbox",
+    "name" : "HIToolbox"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64e",
+    "base" : 6612463616,
+    "CFBundleShortVersionString" : "6.9",
+    "CFBundleIdentifier" : "com.apple.AppKit",
+    "size" : 24260512,
+    "uuid" : "c92cc156-d767-322b-b79b-433f56e72561",
+    "path" : "\/System\/Library\/Frameworks\/AppKit.framework\/Versions\/C\/AppKit",
+    "name" : "AppKit",
+    "CFBundleVersion" : "2685.60.104"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64e",
+    "base" : 6536380416,
+    "size" : 680472,
+    "uuid" : "f924bdd3-4365-3466-9580-8b1b3fa8f857",
+    "path" : "\/usr\/lib\/dyld",
+    "name" : "dyld"
+  },
+  {
+    "size" : 0,
+    "source" : "A",
+    "base" : 0,
+    "uuid" : "00000000-0000-0000-0000-000000000000"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64e",
+    "base" : 6540152832,
+    "size" : 250544,
+    "uuid" : "fca53b98-3d6a-38b2-a0ec-df0f7e05f171",
+    "path" : "\/usr\/lib\/system\/libsystem_kernel.dylib",
+    "name" : "libsystem_kernel.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64e",
+    "base" : 6540406784,
+    "size" : 52028,
+    "uuid" : "4f33683c-18c8-39a1-800b-2e3bd43bcc13",
+    "path" : "\/usr\/lib\/system\/libsystem_pthread.dylib",
+    "name" : "libsystem_pthread.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64e",
+    "base" : 6539448320,
+    "size" : 592616,
+    "uuid" : "5013c0f8-84a9-3b56-9feb-c353816a750f",
+    "path" : "\/usr\/lib\/libc++.1.dylib",
+    "name" : "libc++.1.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64e",
+    "base" : 6538919936,
+    "size" : 527776,
+    "uuid" : "694b7881-1bf3-3d0f-8f19-b50ae4e8ef8a",
+    "path" : "\/usr\/lib\/system\/libsystem_c.dylib",
+    "name" : "libsystem_c.dylib"
+  }
+],
+  "sharedCache" : {
+  "base" : 6535249920,
+  "size" : 5990973440,
+  "uuid" : "157e6d2e-2e5c-39b1-8f2a-8866ee228bed"
+},
+  "vmSummary" : "ReadOnly portion of Libraries: Total=2.0G resident=0K(0%) swapped_out_or_unallocated=2.0G(100%)\nWritable regions: Total=351.3M written=3425K(1%) resident=913K(0%) swapped_out=2896K(1%) unallocated=347.6M(99%)\n\n                                VIRTUAL   REGION \nREGION TYPE                        SIZE    COUNT (non-coalesced) \n===========                     =======  ======= \nAccelerate framework               128K        1 \nActivity Tracing                   256K        1 \nAttributeGraph Data               1024K        1 \nCG image                          5104K        5 \nCG raster data                    3296K        7 \nColorSync                           48K        3 \nCoreAnimation                      912K       43 \nCoreGraphics                        48K        3 \nCoreUI image data                  400K        3 \nDispatch continuations            64.0M        1 \nFoundation                          16K        1 \nJS VM Gigacage                    4096K        1 \nJS VM Isolated Heap               4416K        5 \nJS VM Isolated Heap (reserved)    2048K        1         reserved VM address space (unallocated)\nKernel Alloc Once                   32K        1 \nMALLOC                           181.0M       55 \nMALLOC guard page                 3568K        4 \nMemory Tag 22                     64.0M        1 \nOpenGL GLSL                        256K        3 \nSTACK GUARD                       56.3M       20 \nStack                             18.1M       20 \nVM_ALLOCATE                       2768K      165 \n__AUTH                            5959K      627 \n__AUTH_CONST                      88.6M     1014 \n__CTF                               824        1 \n__DATA                            38.4M     1073 \n__DATA_CONST                      45.8M     1136 \n__DATA_DIRTY                      8315K      871 \n__FONT_DATA                        2352        1 \n__GLSLBUILTINS                    5176K        1 \n__LINKEDIT                       667.3M      120 \n__OBJC_RO                         79.1M        1 \n__OBJC_RW                         2598K        1 \n__TEXT                             1.4G     1159 \n__TPRO_CONST                       128K        2 \ndyld private memory               1024K        7 \nmapped file                      266.9M       35 \npage table in kernel               913K        1 \nshared memory                      880K       14 \n===========                     =======  ======= \nTOTAL                              2.9G     6409 \nTOTAL, minus reserved VM space     2.9G     6409 \n",
+  "legacyInfo" : {
+  "threadTriggered" : {
+    "queue" : "com.apple.main-thread"
+  }
+},
+  "logWritingSignature" : "ec6dd9a711e08e37079fb8e1116b772f4cecd225",
+  "bug_type" : "309",
+  "roots_installed" : 0,
+  "trmStatus" : 1,
+  "trialInfo" : {
+  "rollouts" : [
+    {
+      "rolloutId" : "64b21a7351cbb02ce3442e4e",
+      "factorPackIds" : [
+        "6647f0f7b6a75d3dc32993e7"
+      ],
+      "deploymentId" : 240000042
+    },
+    {
+      "rolloutId" : "65a8173205d942272410674b",
+      "factorPackIds" : [
+        "65d39fa4cb0e2417d11ce5f6"
+      ],
+      "deploymentId" : 240000001
+    }
+  ],
+  "experiments" : [
+
+  ]
+}
+}
+

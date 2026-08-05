@@ -536,3 +536,70 @@ trained-then-cancel case.
 
 Confirm `RandomForestBailOut` on Linux — one run, not an investigation; the gdb stack recorded there
 is the same crash. Then W1 step 6, which now has a trustworthy harness *and* a green suite to land on.
+
+---
+
+## 2026-08-05 (second entry) — Crash-report corpus audited; my own fix was incomplete
+
+**Goal:** explain the crash reports the user was seeing during auto-test runs.
+
+### Done
+
+- **Classified all 12 ITK-SNAP crash reports on the machine** (2026-07-30 → 08-05), not just the one
+  supplied. Four distinct signatures, every one accounted for:
+
+  | Sig | Count | Cause | Status |
+  |---|---|---|---|
+  | A — `__dynamic_cast` in `LayerInspectorRowDelegate::onModelUpdate` | 5 | W8 item 15d use-after-free | fixed `7ba0692e` |
+  | B — `MeshLayerTableRowModel::UpdateRoleInfo` null deref | 4 | **my own broken intermediate build**, 00:44–00:51 tonight | fixed same commit |
+  | C — `SNAPTestQt::findChild` `qFatal` | 1 | assertion placed at the hop, not the touch | fixed `5f2825e4` |
+  | D — `-[NSMenu itemArray]` NSException on `TestWorker` | 2 | W8 item 17 off-thread Qt access | fixed `b3cf79d3` |
+
+- **Ran an adversarial audit** (39 agents: 4 refuters against the dispositions, 5 sweep lenses, 15
+  findings verified, 15 rejected). It returned **PARTIALLY_FIXED on A and B and NOT_FIXED on C** —
+  and it was right on all three.
+- **Fixed what it found in my own commit** (W8 item 24) and one reproduced harness hole (item 25).
+- Filed items 26–34 for the rest, each with the verifier's reachability argument.
+
+### Findings
+
+**1. My item-15d fix was incomplete, and in one respect made things worse.** `InvalidateLayer()`
+sets `m_LayerRole = NO_ROLE`; the guards in `CheckState()` are written `m_LayerRole != SOME_ROLE`,
+which `NO_ROLE` **passes**. So nulling `m_Layer` synchronously *opened* the layer derefs at
+`LayerTableRowModel.cxx:79/309/313/317` rather than closing them, and
+`MeshLayerTableRowModel::CheckState` derefs `m_MeshLayer` in its first two statements, before the
+switch, for every state query. The delivery vehicle is the same queued path as signature A:
+`QtWidgetActivator::OnStateChange` ignores the bucket and calls `CheckState` on every
+`StateMachineChangeEvent`, and the row delegate registers ~15 of those activators.
+
+**2. I verified reachability instead of assuming it, and the answer was partial.** Instrumented
+guards fire **twice in `RandomForestBailOut`**, immediately after "Cancel segmentation" — one of
+them the `UIF_MESH` query from `UpdateOverlaysMenu()` that the audit predicted. So the path is live.
+But the two states reached are the harmless ones, and **two targeted mesh-teardown repros hit the
+path zero times**. The guards are correct and the derefs are verified by construction; the crash
+itself is **not reproduced**. Recorded that way in item 24 rather than claimed as a fixed crash.
+
+**3. `protected slots:` is not private (item 25).** QJSEngine exposes protected slots to scripts —
+only private ones are hidden. `postKeyEventInternal` was therefore script-callable, took a raw
+`QObject*`, and called `AssertOnGuiThread` with no hop, so one line of JS reproduced **crash
+signature C on demand** (exit 134). It is only called from a lambda that has already hopped, so it
+never needed to be a slot. Fixed and verified both ways: `typeof` was `"function"`, now `undefined`.
+
+**4. The harness cannot fail.** Beyond item 22, the audit measured at runtime that
+`validateFloatValue` **passes on NaN** — and that the harness's own readers return `undefined` on a
+miss, which coerces to NaN, so *a lookup that found nothing validates as OK* (item 31). `test_NaNs`
+is the sharpest case: it exists to check NaN handling. `comboBoxSelect` maps "not found" to row 0
+(item 32), every `invokeMethod`/`setProperty` result is discarded (item 33), and the load helpers
+never check that the load happened, while **eight scripts contain zero assertions** (item 34).
+Together these mean a green suite is much weaker evidence than the numbers suggest.
+
+**5. Method note.** The audit's value came from being told to *refute*, not to review: it accepted
+that the use-after-free was gone and then found what the fix had opened. Two of my own claims from
+the previous entry needed correcting as a result. Capped coverage is recorded honestly — 4 of the 5
+lenses produced more findings than were verified (9, 13, 9 and 7 unverified).
+
+### Next
+
+Items 26 and 27 are the highest-value follow-ups (both crashes, both with deterministic repros).
+The harness-fidelity cluster (31–34) is small individually and would materially raise the value of
+every future green run.

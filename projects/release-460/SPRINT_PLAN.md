@@ -131,8 +131,9 @@ complete, the version reads `4.6.0` with no qualifier, and the PR is open with a
 
 ### Test baseline to beat
 
-**macOS arm64, `staging/v460` @ `7ba0692e`, measured 2026-08-05 — this is now the authoritative
-baseline: 32/34, and for the first time this sprint every failure is a known flake.**
+**macOS arm64, `staging/v460` @ `038fa32b`, measured 2026-08-05 — this is now the authoritative
+baseline. Run 4 was 32/34 and run 5 was 31/34; every failure in both is a known flake, so the sets
+agree even though the totals do not. Compare the sets.**
 
 | Run | Commit | Failure set |
 |---|---|---|
@@ -140,6 +141,7 @@ baseline: 32/34, and for the first time this sprint every failure is a known fla
 | 2 | `092022fb` | `RemoteImageLoadTest_SingleImage`, `4DReplayWithMeshUpdate`, `RandomForestBailOut` |
 | 3 | `5f2825e4` | `RemoteImageLoadTest_WorkspaceWithMesh`, `RandomForestBailOut` |
 | 4 | `7ba0692e` | `RemoteImageLoadTest_SingleImage`, `4DReplayWithMeshUpdate` |
+| 5 | `038fa32b` | `RemoteImageLoadTest_SingleImage`, `RemoteImageLoadTest_WorkspaceWithMesh`, `4DReplayWithMeshUpdate` |
 
 | Test | State | Note |
 |---|---|---|
