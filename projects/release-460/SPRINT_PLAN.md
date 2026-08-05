@@ -33,7 +33,7 @@ the demo builds on release code — but do not merge it, and do not merge `itksn
 | Branch | `staging/v460` (itksnap) |
 | Base | `upstream/master` @ `679ba76a` |
 | Purpose | Land each workstream, run integration tests, then one wholesale PR to `pyushkevich/itksnap:master` |
-| Status | pushed; at `5f2825e4`, **21 commits** ahead of base (2026-07-31) |
+| Status | pushed; at `038fa32b`, **23 commits** ahead of base (2026-08-05) |
 
 Nothing merges into `staging/v460` until its workstream row in §3 says the branch builds **and** its
 tests pass. Rebase on `upstream/master` before each merge so the final PR stays a clean fast-forward
