@@ -467,3 +467,72 @@ the only failure common to all three**, which is what makes it the next goal:
 `EdgeAttraction` red in run 1 is the item-21 story above, not a flake. The remote-test failure moves
 between `SingleImage` and `WorkspaceWithMesh`, which supports shared state or rate limiting over a
 defect in either test.
+
+---
+
+## 2026-08-05 — `RandomForestBailOut` re-baselined and fixed; a use-after-free of our own making
+
+**Goal:** re-baseline `RandomForestBailOut` on macOS against a stock build and settle the
+item 15 / 15d contradiction.
+
+### Done
+
+- **Re-baselined against a stock build first, as prescribed.** `staging/v460` @ `5f2825e4`, no local
+  changes, macOS: `RandomForestBailOut` **SEGFAULTs every run** (exit 139, 3/3). W8 item 15's claim
+  that it "no longer segfaults but still fails" was wrong; the row in `SPRINT_PLAN.md` §4 is now
+  measured rather than assumed.
+- **Root-caused and fixed it — `7ba0692e`, W8 item 15d.** A use-after-free of
+  `AbstractLayerTableRowModel::m_Layer`, regressed by **`1712c6e7`** (our own March 2026 leak fix).
+- **Fixed the regression the fix itself caused**, before committing: `MeshWorkspace` began
+  segfaulting deterministically. Caught by running the full suite, not by inspection.
+- **macOS full suite: 32/34**, and for the first time this sprint **every failure is a known flake**
+  (`RemoteImageLoadTest_SingleImage`, `4DReplayWithMeshUpdate`).
+- Filed two new items: **22** (the test paints nothing) and **23** (`findChild` fails silently).
+
+### Findings
+
+**1. Two bugs, one symptom — that is why items 15 and 15d disagreed.** `1d1fe7ea` fixed a real null
+deref. With the harness repaired (item 17) the test gets *further* and hits a second, unrelated
+crash. Both are true; neither statement was complete. **Item 15c is resolved by item 17**: the test
+does now enter RF mode, proven by `TrainClassifier()` reaching a `throw` that is only reachable with
+a non-null engine.
+
+**2. The mechanism, and the inference it disproves.** Item 15d guessed the concurrent teardown was
+the harness driving Qt from a worker thread. That is now fixed, and the click runs on the GUI
+thread — so the guess was wrong. The real re-entrancy is the **modal error dialog**:
+`ReportNonLethalException` → `QDialog::exec()` pumps posted events, so the script's queued "Cancel
+segmentation" executes **inside** the nested loop and destroys the layers under the dialog. A queued
+ITK event then reaches a delegate whose layer is gone. Proven by deleting the cancel click from a
+copy of the script: no crash.
+
+**3. The leak fix and the crash fix were in direct tension, and the leak fix won silently.**
+`1712c6e7` changed `m_Layer` to a raw pointer to break a cycle with the wrapper's `m_UserDataMap`.
+But invalidation was left in `OnUpdate()`, which only runs when a view calls `Update()` — so between
+the layer's destructor and that call, every reader of `GetLayer()` held freed memory.
+`LayerInspectorRowDelegate::GetLayer()` calls `Update()` first *for exactly this reason*;
+`UpdateOverlaysMenu()` and `onModelUpdate()` read `m_Model->GetLayer()` directly and did not.
+**This is the 2018 crash returning** — `062ba382` fixed it with a `SmartPtr` and added this very
+test, which never ran until `4e1baa2a`. Fix: observe `DeleteEvent` directly and invalidate at once.
+ITK fires it from `UnRegister()` while the object is still alive, and `itk::MemberCommand` holds a
+raw back-pointer, so the leak fix is preserved.
+
+**4. Nulling earlier is not free — it converts dangling reads into null reads.** Two sites had to be
+repaired in the same commit, one of which the test suite caught and inspection had not:
+`AbstractLayerTableRowModel::OnUpdate()` stopped matching its `DeleteEvent` branch (`m_Layer` is
+already null, and `HasEvent(evt, NULL)` means *any* source), fell through to `UpdateRoleInfo()`, and
+segfaulted `MeshWorkspace`; and `ApplyColorMap()` dereferenced `GetLayer()` unguarded. **Lesson: a
+fix that changes when a pointer becomes null must be measured on the whole suite, not the one test
+it targets.**
+
+**5. The now-green test does not test what it was written to test (item 22).** Its three paintbrush
+strokes are silent no-ops — `findChild(panel0,"sliceView")` matches nothing (the canvas is
+`sliceViewCanvas`), so the key events go nowhere and the classifier trains on **0 samples**. The run
+follows the "training threw → modal dialog → cancel" path instead. That path is what exposed item
+15d, so the coverage is real and worth keeping — **do not just repoint the selector**, since making
+training succeed would delete the very path that found the bug. Add a second test for the
+trained-then-cancel case.
+
+### Next
+
+Confirm `RandomForestBailOut` on Linux — one run, not an investigation; the gdb stack recorded there
+is the same crash. Then W1 step 6, which now has a trustworthy harness *and* a green suite to land on.

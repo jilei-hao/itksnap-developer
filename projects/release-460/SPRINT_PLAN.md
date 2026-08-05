@@ -131,24 +131,28 @@ complete, the version reads `4.6.0` with no qualifier, and the PR is open with a
 
 ### Test baseline to beat
 
-**macOS arm64, `staging/v460` @ `5f2825e4`, measured 2026-07-31 — this is now the authoritative
-baseline: 32/34.** The suite gained a 34th test (`HarnessThreadSafety`, W8 item 17).
-
-**Only one failure is stable.** Three full runs on this tree today gave 30/33, 31/34 and 32/34; the
-totals move because the flakes rotate, so read the sets, not the numbers:
+**macOS arm64, `staging/v460` @ `7ba0692e`, measured 2026-08-05 — this is now the authoritative
+baseline: 32/34, and for the first time this sprint every failure is a known flake.**
 
 | Run | Commit | Failure set |
 |---|---|---|
 | 1 | `b3cf79d3` | `RemoteImageLoadTest_SingleImage`, `EdgeAttraction`, `RandomForestBailOut` |
 | 2 | `092022fb` | `RemoteImageLoadTest_SingleImage`, `4DReplayWithMeshUpdate`, `RandomForestBailOut` |
 | 3 | `5f2825e4` | `RemoteImageLoadTest_WorkspaceWithMesh`, `RandomForestBailOut` |
+| 4 | `7ba0692e` | `RemoteImageLoadTest_SingleImage`, `4DReplayWithMeshUpdate` |
 
 | Test | State | Note |
 |---|---|---|
-| `RandomForestBailOut` | 🔴 SEGFAULT | The only failure in all three runs. Stated debt — W8 items 15/15c/15d. **Not re-baselined this session**: whether macOS still segfaults *after* `1d1fe7ea`, or merely fails, was not re-established against a stock build, so do not read this row as a change caused by item 17. |
+| `RandomForestBailOut` | ✅ | **Fixed in `7ba0692e`** (W8 item 15d) — a use-after-free of the row model's raw layer pointer, regressed from `1712c6e7`. Re-baselined against a stock build first: `5f2825e4` SEGFAULTs on macOS every run, so W8 item 15's "no longer segfaults" was wrong. Passes at **20.5 s**; a sub-second pass means it is not running. |
+| `MeshWorkspace` | ✅ | Briefly SEGFAULTed on the first cut of the item-15d fix — caught and fixed in the same commit. Passes at **54 s**. Not a flake; if it goes red, it is a real regression. |
 | `RemoteImageLoadTest_{SingleImage,WorkspaceWithMesh}` | ⚠️ flaky | **Fail only when the three remote tests run back-to-back**, and not always the same one; each passes standalone at the same sub-second duration, so it is not a timeout. Standalone CLI executables — unreachable from the GUI harness. W8 item 3/3b. |
-| `4DReplayWithMeshUpdate` | ⚠️ flaky | Timing-sensitive; failed run 2, passed runs 1 and 3. W8 item 2. |
+| `4DReplayWithMeshUpdate` | ⚠️ flaky | Timing-sensitive; failed runs 2 and 4, passed runs 1 and 3. W8 item 2. |
 | `EdgeAttraction` | ✅ | Red in run 1, and correctly so — it had been passing *because of* the item-17 bug. Green since W8 item 21, at 34.6 s, matching the stock-build timing. |
+
+> ⚠️ **`RandomForestBailOut` is green but does not test what it was written to test.** Its three
+> paintbrush strokes are silent no-ops, so the classifier trains on **0 samples** and the run
+> follows the "training threw → modal dialog → cancel" path instead. That path is what exposed the
+> item-15d use-after-free, so the coverage is real — it is just not the written intent. W8 item 22.
 
 > ⚠️ **Superseded: the 2026-07-30 macOS figure of 32/33.** It predates `1d1fe7ea` and the harness
 > fix, and the sprint's two records of it disagreed (32/33 here, 31/33 in the handoff). Do not
@@ -165,7 +169,7 @@ merge, the VTK upgrade, or `e2f19b56`.
 | Test | State | Note |
 |---|---|---|
 | `RemoteImageLoadTest_Cache` | 🔴 fails | Genuinely **Linux-specific** — passes on macOS, failed here in July too. Download succeeds, `CacheMetadata.xml` is never written. W8 item 3. |
-| `RandomForestBailOut` | 🔴 SEGFAULT | Still segfaults on Linux **after `1d1fe7ea`**, on a code path macOS never reaches. Different mechanism from the one that commit fixed — see W8 item 15d. |
+| `RandomForestBailOut` | 🔴 SEGFAULT | Measured before the fix. **Expected green on `7ba0692e`** — the macOS crash root-caused this session is the same stack gdb captured here, so this row needs one Linux run to confirm, not further investigation. The "code path macOS never reaches" claim was disproved: after W8 item 17, macOS reaches it too. |
 | `4DReplayWithMeshUpdate` | ⚠️ flaky | llvmpipe timing; the documented cold-start mesh-build budget. W8 item 2. |
 | other 30 | ✅ | including `4DContinuousRendering` at **36.5 s** — the false-green canary genuinely runs on Linux too |
 
