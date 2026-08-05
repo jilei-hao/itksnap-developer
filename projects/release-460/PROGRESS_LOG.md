@@ -614,3 +614,25 @@ Two `assert()`-only guards on one path (`IRISApplication.cxx:429`, `GenericImage
 latter dereferencing the pointer it checks). Filed as item 35 — the third confirmed instance of the
 item-15b pattern. Worth noting how it surfaced: an agent driving the app found a crash that no test
 in the suite reaches.
+
+---
+
+## 2026-08-05 (handoff) — Session closed
+
+**Test run on the committed tree** (`itksnap` @ `038fa32b`, macOS arm64, full `ctest`): **33/34** —
+the best result of the sprint. The single failure is `RemoteImageLoadTest_WorkspaceWithMesh`, a
+documented flake (W8 item 3/3b: the remote tests fail only when the three run back-to-back, and
+which one fails rotates). `4DReplayWithMeshUpdate` passed this time. Recorded as run 6 in
+`SPRINT_PLAN.md` §4; runs 4/5/6 on this same tree gave 32/34, 31/34 and 33/34 with identical
+failure *sets* modulo the rotating flake, which is the clearest demonstration yet of why this
+sprint compares sets rather than totals.
+
+**Landed this session:** `7ba0692e` (W8 item 15d — use-after-free of the row model's raw layer
+pointer, regressed by our own `1712c6e7`), `038fa32b` (items 24 and 25 — the guards that fix left
+open, and a reproduced harness abort). Wrapper checkpoints `aa5ab9b`, `3cec401`, `63e1121`.
+W8 items 15c resolved, 15/15d closed; items 22–35 filed.
+
+**Handoff acts:** `NEXT_SESSION_PROMPT.md` rewritten wholesale — the next goal is the harness
+false-green cluster (items 23, 31, 32), argued from §4's own done-criteria rather than from urgency,
+with W1 step 6 named as the alternative. Nothing in `SPRINT_PLAN.md` §3 was ticked: W8 is rolling
+and no other workstream closed this session, so there was nothing to mark done. No new work started.

@@ -132,8 +132,8 @@ complete, the version reads `4.6.0` with no qualifier, and the PR is open with a
 ### Test baseline to beat
 
 **macOS arm64, `staging/v460` @ `038fa32b`, measured 2026-08-05 — this is now the authoritative
-baseline. Run 4 was 32/34 and run 5 was 31/34; every failure in both is a known flake, so the sets
-agree even though the totals do not. Compare the sets.**
+baseline. Runs 4/5/6 on this tree gave 32/34, 31/34 and 33/34; every failure in all three is a known
+flake. The totals move only because the remote-test flake rotates. Compare the sets, not the numbers.**
 
 | Run | Commit | Failure set |
 |---|---|---|
@@ -142,6 +142,7 @@ agree even though the totals do not. Compare the sets.**
 | 3 | `5f2825e4` | `RemoteImageLoadTest_WorkspaceWithMesh`, `RandomForestBailOut` |
 | 4 | `7ba0692e` | `RemoteImageLoadTest_SingleImage`, `4DReplayWithMeshUpdate` |
 | 5 | `038fa32b` | `RemoteImageLoadTest_SingleImage`, `RemoteImageLoadTest_WorkspaceWithMesh`, `4DReplayWithMeshUpdate` |
+| 6 | `038fa32b` | `RemoteImageLoadTest_WorkspaceWithMesh` |
 
 | Test | State | Note |
 |---|---|---|
