@@ -1,8 +1,15 @@
 # W2 — Developer docs & governance
 
-**Status:** not started
-**Branch:** none yet
+**Status:** ✅ **done — merged upstream** as PR #244 (`5fd810a4`..`345f4361`, merge `5e2984ff`,
+2026-08-18). Upstream now has `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md` (Contributor Covenant 3.0,
+named reporting contacts), `GOVERNANCE.md`, and `Documentation/Developer/{README,DeveloperGuide}.md`.
+`itksnap-dls:main` carries the matching contributing guide and developer guide.
+**Branch:** `developer-doc` — fully merged; delete with W8 item 7
 **Depends on:** nothing
+
+> Not re-audited against the plan below: whether a root `LICENSE` and `Architecture.md` landed, and
+> whether the macOS + Linux "follow the build instructions verbatim" done-criterion was run. The
+> body below is the July plan, kept for history.
 
 ## Goal
 

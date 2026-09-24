@@ -1,0 +1,14 @@
+#!/bin/sh
+# itksnap reference-transaction hook: keep projects/release-460/MERGE_ORDER.md current.
+#
+# Fires on every ref update in itksnap. Acts only once the transaction has committed, and
+# only when a topic branch, staging, or the tracking refs they are compared against changed.
+# Installed as a symlink by `scripts/merge_order_status.py --install-hook`; the real path of
+# this file locates the wrapper. Never fails the git operation that triggered it.
+[ "$1" = committed ] || exit 0
+grep -qE ' refs/(heads|remotes/origin)/(feature|bug|test|staging)/| refs/remotes/upstream/master$' || exit 0
+self=$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$0") || exit 0
+wrapper=$(dirname "$(dirname "$(dirname "$self")")")
+python3 "$wrapper/scripts/merge_order_status.py" --quiet >/dev/null 2>&1 || \
+  echo "merge-order: status refresh failed; run scripts/merge_order_status.py" >&2
+exit 0

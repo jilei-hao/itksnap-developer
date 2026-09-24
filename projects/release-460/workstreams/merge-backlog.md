@@ -1,7 +1,10 @@
 # W1 — Merge the ready backlog
 
-**Status:** not started (work is written; merge decisions pending)
-**Branch:** sources are `itksnap:feature/cardiac-io`, `itksnap:sprint/caimi@ad727107`, `itksnap:test/dls_sam2`; target is `itksnap:staging/v460`
+**Status:** in progress — D1 and D2 are topic branches ready for review; D3 blocked on Q4
+**Branch:** `itksnap:feature/cardiac-io` (D1, rebased onto `upstream/master` @ `52ee94fa`) and
+`itksnap:bug/linux-gcc-build` (D2 + the Q2 VTK floor). D3 source is still `itksnap:test/dls_sam2`.
+Per the 2026-09-24 branch model, `staging/v460` is **testing only** — see
+[../SPRINT_PLAN.md](../SPRINT_PLAN.md) §2 and [../branches.md](../branches.md).
 **Depends on:** nothing — this is the first workstream
 
 ## Goal
@@ -94,10 +97,18 @@ The 6 agentic-API commits on `sprint/caimi` and the whole `itksnap-mcp` repo. Se
 5. ✅ Cherry-pick `ad727107` **minus** the VTK floor line — `e2f19b56`. **Verified on Linux/GCC
    2026-07-31 — the build it targets now succeeds with no local patches**, which is what it was
    written for and the one thing it could not previously claim.
+
+**2026-09-24 — re-cut as topic branches.** Steps 4 and 5 no longer live as commits on
+`staging/v460`. They are now `feature/cardiac-io` (rebased, no conflicts) and `bug/linux-gcc-build`
+(`e2f19b56` + `7cc60053`, both cherry-picked cleanly), each off `upstream/master` @ `52ee94fa`.
+Staging is rebuilt by merging them. Any further W1 change goes on its own branch: a new
+`feature/dls-async` for step 6 and a new `bug/` or `test/` branch for the round-trip test.
+
 6. ⏳ Cherry-pick `cb6f692e` and `ea86df0d` — **blocked on Q4**; add the undo test first.
 7. ⏳ Re-resolve the `Submodules/{c3d,greedy}` bump against current upstream rather than replaying
    `71e2544d`.
-8. ⏳ Delete the seven fully-merged branches listed in [../SPRINT_PLAN.md](../SPRINT_PLAN.md) §2.
+8. ⏳ Delete the seven fully-merged branches listed in [../SPRINT_PLAN.md](../SPRINT_PLAN.md) §2,
+   plus `developer-doc` (W2, merged upstream as PR #244).
 
 Landed alongside, from investigating the test baseline (W8 items 1 and 13): `97285971` fixes the
 `4DContinuousRenderingD` typo **and** the reason it survived — a missing test script was reported as
@@ -206,7 +217,8 @@ properly needs item 17 fixed, or a model-level test against a stub server.
 
 ## Done-criteria
 
-- `staging/v460` contains all 15 accepted commits; `git rev-list --count upstream/master..staging/v460` == 15.
+- ~~`staging/v460` contains all 15 accepted commits~~ — superseded by the topic-branch model: each
+  accepted commit is on a topic branch that builds and tests standalone (SPRINT_PLAN §4 item 1).
 - A 4D cardiac CTA round-trip test (`.seq.nrrd` and `.nii.gz` + sidecar) exists in `Testing/` and
   fails if the `%R-R` axis is dropped. The 4DCTA work was verified with a throwaway driver — that
   does not ratchet.

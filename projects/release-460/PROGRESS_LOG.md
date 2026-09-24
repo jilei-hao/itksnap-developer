@@ -636,3 +636,174 @@ W8 items 15c resolved, 15/15d closed; items 22–35 filed.
 false-green cluster (items 23, 31, 32), argued from §4's own done-criteria rather than from urgency,
 with W1 step 6 named as the alternative. Nothing in `SPRINT_PLAN.md` §3 was ticked: W8 is rolling
 and no other workstream closed this session, so there was nothing to mark done. No new work started.
+
+## 2026-09-24 — Goal changed: per-topic branches, staging becomes testing-only
+
+**Why this session happened.** Jilei came back after seven weeks with a changed goal:
+
+1. `staging/v460` stays as a **testing** branch, but each workstream lives on its own branch. They
+   will be reviewed and merged one at a time in the planning meeting.
+2. List what is done and worth an upstream feature branch.
+3. Keep undone items as a reminder, but **Jilei picks each session's goal**.
+
+Decisions, asked and answered:
+- **Per-topic branches** (5), not per-workstream (2).
+- **Rebuild staging from the branches**, tagging the old tip.
+- **Cut + build + test, local only.** Nothing is pushed.
+
+**Unlogged work found first.** The 2026-08-05 handoff was the last entry, but local `staging/v460`
+carried `6f5ae27c` (2026-09-04, co-authored by Claude Fable 5.1). That was an unpushed merge of 26
+upstream commits. Its commit message is the only record, so here is the summary:
+
+- Three files conflicted, all because upstream had fixed the same defect independently:
+  - `LayerInspectorRowDelegate::ApplyColorMap` null guard — took upstream's.
+  - `QDoubleSliderWithEditor` NOTIFY, W8 item 21 — took upstream's `93aa9583`.
+  - `SNAPTestQt` threading, W8 item 17 vs upstream `dbf8e79f` — kept our `TestObjectProxy` and
+    ported Paul's helper family onto it.
+- macOS result was 34/35; the one failure was the rotating remote flake.
+- Upstream also merged **our W2 docs as PR #244** (2026-08-18). W2 is done.
+
+**What was built** (all in `itksnap/`, all local):
+
+| Branch | Tip | How |
+|---|---|---|
+| `feature/cardiac-io` | `2fc0d9b8` | rebased 12 commits `679ba76a` → `52ee94fa`, no conflicts |
+| `bug/linux-gcc-build` | `fb65f2b9` | cherry-picked `e2f19b56`, `7cc60053` |
+| `bug/rf-layer-crashes` | `9e80001f` | `4e1baa2a`, `1d1fe7ea`, `7ba0692e` (conflict: took upstream's identical `ApplyColorMap` guard), then the item-24 half of `038fa32b` |
+| `test/harness-false-green` | `83c44f62` | cherry-picked `97285971` |
+| `test/harness-gui-thread` | `8a28d50c` | one port commit: `SNAPTestQt.{cxx,h}` as resolved in `6f5ae27c`, minus `97285971`'s hunks, plus the `HarnessThreadSafety` registration |
+
+- Tags `archive/staging-v460-0904` (`6f5ae27c`) and `archive/feature-cardiac-io-pre-rebase`
+  (`9b5d9eb4`).
+- Local `staging/v460` moved to `62588ffc`: `upstream/master` plus a `--no-ff` merge of each
+  branch.
+
+**Evidence the split is lossless:**
+- `git diff archive/staging-v460-0904 staging/v460` is **empty**: the rebuilt tree is
+  byte-identical to the tip that measured 34/35 on Sep 4.
+- All 10 branch pairs merge cleanly (`git merge-tree --write-tree`), so any subset can land in any
+  order.
+
+**Surprises:**
+- **Upstream fixed three of our items independently while we were away** (17, 21, the
+  `ApplyColorMap` guard). A waiting branch can be overtaken; SPRINT_PLAN §6 now lists this as a
+  risk.
+- **`git checkout -b X upstream/master` set four new branches to track Paul's `master`.** It is the
+  trap the release memory already warned about, and it happened anyway. Unset straight away.
+- **zsh does not word-split `$B`.** The first pairwise loop ran zero iterations and printed nothing.
+  It looked like success. Arrays fixed it; recorded as a trap.
+- **Upstream `master` shows the false-green in action:** `4DContinuousRenderingD` "passes" in
+  0.91 s.
+
+**Docs changed:**
+- New `branches.md`: the review queue and meeting handout.
+- `SPRINT_PLAN.md` re-planned at Jilei's request:
+  - the two rules at the top;
+  - §2 re-verified with the branch model;
+  - §3 branch column, and W2 ticked;
+  - §4 item 1 now requires each branch to pass standalone;
+  - §5 has no fixed order;
+  - §6 new risks;
+  - §7 rebuild recipe.
+- W1, W2 and W8 workstream files re-pointed at branches.
+- README start ritual now says "ask Jilei".
+- `NEXT_SESSION_PROMPT.md` rewritten with **no chosen goal**, only the grouped open list.
+- Memories: `feedback_user_picks_session_goal`, `feedback_topic_branch_per_feature`.
+
+**Test results** (macOS arm64, Release, full `ctest` unless noted; each branch built standalone in a
+scratch worktree, a full build taking 3.8 min):
+
+| Tree | Result | Failures |
+|---|---|---|
+| `upstream/master` `52ee94fa` | 34/34 | none, but two passes are vacuous: `4DContinuousRenderingD` 0.91 s, `RandomForestBailOut` 0.89 s |
+| `feature/cardiac-io` | 34/34 | — |
+| `bug/linux-gcc-build` | 34/34 | — |
+| `bug/rf-layer-crashes` | 33/34 | remote flake. `RandomForestBailOut` really runs, 20.0 s |
+| `upstream/master` + `6afd0d10` only | — | `RandomForestBailOut` **SEGFAULT, 19.8 s**: the merge-order trap, confirmed |
+| `test/harness-false-green` | 32/34 | remote flake, plus `RandomForestBailOut` "no such test" |
+| `test/harness-gui-thread` | 32/35 | two remote flakes, plus `4DReplayWithMeshUpdate` |
+| rebuilt `staging/v460` `62588ffc` | 34/35 | `RemoteImageLoadTest_SingleImage` |
+
+Follow-ups:
+- **`4DReplayWithMeshUpdate` reruns:** 5/5 on `harness-gui-thread` and 3/5 on `upstream/master`.
+  It is the W8 item 2 flake, not a regression.
+- **Missing script:** `--test ThisTestDoesNotExist` exits 3 on `harness-false-green`.
+- **Mutation check on the harness port:** I ran `findChild()`'s body without the GUI-thread hop.
+  `HarnessThreadSafety` aborted with "'TestObjectProxy::target' ran on a worker thread", so the
+  commit-message claim holds on the ported code.
+
+**The finding that changed the plan: `test/harness-false-green` depends on `bug/rf-layer-crashes`.**
+The false-green fix makes upstream's never-registered `RandomForestBailOut` fail honestly as "no such
+test". So the merge order is #3 before #4 (or together). #3 itself cannot be split, as the SEGFAULT
+row shows. Recorded in `branches.md`, SPRINT_PLAN §5, and `NEXT_SESSION_PROMPT.md`.
+
+**Not done / still open:**
+- Linux was not re-run on the branches.
+- Nothing is pushed.
+- The wrapper commit (docs + submodule pointers) is left for Jilei.
+- `feature/cardiac-io` still has no ratcheting test.
+- `change_tracking.md` is stale past `679ba76a`.
+
+## 2026-09-24 (cont.) — Branches pushed; merge order gets its own self-refreshing doc
+
+**Jilei's instructions:** push to the forks; keep the merge order in a doc that is updated every
+time a branch changes; commit the wrapper.
+
+**Pushed to `jilei-hao/itksnap`:**
+- The four new branches, with `-u origin`. Their tracking now points at `origin`, not
+  `upstream/master`.
+- `feature/cardiac-io` `9b5d9eb4 → 2fc0d9b8` and `staging/v460` `038fa32b → 62588ffc`,
+  force-pushed with `--force-with-lease=<branch>:<old sha>`. The leases pinned the exact tips seen
+  before the push.
+- All six are in sync with origin afterwards.
+- The `archive/*` tags stay local. `038fa32b` is no longer on any origin branch.
+- `itksnap-dls` needed nothing: its `developer-doc` checkout is already in `origin/main`.
+
+**New: `MERGE_ORDER.md`.** It has three parts:
+- **Queue** — curated, in merge order, one `branch verified-at why` line per branch.
+- **Constraints** — curated, with measured evidence.
+- **Status** — generated; nothing in it is hand-written.
+
+`scripts/merge_order_status.py` builds Status. For each branch it reports:
+- tip and ahead count;
+- whether it is on the current `upstream/master` (and whether a rebase would conflict);
+- origin sync;
+- whether it moved since its `verified-at`.
+
+For the queue as a whole it reports pairwise `merge-tree` conflicts, any constraint the queue order
+violates, and whether `staging/v460` contains exactly base + queue tips. It then ends with a
+"Needs attention" line.
+
+`scripts/hooks/itksnap-reference-transaction` runs the script after any committed update to
+`refs/heads/{feature,bug,test,staging}/*`, the matching `origin` refs, or `upstream/master`:
+- It is installed as a symlink in `itksnap/.git/hooks` by `--install-hook`.
+- It strips `GIT_*` from the environment and never fails the git command.
+- It rewrites the doc only when something other than the timestamp changed.
+
+**Verified before trusting it.** The checker was run against a mutated copy of the doc. Every
+failure path fired, and `--check` exited 1. The paths:
+- a swapped queue violating the constraint;
+- a stale `verified-at`;
+- `sprint/caimi` as an old-base, never-verified branch;
+- a nonexistent branch;
+- a *real* conflict it found unaided: `bug/linux-gcc-build` + `sprint/caimi` on
+  `CMake/standalone.cmake`, the old VTK relax against the new raise;
+- staging missing a queue tip.
+
+The hook was tested end to end:
+- creating and deleting a probe branch left the doc byte-identical;
+- the same ref update, after a stale `verified-at` was planted, rewrote Status to "moved since —
+  re-verify".
+
+One false alarm on the way: the first no-op test "failed" only because I had reworded a Status line
+after the previous run.
+
+**Docs:**
+- SPRINT_PLAN gains **rule 3** (MERGE_ORDER.md on every branch change; a session isn't done until
+  "Needs attention: nothing"), and §2, §5 and §7 now point at the file.
+- branches.md: its merge-order section became a pointer, and "Before anything is pushed" became a
+  push record.
+- README, NEXT_SESSION_PROMPT and memory updated.
+- Wrapper committed (docs + scripts + `itksnap` pointer → `62588ffc`). The `itksnap-dls` pointer
+  change (`bbaac51 → 76f609f`, just the checkout sitting on `developer-doc`) is deliberately left
+  out.
