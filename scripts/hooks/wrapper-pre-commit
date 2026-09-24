@@ -1,0 +1,70 @@
+#!/bin/sh
+# itksnap-developer pre-commit hook: keep user identity and user data out of projects/user-support/.
+#
+# The wrapper repo is public (see projects/user-support/README.md). Blocks a commit that stages,
+# under projects/user-support/:
+#   1. an added line containing an email address (git@host SSH remotes are allowed);
+#   2. users.local.md or anything in attachments/ -- gitignored, so only reachable via `git add -f`;
+#   3. a binary file -- screenshots, scans and data belong in attachments/.
+# It checks the index, not the working tree, so it sees exactly what the commit will contain.
+#
+# Install (once per clone):  scripts/hooks/wrapper-pre-commit --install
+# False positive? Rephrase ("name at domain"). Do not bypass with --no-verify.
+
+if [ "$1" = --install ]; then
+  self=$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$0") || exit 1
+  # Resolve the hooks *directory*: --path-format=absolute follows a symlink at the final component.
+  hooks=$(git -C "$(dirname "$self")" rev-parse --path-format=absolute --git-path hooks) || exit 1
+  dst=$hooks/pre-commit
+  if [ -L "$dst" ] && [ "$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$dst")" = "$self" ]; then
+    echo "already installed: $dst"; exit 0
+  fi
+  if [ -e "$dst" ] || [ -L "$dst" ]; then
+    echo "$dst exists and is not this hook; not overwriting" >&2; exit 1
+  fi
+  mkdir -p "$(dirname "$dst")" && ln -s "$self" "$dst" && echo "installed: $dst -> $self"
+  exit $?
+fi
+
+dir=projects/user-support
+fail=0
+
+# 1. Email addresses on added lines, reported as file:line: address.
+emails=$(git diff --cached -U0 --no-color --no-ext-diff --diff-filter=ACMR -- "$dir" | awk '
+  /^diff --git / { hunk = 0; next }
+  !hunk && /^\+\+\+ / { file = substr($0, 5); sub(/^b\//, "", file); next }
+  /^@@ / { hunk = 1; match($0, /\+[0-9]+/); ln = substr($0, RSTART + 1, RLENGTH - 1) + 0; next }
+  hunk && /^\+/ {
+    rest = substr($0, 2)
+    while (match(rest, /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z][A-Za-z]+/)) {
+      m = substr(rest, RSTART, RLENGTH)
+      if (m !~ /^git@/) print "  " file ":" ln ": " m
+      rest = substr(rest, RSTART + RLENGTH)
+    }
+    ln++
+  }')
+if [ -n "$emails" ]; then
+  echo "pre-commit: email address(es) staged under $dir/ (public repo):" >&2
+  echo "$emails" >&2
+  echo "  Replace with the user's U-NNN handle; identities go in $dir/users.local.md." >&2
+  fail=1
+fi
+
+# 2. Local-only files forced into the index.
+forced=$(git diff --cached --name-only --diff-filter=ACMR -- "$dir/users.local.md" "$dir/attachments")
+if [ -n "$forced" ]; then
+  echo "pre-commit: local-only file(s) staged -- these are gitignored for a reason:" >&2
+  echo "$forced" | sed 's/^/  /' >&2
+  echo "  Unstage with: git restore --staged <path>" >&2
+  fail=1
+fi
+
+# 3. Binary files (numstat reports "-<TAB>-" for them).
+binaries=$(git diff --cached --numstat --diff-filter=ACMR -- "$dir" | awk -F '\t' '$1 == "-" { print "  " $3 }')
+if [ -n "$binaries" ]; then
+  echo "pre-commit: binary file(s) staged under $dir/ -- user files belong in $dir/attachments/:" >&2
+  echo "$binaries" >&2
+  fail=1
+fi
+
+exit $fail

@@ -25,3 +25,7 @@ memory_leak_profiling/asan_logs/
 # Build/test transcripts written at the repo root by the scripts above
 *.log
 config.local.sh
+
+# user-support: identities and user-sent files stay local (public repo; see projects/user-support/README.md)
+projects/user-support/users.local.md
+projects/user-support/attachments/
