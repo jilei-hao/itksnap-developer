@@ -807,3 +807,46 @@ after the previous run.
 - Wrapper committed (docs + scripts + `itksnap` pointer → `62588ffc`). The `itksnap-dls` pointer
   change (`bbaac51 → 76f609f`, just the checkout sitting on `developer-doc`) is deliberately left
   out.
+
+## 2026-09-24 (handoff) — Session closed; next goal chosen by Jilei
+
+**Since the previous entry:**
+- **The wrapper was pushed by Jilei:** `origin/main` = `62fba73`.
+- **The global `/handoff` ritual was changed at Jilei's request, in `~/metronome`.** The next-session
+  prompt now lists open items grouped as a reminder rather than a queue, and records a goal only if
+  the user named one. `docs/sprint-workflow.md` gained the rationale, plus a start-ritual step to
+  ask. Committed and pushed as `jilei-hao/metronome@9d7d48a`.
+- `install.sh` found every link already in place: `~/.claude/skills` is a symlink into metronome,
+  so the edit was live straight away.
+
+**Next goal — named by Jilei at this handoff:** *"testing Paul's new segmentation logic on 4D
+segmentations"*. A read-only survey for the prompt found:
+- The seg_anchor work (the reference space follows the active segmentation) is on
+  `upstream/master` via PRs #247–#249.
+- `upstream/seg_anchor` has one more commit, `88fb7aaa` (a reference-space bounds box).
+- Its only test, `test_SegmentationSwitching.js`, is **3D only**: MRIcrop plus two 0.4 mm
+  hippocampus segs.
+- 4D test data exists (`img4d_11f` + `seg4d_11f`, `ultrasound_img4d` + `seg4d`), but none of it has
+  a seg on a different grid from its image.
+- Three questions for Jilei — base branch, which 4D cases, and the output wanted — are in
+  `NEXT_SESSION_PROMPT.md`. None of it was started.
+
+**Checkpoint test run** on `staging/v460` @ `62588ffc` (macOS arm64, full `ctest`): **34/35**. The
+only failure is `RemoteImageLoadTest_WorkspaceWithMesh`, the rotating remote flake (W8 item 3b).
+Runs 8 and 9 on this tree each failed one of the two remote tests, and nothing else. Real run times:
+
+| Test | Time |
+|---|---|
+| `RandomForestBailOut` | 20.4 s |
+| `MeshWorkspace` | 46.9 s |
+| `SegmentationSwitching` | 62.6 s |
+| `HarnessThreadSafety` | 1.6 s |
+
+`MERGE_ORDER.md` Status: **"Needs attention: nothing."**
+
+**Handoff acts:**
+- `NEXT_SESSION_PROMPT.md` rewritten around Jilei's named goal, with the open list kept as a
+  reminder.
+- Nothing ticked in `SPRINT_PLAN.md`: no workstream closed since W2 was ticked earlier today.
+- Checkpoint commit covers the release-460 files only. Uncommitted `projects/user-support/` changes
+  from another session were left alone.
