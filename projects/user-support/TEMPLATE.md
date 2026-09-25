@@ -41,7 +41,8 @@ The working draft. Once it's sent, move it into the conversation log and clear t
 ## For a fix session
 
 <!-- Fill in only when Type is bug or feature and we'll act on it. Assume the reader has not read
-     anything above. -->
+     anything above. Once the issue is CONFIRMED, move this brief to confirmed_issues.md as an
+     ISS-NNN entry and leave only a pointer here. -->
 
 - **Symptom:**
 - **Repro:** numbered steps, plus the data. Prefer a file in `itksnap/Testing/TestData/`, or say which attachment reproduces it.

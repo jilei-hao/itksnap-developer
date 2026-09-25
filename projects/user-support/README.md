@@ -48,6 +48,7 @@ the diff. If the hook flags something by mistake, rephrase the line. Don't bypas
 | [TEMPLATE.md](TEMPLATE.md) | yes | Copy this to start a new thread. |
 | `threads/Q-NNN-<slug>.md` | yes | One file per question: the conversation log, investigation notes, the draft reply, and a fix brief if one is needed. |
 | [KNOWN_ANSWERS.md](KNOWN_ANSWERS.md) | yes | Reusable explanations taken from closed threads. Check it before drafting. |
+| [confirmed_issues.md](confirmed_issues.md) | yes | **Confirmed bugs** (`ISS-NNN`), each with a self-contained fix brief and a **status** (`open` → `in-progress` → `in-review` → `merged` → `released`). Fix sessions start here, and they update the status. |
 | `users.local.md` | **no** | Maps each `U-NNN` handle to a real identity, plus notes on each user. |
 | `attachments/Q-NNN/` | **no** | Files the user sent. |
 
@@ -71,18 +72,23 @@ and never reused. One user can open several threads.
    update the status.
 
 **It's a bug or a feature request**
-1. Fill in **For a fix session** in the thread. It has to stand on its own: repro, expected vs.
-   actual, versions, suspected code area, and the test that would fail on regression.
-2. Record the work item where work is tracked. For 4.6.0 bugs that means a row in
-   [../release-460/workstreams/bugfixes.md](../release-460/workstreams/bugfixes.md) citing `Q-NNN`.
-   Features go to the workstream that owns them, or into a new project.
-3. Set the status to `escalated` and fill **Escalated to** in both the thread and the index.
+1. While it's only suspected, write the brief under **For a fix session** in the thread. It has to
+   stand on its own: repro, expected vs. actual, versions, suspected code area, and the test that
+   would fail on regression.
+2. **Once it's confirmed** (reproduced, or observed in the field and explained by the code), move
+   the brief into [confirmed_issues.md](confirmed_issues.md) as the next `ISS-NNN`, with status
+   `open`. Leave a pointer in the thread so the brief lives in one place.
+3. Fill **Escalated to** with the `ISS-NNN` in both the thread and the index. If it's in 4.6.0
+   scope, Jilei may also add a row to
+   [../release-460/workstreams/bugfixes.md](../release-460/workstreams/bugfixes.md) citing `ISS-NNN`.
 4. The fix follows the usual rule: one topic branch off `upstream/master`, never `staging/v460`.
-   Mention `Q-NNN` in the commit body so the fix can be traced back to the user.
-5. Once the fix ships, draft the "this is fixed in …" reply, then close the thread.
+   Mention `ISS-NNN` in the commit body.
+5. When the issue reaches `released`, draft a "this is fixed in …" reply for every thread listed
+   under its **Users to notify**, then close those threads.
 
-**A fix session picking this up**: read the thread's **For a fix session** section. The conversation
-log is background and can be skipped.
+**A fix session picking this up**: start from [confirmed_issues.md](confirmed_issues.md). Each entry
+is the full brief, and the conversation logs are background. Update the issue's status as you go,
+following the three-edit rule at the top of that file.
 
 **Closing**: set the status to `closed` and write a one-line resolution in the index. If the answer
 will come up again, turn it into an entry in `KNOWN_ANSWERS.md`.
