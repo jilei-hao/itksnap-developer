@@ -959,3 +959,11 @@ working on this project.
   session were left alone.
 - Nothing was ticked in `SPRINT_PLAN.md`. SPRINT_PLAN §2 still lists five branches, and needs a
   refresh once staging is pushed.
+
+## 2026-09-25 (after handoff) — staging pushed; wrapper pointer bumped
+
+- Jilei force-pushed `staging/v460` (`62588ffc` → `d02236c3`) with the lease from the handoff.
+  `origin/staging/v460` = `d02236c3`, and the local branch is in sync.
+- Wrapper `itksnap` pointer bumped to `d02236c3`, which is on `origin`.
+- `branches.md` (header, staging summary, push record) and `NEXT_SESSION_PROMPT.md` updated to
+  match. `MERGE_ORDER.md` Status still reads "Needs attention: nothing".

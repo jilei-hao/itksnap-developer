@@ -1,8 +1,7 @@
 # Topic branches — the upstream review queue
 
 **Snapshot:** 2026-09-24 · **Base for every branch:** `upstream/master` @ `52ee94fa` · **Pushed:** all eight
-branches to `jilei-hao/itksnap` (2026-09-24). **`staging/v460` @ `d02236c3` is not pushed yet**;
-`origin` still has `62588ffc`. **Merge order and live branch
+branches, plus `staging/v460` @ `d02236c3` (2026-09-25), to `jilei-hao/itksnap`. **Merge order and live branch
 state:** [MERGE_ORDER.md](MERGE_ORDER.md). · **Meeting page (private):**
 https://claude.ai/artifact/QyivAN8NiDzadZ7hPKn6ut — a rendered copy of this file as of 2026-09-24; this file stays the
 source of truth.
@@ -32,7 +31,7 @@ Each branch section has two parts:
 | 7 | `bug/full-extent-off-by-one` | `6a72f6a1` | 1 | W8 · 36 | ✅ builds, 34/35: only the remote flake. `FullExtentRegion` passes; `SegmentationSwitching` and `MeshWorkspace` unaffected |
 | 8 | `bug/seg3d-into-4d-check` | `635bd1ac` | 1 | W8 · 37 | ✅ builds, 34/35: only the remote flake. `Seg3DInto4D` passes |
 
-**All eight merged (`staging/v460` @ `d02236c3`, local): 40/41**, failing only
+**All eight merged (`staging/v460` @ `d02236c3`): 40/41**, failing only
 `RemoteImageLoadTest_WorkspaceWithMesh` (remote flake).
 - The seven new tests pass with everything merged.
 - The tests that other branches make real do run: `4DContinuousRendering` 37.7 s,
@@ -498,3 +497,11 @@ copied in as it is. How that case should behave is an open question.
 The old tips survive as the local tags `archive/feature-cardiac-io-pre-rebase` and
 `archive/staging-v460-0904`. They are not pushed. `9b5d9eb4` is still reachable on `origin` through
 `sprint/caimi`; `038fa32b` is not.
+
+**Pushed 2026-09-25 to `jilei-hao/itksnap`:**
+- `test/seg-anchor-4d`, `bug/full-extent-off-by-one` and `bug/seg3d-into-4d-check`, with
+  `-u origin`.
+- `staging/v460` (`62588ffc` → `d02236c3`), force-pushed by Jilei with a lease pinned to
+  `62588ffc`.
+
+The old staging tip is the local tag `archive/staging-v460-0924`, which is not pushed.

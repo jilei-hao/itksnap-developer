@@ -17,11 +17,9 @@ passes the full suite on its own, and is pushed to `jilei-hao/itksnap`:
 That is the recommended merge order. The last session added numbers 4–6, which test Paul's
 seg_anchor work (segmentations on their own grid) with 4D data and fix two small bugs in it.
 
-**`staging/v460` was rebuilt locally at `d02236c3`** (all eight merged): **40/41** on macOS, failing
-only the rotating remote flake. **It is not pushed yet**, because the force-push was blocked by the
-auto-mode classifier, so `origin` still has the five-branch `62588ffc`. The wrapper's `itksnap`
-pointer is deliberately not bumped until it is pushed. `MERGE_ORDER.md` Status reads "Needs
-attention: nothing".
+**`staging/v460` @ `d02236c3`** (all eight merged) is pushed and passes **40/41** on macOS, failing
+only the rotating remote flake. The wrapper's `itksnap` pointer is at `d02236c3`.
+`MERGE_ORDER.md` Status reads "Needs attention: nothing".
 
 Where things are recorded:
 - **`branches.md`**: every branch has a plain-language **PR description** for the community, then
@@ -82,9 +80,7 @@ Ask Jilei before starting:
 
 **Getting the eight branches merged** (live state: `MERGE_ORDER.md`)
 
-- **Push staging:** `git -C itksnap push --force-with-lease=staging/v460:62588ffc origin staging/v460`.
-  Only then bump the wrapper `itksnap` pointer.
-- SPRINT_PLAN §2 still shows five branches; refresh it after the push.
+- SPRINT_PLAN §2 still shows five branches and the old staging tip. Refresh it with §7.
 - **Measured order constraint:** `bug/rf-layer-crashes` must merge before `test/harness-false-green`,
   and it cannot be split.
 - `feature/cardiac-io` has **no test in `Testing/`**. Add a `.seq.nrrd` + `.nii.gz`/sidecar
@@ -160,8 +156,9 @@ Ask Jilei before starting:
   a rounding tie. Pick probe points that are tie-free both ways.
 - **Several branches edit `CMakeLists.txt` and `TestingScripts.qrc`.** Insert at an anchor no other
   branch uses, then check every pair with `git merge-tree --write-tree`.
-- **Force-pushing `staging/v460` needs Jilei**; the auto-mode classifier blocks it. Don't bump the
-  wrapper `itksnap` pointer to an unpushed commit.
+- **Force-pushing `staging/v460` needs Jilei**; the auto-mode classifier blocks it. Hand over the
+  exact `--force-with-lease=staging/v460:<old tip>` command. Don't bump the wrapper `itksnap`
+  pointer to an unpushed commit.
 - **SimpleITK `GetImageFromArray` on a 4D array gives a 3D image.** Build 4D images with
   `JoinSeries`.
 
