@@ -158,6 +158,10 @@ suite passes on macOS.
 - **For Paul:** the VTK floor is a policy call, not a fix. Raising it affects anyone packaging against
   an older distro VTK. It is a separate commit, so it can be dropped without touching the portability
   fixes.
+- **The Qt guards are now dead code (found 2026-09-25, W8 42).** Upstream `34f091c8` requires Qt
+  ≥ 6.9.3, so the `≥ 6.7` / `≥ 6.5` guards in `9ca38fcb` can never be false, and the Ubuntu apt Qt
+  6.4.2 they were written for can no longer configure `upstream/master` at all. Either drop the
+  guards from this branch, or keep them only if Paul lowers the Qt floor.
 
 ## 3 · `bug/rf-layer-crashes` — crashes after random-forest cancel and layer teardown
 

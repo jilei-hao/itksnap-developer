@@ -86,6 +86,11 @@ Ubuntu 24.04 ships Qt 6.4.2. The project's CMake assumes Qt ≥ 6.7 for two macr
 gotchas); these are version-guarded so 6.4.2 configures cleanly, losing only bundled UI
 translations and the install-time deploy script (neither needed to build or run locally).
 
+> ⚠️ **Stale since upstream `34f091c8` (2026-08-24):** `CMake/standalone.cmake` now requires
+> **Qt ≥ 6.9.3**, so apt's Qt 6.4.2 can no longer configure `upstream/master` or any branch off it.
+> The next Linux run needs a Qt 6.9.3 install (for example aqtinstall), unless Paul lowers the
+> floor. See W8 42.
+
 **2. Dependency locations on this machine** (recorded in `config.local.sh`):
 
 | Dep | Path | Notes |
@@ -218,6 +223,30 @@ unrelated to the Linux build patches:
 Note: some GUI tests are timing-sensitive under software rendering — `4DReplayWithMeshUpdate`
 also intermittently fails to populate the layer-inspector rows when launched as a standalone
 `ITK-SNAP --test …` process, yet reaches Phase A reliably under `ctest`.
+
+### Building on Windows (MSVC)
+
+First built 2026-09-25: the 8-branch `staging/v460` @ `d02236c3` gave **777/777 targets, 0 errors, no patches;
+ctest 40/41** (only `RemoteImageLoadTest_Cache`, W8 3). Full notes and traps are in
+`projects/release-460/PROGRESS_LOG.md`, 2026-09-25 (Windows). The scripts mirror CI's
+`windows-2022` job. Run them from cmd or PowerShell:
+
+```bat
+scripts\windows\build-deps.cmd      :: vcpkg curl/libssh/zlib, ITK 5.4.0, VTK 9.5.2 -> lib\
+scripts\windows\build-release.cmd   :: ITK-SNAP, all targets -> build-release\
+scripts\windows\run-tests.cmd       :: ctest with Qt on PATH; extra args go to ctest
+```
+
+- **Prerequisites:** VS 2022 with C++ and **Qt ≥ 6.9.3 msvc2022_64**. Upstream `34f091c8` made
+  6.9.3 a hard floor (W8 42). Qt is expected at `C:\tk\Qt\6.9.3\msvc2022_64`; set `QT_DIR` if it
+  is elsewhere. There is no Python on the box, so no aqtinstall; install Qt with the Qt Maintenance
+  Tool.
+- **Network:** the Penn Medicine firewall re-signs TLS. vcpkg therefore downloads through
+  `scripts/windows/vcpkg-fetch.ps1` (Windows cert store), which also falls back from
+  `mirror.msys2.org` (it bot-challenges) to `repo.msys2.org`.
+- **`.cmd` files must stay CRLF** (`.gitattributes`); LF breaks `goto` in cmd.exe.
+- **GUI tests open real windows** for about 13 minutes. Keep hands off the mouse and keyboard.
+- **The Cache remote test writes into your real `%APPDATA%\itksnap.org\ITK-SNAP`** (W8 3).
 
 ## Running Tests
 

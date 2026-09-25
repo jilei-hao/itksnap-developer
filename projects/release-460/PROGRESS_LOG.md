@@ -967,3 +967,74 @@ working on this project.
 - Wrapper `itksnap` pointer bumped to `d02236c3`, which is on `origin`.
 - `branches.md` (header, staging summary, push record) and `NEXT_SESSION_PROMPT.md` updated to
   match. `MERGE_ORDER.md` Status still reads "Needs attention: nothing".
+
+## 2026-09-25 (Windows) — First Windows build of the 8-branch staging: 40/41
+
+**Goal (Jilei's choice, overriding NEXT_SESSION_PROMPT):** rebuild and test the Windows build of the
+latest version.
+
+**What was built: exactly `staging/v460` @ `d02236c3`.** When the session started, `origin` still
+had the 5-branch `62588ffc`. So the 8-branch staging was recreated here as a local branch:
+`upstream/master` `52ee94fa` plus the eight queue tips, merged in MERGE_ORDER order, tip
+`1d0df743`. All merges were clean. Once `d02236c3` was pushed, its tree turned out **byte-identical**
+to the local one (`342cfacf`). The results below are therefore for `d02236c3` itself. The local
+branch was deleted, and the itksnap checkout on this machine is now `staging/v460` = `d02236c3`.
+
+**Toolchain (Windows 11, MSVC 19.34 / VS 2022 17.4, 16 threads):** all deps built from scratch into
+the gitignored `lib/`, mirroring the `windows-2022` CI job:
+
+| Dep | Version | Notes |
+|---|---|---|
+| ITK | v5.4.0, static | `Module_MorphologicalContourInterpolation`, `/FORCE:MULTIPLE` (CI's workaround); ITK_DIR = build tree, like CI |
+| VTK | v9.5.2, static | Qt group on, `RenderingExternal=YES`, `VTK_SMP_ENABLE_STDTHREAD=OFF` |
+| Qt | 6.9.3 msvc2022_64 | installed by Jilei at `C:\tk\Qt` (Maintenance Tool) |
+| curl, libssh, OpenSSL, zlib | 8.22, 0.12.0, 3.6.4, 1.3.2 | vcpkg `x64-windows-release` |
+| CMake / Ninja | 4.4.3 / 1.13.2 | the copies vcpkg downloads |
+
+New scripts: `scripts/windows/{build-deps,build-release,run-tests}.cmd` (+ `vsenv.cmd`,
+`vcpkg-fetch.ps1`). Re-checked end to end as no-ops after the real build.
+
+**Result — `ITK-SNAP` 777/777 targets, 0 errors, no source patches. ctest 40/41**, failing only
+`RemoteImageLoadTest_Cache`. Real run times match macOS within a few seconds:
+- `4DContinuousRendering` 39.1 s, `RandomForestBailOut` 20.8 s, `MeshWorkspace` 47.5 s,
+  `HarnessThreadSafety` 3.1 s.
+- `SegmentationSwitching` 62.6 s, `SegAnchor4DSwitching` 74.1 s, `SegAnchor4DLoad3D` 54.7 s,
+  `SegAnchor4DMesh` 44.5 s.
+- `4DReplayWithMeshUpdate` passed (58.4 s). `RemoteImageLoadTest_WorkspaceWithMesh` failed once
+  (t-digest p25, W8 3b) in a provisional run, then passed 4 times in a row.
+
+**Findings:**
+- **W8 3 root-caused: `RemoteImageLoadTest_Cache` is a test bug on every platform except macOS.**
+  Only the `__APPLE__` `SystemInterface::GetApplicationDataDirectory()` consults the test's
+  delegate (`.itksnap_test`). Windows and Linux write the cache to the real user profile
+  (`%APPDATA%\itksnap.org\ITK-SNAP`, `~/.itksnap.org/ITK-SNAP`), so the test's check never sees
+  it — and every run pollutes the developer's real profile. Detail and fix in W8 3.
+- **W8 42 (new): upstream now requires Qt ≥ 6.9.3** (`34f091c8`). The first configure against Qt
+  6.7.3 failed on it. The Linux recipe (apt Qt 6.4.2) can no longer configure `upstream/master`,
+  and the Qt guards in `bug/linux-gcc-build` are dead code. Noted in branches.md §2.
+- **W8 41 is live on Windows too:** that "TEMP DIAGNOSTIC" block is in this build.
+
+**Traps (Windows, this machine):**
+- **The Penn Medicine firewall (`UPHS_FW`) re-signs TLS** for every host except a few, such as
+  GitHub. The Windows cert store trusts its root, but vcpkg's built-in downloader and Git Bash's
+  `curl` do not ("SSL connect error" / "self signed certificate in chain"). Fix: vcpkg's
+  `X_VCPKG_ASSET_SOURCES=x-script,…` → `vcpkg-fetch.ps1`, which uses `Invoke-WebRequest`. vcpkg
+  still SHA512-checks every file.
+- **`mirror.msys2.org` returns a 403 / "Verification Required" page** to scripts. The fetch script
+  falls back to the canonical `repo.msys2.org`, the next mirror in vcpkg's own list. The pkgconf
+  package fetched from it matched vcpkg's pinned SHA512.
+- **`NoDefaultCurrentDirectoryInExePath=1` is set in Claude Code shells**, so `cmd` will not run
+  `bootstrap-vcpkg.bat` from the current directory. Use `.\`.
+- **`vcvars64.bat` prints "'vswhere.exe' is not recognized"** unless
+  `%ProgramFiles(x86)%\Microsoft Visual Studio\Installer` is on PATH. It is harmless; `vsenv.cmd`
+  adds the directory. (It is not a Git Bash env problem: `ProgramFiles(x86)` survives Git Bash.)
+- **`.cmd` files with LF endings misbehave**: `goto` label scanning executes fragments, which
+  shows up as "'m' is not recognized". Added `.gitattributes` (`*.cmd`/`*.bat` → CRLF).
+- **Switching CMake version or Ninja path on an existing tree rebuilds it all.** VTK rebuilt all
+  5069 steps when moving from Qt's CMake 3.29 to vcpkg's 4.4.3. Removing `C:\tk\Qt6.7` also took
+  away the Ninja that the ITK tree had cached; `build-deps.cmd` now skips finished deps instead of
+  re-invoking their build.
+- **GUI tests open real windows** on the desktop: about 13.5 minutes for the full suite.
+
+**Left on disk (untracked):** `lib/` (deps, gitignored), `build-release/` (gitignored). The build
+logs are `lib/*.log`. A provisional Qt 6.7.3 build was deleted after Qt 6.7.3 was uninstalled.

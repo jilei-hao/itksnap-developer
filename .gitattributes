@@ -1,0 +1,4 @@
+# Windows batch files must keep CRLF: with LF endings cmd.exe mis-scans goto labels
+# and executes fragments of lines ("'m' is not recognized ...").
+*.cmd text eol=crlf
+*.bat text eol=crlf

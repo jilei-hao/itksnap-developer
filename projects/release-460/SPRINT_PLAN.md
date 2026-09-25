@@ -265,6 +265,14 @@ sufficient and the historical six-patch list is retired.
 > (the ~1-in-4 tdigest flake) happened to pass here and fail on macOS. Compare failure *sets*, not
 > totals.
 
+**Windows 11 / MSVC 19.34, `staging/v460` @ `d02236c3` (built from a byte-identical local merge),
+Qt 6.9.3, VTK 9.5.2, ITK 5.4.0, measured 2026-09-25: 40/41.**
+First Windows run. Build: 777/777 targets, 0 errors, no patches. The only failure is
+`RemoteImageLoadTest_Cache`, which is a test bug on every non-macOS platform (W8 3, root-caused
+this run). Real run times are within a few seconds of macOS: `RandomForestBailOut` 20.8 s,
+`4DContinuousRendering` 39.1 s, `MeshWorkspace` 47.5 s. `4DReplayWithMeshUpdate` passed. Recipe:
+`scripts/windows/`.
+
 Linux headless, 2026-07-17 on `feature/cardiac-io`, **superseded**: 30/33, failing
 `4DContinuousRenderingD`, `4DReplayWithMeshUpdate`, `RemoteImageLoadTest_Cache`. The matching total
 is a coincidence — that run counted `4DContinuousRenderingD` as a real test when it executed nothing.
