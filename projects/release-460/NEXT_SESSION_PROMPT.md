@@ -1,187 +1,193 @@
-# RESUME — ITK-SNAP 4.6.0 · Goal (Jilei's choice): test Paul's seg_anchor logic on 4D segmentations
+# RESUME — ITK-SNAP 4.6.0 · Goal (Jilei's choice): manual tests, code review, maybe a guide for AI agents
 
 ## Current state (read this paragraph first)
 
-The 4.6.0 work lives on **five topic branches**, each cut from `upstream/master` @ `52ee94fa`, all
-pushed to `jilei-hao/itksnap`:
+The 4.6.0 work lives on **eight topic branches**. Each is cut from `upstream/master` @ `52ee94fa`,
+passes the full suite on its own, and is pushed to `jilei-hao/itksnap`:
 
-- `feature/cardiac-io`
-- `bug/linux-gcc-build`
-- `bug/rf-layer-crashes`
-- `test/harness-false-green`
-- `test/harness-gui-thread`
+1. `bug/linux-gcc-build`
+2. `bug/rf-layer-crashes`
+3. `test/harness-false-green`
+4. `test/seg-anchor-4d`
+5. `bug/full-extent-off-by-one`
+6. `bug/seg3d-into-4d-check`
+7. `feature/cardiac-io`
+8. `test/harness-gui-thread`
 
-Each builds and passes the suite on its own. **`staging/v460`** (`62588ffc`) is a testing-only merge
-of all five: 34/35 on macOS, failing only the rotating remote flake. Jilei reviews and merges the
-branches one at a time in the planning meeting. Where things are recorded:
+That is the recommended merge order. The last session added numbers 4–6, which test Paul's
+seg_anchor work (segmentations on their own grid) with 4D data and fix two small bugs in it.
 
-- **`branches.md`** — what each branch contains, with evidence.
-- **`MERGE_ORDER.md`** — the order, the measured constraints, and a Status section that a git hook
-  regenerates whenever a branch moves. It currently reads "Needs attention: nothing".
-- **SPRINT_PLAN's three rules at the top** govern everything: one topic branch per feature or fix,
-  staging for testing only; Jilei picks each session's goal; `MERGE_ORDER.md` is updated on every
-  branch change.
+**`staging/v460` was rebuilt locally at `d02236c3`** (all eight merged): **40/41** on macOS, failing
+only the rotating remote flake. **It is not pushed yet**, because the force-push was blocked by the
+auto-mode classifier, so `origin` still has the five-branch `62588ffc`. The wrapper's `itksnap`
+pointer is deliberately not bumped until it is pushed. `MERGE_ORDER.md` Status reads "Needs
+attention: nothing".
 
-The global `/handoff` skill now also leaves the next goal to Jilei. The agentic API stays out of
-scope, on `sprint/caimi`.
+Where things are recorded:
+- **`branches.md`**: every branch has a plain-language **PR description** for the community, then
+  review notes.
+- **`MERGE_ORDER.md`**: order, constraints, and live status.
+- **`workstreams/bugfixes.md`**: W8 items, including new 36–41.
 
-## This session's goal — chosen by Jilei at the 2026-09-24 handoff
+The agentic API stays out of scope, on `sprint/caimi`.
 
-> **"Testing Paul's new segmentation logic on 4D segmentations."**
+## This session's goal — named by Jilei at the 2026-09-25 handoff
 
-Ask Jilei the open questions below before touching code; the goal is theirs, the scope isn't settled
-yet.
+> **"Manual tests and code review, and probably write some guide for AI agents to work with this
+> project."**
 
-**What "Paul's new segmentation logic" is.** The **seg_anchor** work, merged to `upstream/master` via
-PRs #247–#249 (2026-08-27 → 09-03). The reference space now follows the *active segmentation* rather
-than the main image, so segmentations need not share the main image's grid. Key commits:
+Ask Jilei before starting:
+1. **Which branches** to manually test and review? All eight, or the three new ones?
+2. **What to try by hand?**
+3. **Where the agent guide should live and who it is for.** Options:
+   - `itksnap/CLAUDE.md` (upstream's, already there);
+   - an `AGENTS.md` in `itksnap`;
+   - the wrapper's `CLAUDE.md`;
+   - `Documentation/Developer/`.
 
-| Commit | What it did |
-|---|---|
-| `431192f7`, `01a011d3` | Moved the reference space to the current segmentation |
-| `effccaae` | Switching segmentations now updates the GUI |
-| `d057beb9` | Different-spacing tests; `GenericImageData` renames (`GetReferenceSpace*` …) |
-| `dbf8e79f` | Harness threading fix + `test_SegmentationSwitching.js` |
-| `93aa9583`, `1ce5866b` | Zoom-to-fit uses the full extent |
-| `454bcc97` | Stopped the view jumping on a segmentation change |
-| `cf65a583` | The last seg layer is no longer made active on workspace load |
-| `f9e25378` | The cursor may now sit outside the segmentation region |
+   Should it go upstream as its own topic branch (rule 1)?
 
-**`upstream/seg_anchor` is 1 commit past master**: `88fb7aaa` "added box indicating reference space
-bounds". Paul is still working there.
+**Ready-made material for each part:**
 
-**What is covered today — 3D only.** `test_SegmentationSwitching.js` uses the MRIcrop 3D image with
-two 0.4 mm hippocampus segmentations (`MRIcrop-seg-hippo{L,R}-04mm.nii.gz`). It checks:
+- **Manual tests.** Builds exist:
+  - `build-release/` = staging `d02236c3`, all eight merged — the one to try things in;
+  - `build-seg-anchor-4d/`, `build-full-extent-off-by-one/`, `build-seg3d-into-4d-check/` = each
+    branch alone.
 
-- the label under the cursor;
-- the per-layer resolution shown in the Layer Inspector;
-- the 3D mesh;
-- `{` / `}` switching.
+  Worth trying by hand:
+  - **W8 36:** open a single image. The cursor boxes should run 1..N. Before the fix they ran 0..N,
+    so scroll or arrow-key past the first slice. `branches.md` §7 has a before/after table; its
+    click, scroll and zoom rows come from reading the code and were never checked in the app.
+  - **W8 37:** open `img4d_11f.nii.gz` and `seg4d_11f_label1.nii.gz`, then open a 3D segmentation of
+    another size. Expect "Mismatched Dimensions".
+  - **seg_anchor with 4D data:** open `Testing/TestData/img4d_11f_seganchor.itksnap`. Switch with
+    `{`/`}`, play the 4D replay, and step through time points.
+  - **cardiac-io "Phase / time" field:** needs the cardiac data under `projects/4dcta_improvement/`.
+- **Code review.** The diffs are `git -C itksnap diff upstream/master <branch>`. The three new ones
+  are small:
+  - `6a72f6a1`: `GenericImageData::GetFullExtentImageRegion` plus a test.
+  - `635bd1ac`: `LoadSegmentationImageDelegate::ValidateHeader` plus a test.
+  - `0b671e86`: tests only.
 
-**Nothing exercises the new logic with a 4D image or a 4D segmentation.**
-
-**4D test data already in `Testing/TestData/`:**
-
-- `img4d_11f.nii.gz` + `seg4d_11f.nii.gz`, with the per-label splits `seg4d_11f_label{1,2}.nii.gz`,
-  plus the workspaces `img4d_11f.itksnap` and `img4d_11f_volren.itksnap`.
-- `ultrasound_img4d.nii.gz` + `ultrasound_seg4d.nii.gz`, with `ultrasound_ws4d.itksnap`.
-- Existing 4D tests: `4DContinuousRendering`, `4DReplayWithMeshUpdate`, `4DToMC`, `MCTo4D`.
-- None of these has a segmentation whose grid differs from the main image's — that data will
-  probably have to be made, e.g. a resampled `seg4d_11f`.
-
-**Open questions for Jilei at the start:**
-
-1. **Which base?** `upstream/master` (`52ee94fa`) or `upstream/seg_anchor` (`88fb7aaa`)? The topic
-   branch should sit on whichever Paul will merge next.
-2. **Which 4D cases matter?** For example:
-   - a 4D seg on its own grid over a 4D main image;
-   - switching between 4D segs with different spacing;
-   - time-point changes while a non-anchored seg is active;
-   - mesh/replay with a non-anchored 4D seg;
-   - workspace save/load round-trip;
-   - cardiac 4D CTA, which would pull in `feature/cardiac-io`.
-3. **What should come out of it?** Regression tests only, bug reports to Paul, fixes, or all three?
-
-**Where the work goes (rule 1):**
-
-- Tests go on a new branch off the chosen base, e.g. `test/seg-anchor-4d`. Run
-  `git branch --unset-upstream` on it immediately.
-- Each bug found gets its own `bug/` branch.
-- Add each new branch to `MERGE_ORDER.md`'s Queue with `verified-at -`.
-- Push the branches, and get Status back to "Needs attention: nothing" before handoff.
+  PROGRESS_LOG 2026-09-25 lists what an adversarial reviewer already caught. `/code-review` is
+  available.
+- **Agent guide.** The raw material already exists:
+  - "Known traps" below, and the traps in earlier PROGRESS_LOG entries;
+  - the wrapper `CLAUDE.md` (build, Linux notes, test status);
+  - `itksnap/CLAUDE.md` (architecture, DLS threading notes);
+  - the three sprint rules in SPRINT_PLAN;
+  - `Documentation/Developer/` (W2 docs, merged as PR #244).
 
 ## The open list — a reminder, not a queue
 
-**Review queue — getting the five branches merged** (live state: `MERGE_ORDER.md`)
+**Getting the eight branches merged** (live state: `MERGE_ORDER.md`)
 
+- **Push staging:** `git -C itksnap push --force-with-lease=staging/v460:62588ffc origin staging/v460`.
+  Only then bump the wrapper `itksnap` pointer.
+- SPRINT_PLAN §2 still shows five branches; refresh it after the push.
 - **Measured order constraint:** `bug/rf-layer-crashes` must merge before `test/harness-false-green`,
   and it cannot be split.
 - `feature/cardiac-io` has **no test in `Testing/`**. Add a `.seq.nrrd` + `.nii.gz`/sidecar
-  round-trip test that fails if the `%R-R` axis is dropped. It pairs naturally with the 4D goal
-  above.
-- Linux/GCC run on the branches (the last Linux run was July, on `7cc60053`).
-- Talk to Paul about `test/harness-gui-thread` before opening a PR — it competes with his
-  `dbf8e79f`.
-- PR descriptions from `branches.md` once branches are accepted.
+  round-trip test that fails if the `%R-R` axis is dropped. Its PR description already says so.
+- Run the branches on Linux/GCC. The last Linux run was in July.
+- Talk to Paul before opening PRs:
+  - `test/harness-gui-thread` competes with his `dbf8e79f`;
+  - branches 5–6 change his seg_anchor code, and W8 38 is a design question for him.
+- Republish the private meeting page (https://claude.ai/artifact/QyivAN8NiDzadZ7hPKn6ut) from
+  `branches.md`. It still shows five branches.
+
+**W8, new from the seg_anchor work** (`workstreams/bugfixes.md`)
+
+- 38: a same-size 3D seg with another header is pasted into a 4D seg silently. Paul decides: refuse,
+  resample, or add it as a layer.
+- 39: `GetReferenceSpaceOrigin()` returns the spacing. It has no callers.
+- 40: adding a 4D seg prompts about unsaved changes it can't overwrite.
+- 41: "TEMP DIAGNOSTIC" `FileOpen` logging to `~/itksnap-url-debug.log` in `upstream/master`.
 
 **W1 — ready backlog** (`workstreams/merge-backlog.md`)
 
-- Async DLS (`cb6f692e`, `ea86df0d` on `test/dls_sam2`). It is blocked on two defects in `cb6f692e`:
-  an undo gap on throw, and a `this`-capturing lambda (a use-after-free). New branch
-  `feature/dls-async`.
+- Async DLS (`cb6f692e`, `ea86df0d` on `test/dls_sam2`). It is blocked on two defects in
+  `cb6f692e` (W1 Q4). New branch `feature/dls-async`.
 - Re-resolve the `Submodules/{c3d,greedy}` bump against current upstream.
-- Delete the merged branches: W8 item 7's seven, plus `developer-doc`.
+- Delete merged branches: W8 item 7's seven, plus `developer-doc`.
 
 **Other workstreams**
 
-- **W3** — itksnap-dls refactor: promote `itksnap-dls:feature/agentic-api` to `main`.
-- **W4** auto-segmentation UI and **W5** propagation UI — both depend on W3; mockups are in
-  `user_files/`.
-- **W6** — free-rotation 2D/3D sync (#229, a bug). It may interact with seg_anchor's
-  reference-space change; check.
-- **W7** — cmesh integration.
+- **W3:** the itksnap-dls refactor (promote `feature/agentic-api` to `main`).
+- **W4 / W5:** auto-seg and propagation UI. Both depend on W3.
+- **W6:** free-rotation sync (#229). It may interact with the reference-space change; check.
+- **W7:** cmesh.
 
-**W8 — open items by cluster** (evidence in `workstreams/bugfixes.md`)
+**W8 — older open items by cluster**
 
-- **Harness can't report failure:** items 22, 23, 31, 32, 33, 34. Recheck each against Paul's
-  rewritten helpers first.
-- **Crashes:** 26, 27, 28, 29, 30, 35, and the `assert()`-only pattern (15b). Item 26 (a stale
-  mesh-layer id across an IRIS↔SNAP switch) is layer/reference-space code that seg_anchor may have
-  changed; re-check it.
-- **Flaky tests:** 2 (`4DReplayWithMeshUpdate` — 3/5 on `upstream/master` too), 3 and 3b (remote
-  tests).
+- **Harness can't report failure:** 22, 23, 31, 32, 33, 34.
+- **Crashes:** 26, 27, 28, 29, 30, 35, and 15b.
+- **Flaky:** 2, 3, 3b.
 - **Linux-only:** 18, 19, 20.
 - **Cardiac metadata:** 8, 9, 10, 11.
-- **Other:** 12 (DLS races), 16 (leak canary baseline).
+- **Other:** 12, 16.
 
 **Release engineering**
 
 - Version to beta, then `4.6.0`.
-- `FormatVersion` decision.
-- `ReleaseNotes.md` 4.6 section.
-- Refresh `change_tracking.md` past `679ba76a` — 26 upstream commits, including all of seg_anchor,
-  are unclassified.
+- The `FormatVersion` decision.
+- `ReleaseNotes.md` 4.6 section. The PR descriptions in `branches.md` are good raw material.
+- Refresh `change_tracking.md` past `679ba76a`.
 - Wrapper `SUBMODULE_SYNC.md` / `CLAUDE.md`.
 
 ## Files to read first
 
-1. **`MERGE_ORDER.md`** — read "Needs attention" first.
-2. **`itksnap/Testing/GUI/Qt/Scripts/test_SegmentationSwitching.js`** and **`test_Library.js`** on
-   `upstream/master` — the model for a new test, written against Paul's helper API.
-3. **`git show d057beb9 dbf8e79f --stat`** and `Logic/Framework/GenericImageData.{h,cxx}` — the
-   renamed reference-space API.
-4. **`SPRINT_PLAN.md`** — the three rules at the top, §2, and §4 (the baseline).
-5. **`branches.md`**, then **`PROGRESS_LOG.md`**'s 2026-09-24 entries.
+1. `MERGE_ORDER.md` — Status first.
+2. `branches.md` — PR descriptions plus review notes, for all eight branches.
+3. `PROGRESS_LOG.md`, the 2026-09-25 entries: what was tested, surprises, and decisions.
+4. `workstreams/bugfixes.md`, items 36–41.
+5. SPRINT_PLAN's three rules at the top.
 
 ## Known traps
 
-- **A new test branch off `upstream/master` does NOT have the false-green fix.** It is on
-  `test/harness-false-green`, which is unmerged. On `upstream/master`, a misnamed or unregistered
-  script still reports **Passed**. Prove a new test really runs: check its duration, and break one
-  assertion deliberately to see it fail.
-- **Register a new script in BOTH `TestingScripts.qrc` and `GUI_TESTS`.**
-- **Write new scripts against Paul's helper API** (`engine.clickChild`, `setChildProperty`,
-  `validateChildProperty`, …). It works on `upstream/master` and also under our
-  `test/harness-gui-thread` proxy, which kept the same API.
-- **The seg_anchor rename (`d057beb9`) changed `GenericImageData` function names.** Code written
-  against a pre-August tree won't compile on the new base.
-- **Compare failure *sets*, never totals.** The remote tests fail at random when run back-to-back.
-  `4DReplayWithMeshUpdate` is flaky on upstream as well (3/5).
-- **A GUI test that passes in under a second is not running.** `RandomForestBailOut` takes about
-  20 s, `MeshWorkspace` about 47 s, and `SegmentationSwitching` about 61 s.
-- **`MeshWorkspace` is not a flake.** If it goes red, it's a real regression.
-- **Build each branch in its own worktree + build dir** (full macOS build ≈ 4 min).
-  `build-release/` follows the main checkout, which is on `staging/v460`.
-- **The `MERGE_ORDER.md` hook fires on any branch ref update in `itksnap`**, including your scratch
-  branches. It only rewrites the doc when Status actually changes.
-- **zsh does not word-split `$var`.** Use arrays.
-- **`ctest | tail` returns tail's exit status.** Redirect to a file instead.
-- **Use an absolute `--testdir`.**
-- **Build in the foreground on macOS.**
-- **Never `pkill -f` from your own shell.**
-- **Push submodules before bumping the wrapper pointer.** Check with `git branch -r --contains`.
+**New from the last session**
+
+- **Selecting a segmentation row in the Layer Inspector makes it the active segmentation**, which
+  moves the reference space and remaps the cursor. `getLayerResolutionInfo(row)` in
+  `test_Library.js` selects the row, so calling it on a non-active segmentation switches
+  segmentations.
+- **Test scripts are compiled into the `ITK-SNAP` binary** (qrc). After editing a script, rebuild
+  `ITK-SNAP` before running it, or the old script runs.
+- **The GUI harness has no scratch directory.** A relative filename in a save dialog resolves against
+  the dialog's history directory, not the working directory. Test save/reload as a C++ Logic test
+  with `${TEMP}`; see `Testing/Logic/SegAnchor4DWorkspaceTest.cxx`.
+- **Grids at exactly 2x put voxel centres on 0.5 boundaries.** Cursor remapping between such grids is
+  a rounding tie. Pick probe points that are tie-free both ways.
+- **Several branches edit `CMakeLists.txt` and `TestingScripts.qrc`.** Insert at an anchor no other
+  branch uses, then check every pair with `git merge-tree --write-tree`.
+- **Force-pushing `staging/v460` needs Jilei**; the auto-mode classifier blocks it. Don't bump the
+  wrapper `itksnap` pointer to an unpushed commit.
+- **SimpleITK `GetImageFromArray` on a 4D array gives a 3D image.** Build 4D images with
+  `JoinSeries`.
+
+**Standing**
+
+- **A branch off `upstream/master` lacks the false-green fix**, so a misnamed or unregistered script
+  reports Passed. Register a new script in BOTH `TestingScripts.qrc` and `GUI_TESTS`, check its run
+  time, and break one assertion to see it fail.
+- **A GUI test that passes in under a second is not running.** Reference times: `RandomForestBailOut`
+  ≈ 20 s, `MeshWorkspace` ≈ 47 s, `SegmentationSwitching` ≈ 61 s, `SegAnchor4DSwitching` ≈ 73 s.
+- **Compare failure *sets*, never totals.** The remote tests rotate. `4DReplayWithMeshUpdate` is
+  flaky upstream (3/5).
+- **`MeshWorkspace` is not a flake.** If it fails, it's a real regression.
+- **Build each branch in its own worktree and build directory.** They are under `worktrees/` and
+  `build-<name>/`, and are untracked in the wrapper. `build-release/` follows the main checkout
+  (`staging/v460`).
+- **The `MERGE_ORDER.md` hook fires on any branch ref update in `itksnap`.**
+- **Shell and process habits:**
+  - zsh does not word-split `$var`; use arrays.
+  - `ctest | tail` returns tail's exit status.
+  - Use an absolute `--testdir`.
+  - Build in the foreground on macOS.
+  - Never `pkill -f` from your own shell.
+- **Push submodules before bumping the wrapper pointer.**
 - **`projects/user-support/` has uncommitted changes from another session.** Don't sweep them into
-  a release-460 checkpoint.
+  a checkpoint.
 
 ## How to work
 

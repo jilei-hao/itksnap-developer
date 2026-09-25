@@ -23,6 +23,9 @@ The script reads this block: keep one branch per line, as `branch  verified-at  
 bug/linux-gcc-build         fb65f2b9     smallest; no behavior change; the VTK-floor commit can be dropped on its own
 bug/rf-layer-crashes        9e80001f     crash fixes + the test that catches them; indivisible; must precede harness-false-green
 test/harness-false-green    83c44f62     after rf-layer-crashes (constraint below)
+test/seg-anchor-4d          0b671e86     tests only (seg_anchor with 4D data); passes on upstream as is
+bug/full-extent-off-by-one  6a72f6a1     small fix in Paul's seg_anchor code, with its test
+bug/seg3d-into-4d-check     635bd1ac     small fix in Paul's seg_anchor code, with its test
 feature/cardiac-io          2fc0d9b8     largest; add the %R-R round-trip test before the PR
 test/harness-gui-thread     8a28d50c     last: discuss with Paul first, it competes with upstream dbf8e79f
 ```
@@ -56,7 +59,7 @@ backticked branch names.
 ## Status
 
 <!-- AUTO:BEGIN -->
-_Generated 2026-09-24 11:19 EDT by `scripts/merge_order_status.py` — do not edit by hand._
+_Generated 2026-09-24 15:59 EDT by `scripts/merge_order_status.py` — do not edit by hand._
 
 `upstream/master` = `52ee94fa` (2026-09-03).
 
@@ -65,12 +68,15 @@ _Generated 2026-09-24 11:19 EDT by `scripts/merge_order_status.py` — do not ed
 | 1 | `bug/linux-gcc-build` | `fb65f2b9` | 2 | current | ✅ in sync | ✅ `fb65f2b9` | smallest; no behavior change; the VTK-floor commit can be dropped on its own |
 | 2 | `bug/rf-layer-crashes` | `9e80001f` | 4 | current | ✅ in sync | ✅ `9e80001f` | crash fixes + the test that catches them; indivisible; must precede harness-false-green |
 | 3 | `test/harness-false-green` | `83c44f62` | 1 | current | ✅ in sync | ✅ `83c44f62` | after rf-layer-crashes (constraint below) |
-| 4 | `feature/cardiac-io` | `2fc0d9b8` | 12 | current | ✅ in sync | ✅ `2fc0d9b8` | largest; add the %R-R round-trip test before the PR |
-| 5 | `test/harness-gui-thread` | `8a28d50c` | 1 | current | ✅ in sync | ✅ `8a28d50c` | last: discuss with Paul first, it competes with upstream dbf8e79f |
+| 4 | `test/seg-anchor-4d` | `0b671e86` | 1 | current | ✅ in sync | ✅ `0b671e86` | tests only (seg_anchor with 4D data); passes on upstream as is |
+| 5 | `bug/full-extent-off-by-one` | `6a72f6a1` | 1 | current | ✅ in sync | ✅ `6a72f6a1` | small fix in Paul's seg_anchor code, with its test |
+| 6 | `bug/seg3d-into-4d-check` | `635bd1ac` | 1 | current | ✅ in sync | ✅ `635bd1ac` | small fix in Paul's seg_anchor code, with its test |
+| 7 | `feature/cardiac-io` | `2fc0d9b8` | 12 | current | ✅ in sync | ✅ `2fc0d9b8` | largest; add the %R-R round-trip test before the PR |
+| 8 | `test/harness-gui-thread` | `8a28d50c` | 1 | current | ✅ in sync | ✅ `8a28d50c` | last: discuss with Paul first, it competes with upstream dbf8e79f |
 
-**Pairwise merges:** all 10 pairs merge cleanly.
+**Pairwise merges:** all 28 pairs merge cleanly.
 **Ordering constraints:** queue order satisfies 1 of 1.
-**`staging/v460`** (`62588ffc`): contains `upstream/master` and every queue tip, and nothing else. ✅
+**`staging/v460`** (`d02236c3`): contains `upstream/master` and every queue tip, and nothing else. ✅
 
 **Needs attention:** nothing.
 <!-- AUTO:END -->

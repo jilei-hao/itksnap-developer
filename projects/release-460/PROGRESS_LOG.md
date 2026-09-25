@@ -850,3 +850,112 @@ Runs 8 and 9 on this tree each failed one of the two remote tests, and nothing e
 - Nothing ticked in `SPRINT_PLAN.md`: no workstream closed since W2 was ticked earlier today.
 - Checkpoint commit covers the release-460 files only. Uncommitted `projects/user-support/` changes
   from another session were left alone.
+
+## 2026-09-25 — seg_anchor tested with 4D data: 4 tests, 2 fixes, 3 new branches
+
+**Goal (Jilei's, named at the previous handoff):** test Paul's seg_anchor logic on 4D
+segmentations. Scope settled with Jilei at the start:
+- **Base:** `upstream/master` (`52ee94fa`). `upstream/seg_anchor`'s one extra commit, `88fb7aaa`, is
+  a rendering overlay only.
+- **Cases:** all four — own-grid 4D segs and switching, time-point changes, mesh/replay, and the
+  workspace round trip.
+- **Output:** tests, plus a repro for Paul for every bug, and a fix on its own `bug/` branch only
+  when the fix is small.
+
+**Landed — all three branches pushed to `origin` with `-u origin`:**
+
+| Branch | Tip | What |
+|---|---|---|
+| `test/seg-anchor-4d` | `0b671e86` | GUI tests `SegAnchor4DSwitching`, `SegAnchor4DLoad3D`, `SegAnchor4DMesh`, and the C++ test `SegAnchor4DWorkspace`. Data: `seg4d_11f_label1_x2crop`, `seg4d_11f_label2_x15`, `seg3d_11f_label1_tp4_x2crop` (exact nearest-neighbour resamplings, checked voxel by voxel), plus `img4d_11f_seganchor.itksnap`, written by `itksnap-wt`. |
+| `bug/full-extent-off-by-one` | `6a72f6a1` | W8 36: `GetFullExtentImageRegion` rounded each corner with `floor(ci-0.5)`. Fixed and covered by `FullExtentRegionTest`, a brute-force oracle over 4 layouts; all 4 fail on `52ee94fa`. |
+| `bug/seg3d-into-4d-check` | `635bd1ac` | W8 37: `ValidateHeader` now checks a 3D seg's size against the selected seg. Covered by `Seg3DInto4DTest`, which fails without the fix with the low-level `UpdateTimePoint` exception. |
+
+**`staging/v460` rebuilt locally at `d02236c3`** (upstream + all eight, in queue order). The old tip
+is tagged `archive/staging-v460-0924` (`62588ffc`). The diff between them is exactly the three new
+branches: 14 files, +1208/−11. **Not pushed**, because the auto-mode classifier blocked the
+force-push. Jilei needs to run
+`git -C itksnap push --force-with-lease=staging/v460:62588ffc origin staging/v460`. For the same
+reason, the wrapper's `itksnap` pointer was **not** bumped.
+
+**Findings: the seg_anchor 4D logic itself is correct.** At every one of the 11 time points:
+- The label shown comes from the active seg's own time point.
+- The main image is sampled nearest-neighbour at the same physical point whichever seg is the
+  reference. The probe values matched SimpleITK to 0.01.
+- Every path that changes the active seg keeps the time point and remaps the cursor by physical
+  position. That is additive load, `{`, `}`, and selecting a Layer Inspector row.
+
+The bugs are W8 36–41 in `workstreams/bugfixes.md`. Only 36 and 37 are branched:
+- 38 — a same-size 3D seg with another header is pasted silently (a design question for Paul).
+- 39 — `GetReferenceSpaceOrigin()` returns the spacing.
+- 40 — a spurious unsaved-changes prompt on an additive 4D load (pre-dates seg_anchor).
+- 41 — "TEMP DIAGNOSTIC" `FileOpen` logging to `~/itksnap-url-debug.log` in `upstream/master`.
+
+**Surprises:**
+- **Selecting a segmentation row in the Layer Inspector activates it**
+  (`ImageLayerTableRowModel::SetActivated`). So `getLayerResolutionInfo()` on a non-active seg row
+  silently switches the reference space. This broke the first version of the Switching test.
+- **W8 37 is not a crash.** `ImageIOWizardModel::OpenImage` converts any `std::exception` into an
+  `IRISException`; the user just gets a cryptic message.
+- **The harness has no scratch directory**, and a relative filename in the save dialog resolves
+  against the dialog's *history* directory, not the working directory. So the save/reload round trip
+  is a C++ Logic test with `${TEMP}`. A `tempdir` global in `SNAPTestQt` would conflict with
+  `test/harness-gui-thread`, which rewrites the constructor.
+- **A 2x grid puts voxel centres exactly on 0.5 boundaries**, so cursor remapping ties are decided by
+  floating-point luck. The probe points P and Q were chosen to be tie-free in both directions.
+- **An adversarial `code-reviewer` found nine weaknesses in the first test commit.** They included
+  vacuous mesh checks (clicking a disabled button passes), a tautological reference check, a round
+  trip that wrote no data, and no GUI workspace load. All were fixed by amending before the push.
+  Proof after the fixes:
+  - `SegAnchor4DMesh` fails with `cf65a583` reverted.
+  - The C++ test fails 11 checks with `UpdateReferenceImageInAllLayers` and the cursor transfer
+    disabled.
+- **Process gap:** after mutation-testing, the `ITK-SNAP` binary still contained the mutated scripts,
+  because the scripts are compiled in through the qrc. Always rebuild before re-running.
+
+**Decisions:**
+- **Probe points:** GUI tests assert labels, intensities and tie-free cursor positions, never the
+  extent min/max. Those values are wrong on master (W8 36).
+- **Merge hygiene:** each new CMake block sits at its own anchor, so every pair stays merge-clean.
+- **Full-extent semantics:** "reference voxels whose centre is inside some layer", with a 1e-6
+  tolerance. Paul may prefer "any overlap"; it is the same fix with ±0.5.
+
+**Docs:**
+- `MERGE_ORDER.md`: three queue lines after `test/harness-false-green`, all with `verified-at` set.
+  Status reads **"Needs attention: nothing"**.
+- `branches.md`: sections 6–8, updated summary and staging lines. At Jilei's request, every branch
+  now has a plain-language **PR description** for the community, followed by "Review notes".
+  Branch 7 has a table of what users see before and after the fix.
+- `workstreams/bugfixes.md`: W8 36–41 and the branch map.
+
+**Tests (macOS arm64), failure sets:**
+
+| Tree | Result | Only failure |
+|---|---|---|
+| `test/seg-anchor-4d` standalone | 37/38 | `RemoteImageLoadTest_SingleImage` |
+| `bug/seg3d-into-4d-check` standalone | 34/35 | `RemoteImageLoadTest_WorkspaceWithMesh` |
+| `bug/full-extent-off-by-one` standalone | 34/35 | `RemoteImageLoadTest_SingleImage` |
+| **`staging/v460` @ `d02236c3`** | **40/41** | `RemoteImageLoadTest_WorkspaceWithMesh` (the rotating remote flake) |
+
+Real run times on staging:
+- `4DContinuousRendering` 37.7 s, `RandomForestBailOut` 20.3 s, `MeshWorkspace` 46.8 s.
+- `SegAnchor4DSwitching` 73.4 s, `SegAnchor4DLoad3D` 54.2 s, `SegAnchor4DMesh` 44.0 s.
+
+**Left on disk (untracked in the wrapper):**
+- Worktrees `worktrees/{seg-anchor-4d,full-extent-off-by-one,seg3d-into-4d-check}` and their
+  `build-*` directories.
+- Logs `*.log` (gitignored).
+
+The meeting-page artifact still shows the five-branch version.
+
+## 2026-09-25 (handoff) — Session closed; next goal named by Jilei
+
+**Next goal (Jilei's choice):** manual testing and code review, and probably a guide for AI agents
+working on this project.
+
+**Checkpoint:**
+- Tests: the staging run above, on the same code; nothing but docs changed after it.
+- The commit covers the release-460 docs only. The `itksnap` pointer is not bumped (staging is
+  unpushed), and the `itksnap-dls` pointer and the `projects/user-support/` changes from another
+  session were left alone.
+- Nothing was ticked in `SPRINT_PLAN.md`. SPRINT_PLAN §2 still lists five branches, and needs a
+  refresh once staging is pushed.
