@@ -1177,3 +1177,35 @@ follow-up. `NEXT_SESSION_PROMPT.md` was rewritten for it.
 - builds `C:\dev\snapwt\build-pr241` (with `*-noutf8.exe` test copies) and `build-pr241-pure`;
 - local refs `pr/241`, `pr/241-update`;
 - the other session's worktree `C:\dev\snapwt\rc` and `build-rc`.
+
+## 2026-09-28 (after handoff) — Ninth topic branch pushed and recorded; correction about #241's base
+
+**`bug/remote-cache-test-datadir` pushed** at Jilei's request: `6ff7a582`, without `-u`, so no
+tracking. It is another session's W8 3 fix, written 2026-09-25 and left unpushed and unrecorded.
+- **Recorded (rule 3):**
+  - `MERGE_ORDER.md` Queue, second after `bug/linux-gcc-build` (test-only, one file), with
+    `verified-at` `-`;
+  - `branches.md`: Summary row 9, a new §9 with the PR description and review notes, and the push
+    record;
+  - W8 3 set to `☐ bug/remote-cache-test-datadir`, plus a row in the W8 branch map;
+  - README Fast facts: 9 branches.
+- **Evidence:** the other session's local merge `22b009e0` (`d02236c3` + branch) ran **41/41** on
+  Windows (2026-09-25), with `_Cache` passing.
+- **Merges:** clean with all eight branches and with #241 (`git merge-tree`).
+- **Not done here, left for the Mac** (NEXT_SESSION_PROMPT, "The ninth branch"):
+  - **Status is not regenerated**, because this box has no Python. A dated "Stale" note sits above the
+    AUTO block;
+  - no standalone verification;
+  - no staging rebuild, which needs a force-push by Jilei.
+- **Dropped check:** a quick check of the fixed test inside the #241 build tree was abandoned. That
+  tree turned out not to be current master (next point), and the swap was reverted.
+
+**Correction: #241 is based on `a86e42da`**, master as of 2026-08-19, 19 commits behind `52ee94fa`.
+Its `88def486` merged master before seg_anchor #247–#249.
+- Earlier entries and statements that it "contains the current `upstream/master`", or that its own
+  build is "master-based", were wrong. They are fixed in `reviews/pr-241.md` (header and §7), in
+  W8 44's evidence and in the missing-file issue draft.
+- What stands: GitHub reports #241 mergeable, and the staging + PR build (`52ee94fa`-based, 40/42) is
+  the test of #241 against current master.
+- The missing-file crash reproduces in both trees. `main.cxx` differs between `a86e42da` and `master`
+  only by two `OpenProject` → `OpenWorkspace` renames.

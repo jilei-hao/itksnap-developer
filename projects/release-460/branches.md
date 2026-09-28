@@ -30,6 +30,7 @@ Each branch section has two parts:
 | 6 | `test/seg-anchor-4d` | `0b671e86` | 1 | seg_anchor 4D goal | ✅ builds, 37/38: only the remote flake. The four new tests pass (SegAnchor4DSwitching 72 s, Load3D 54 s, Mesh 44 s, Workspace 0.8 s) |
 | 7 | `bug/full-extent-off-by-one` | `6a72f6a1` | 1 | W8 · 36 | ✅ builds, 34/35: only the remote flake. `FullExtentRegion` passes; `SegmentationSwitching` and `MeshWorkspace` unaffected |
 | 8 | `bug/seg3d-into-4d-check` | `635bd1ac` | 1 | W8 · 37 | ✅ builds, 34/35: only the remote flake. `Seg3DInto4D` passes |
+| 9 | `bug/remote-cache-test-datadir` | `6ff7a582` | 1 | W8 · 3 | ⏳ **not run standalone yet.** Windows, merged into staging (local `22b009e0`): **41/41**, including `RemoteImageLoadTest_Cache` (2026-09-25) |
 
 **All eight merged (`staging/v460` @ `d02236c3`): 40/41**, failing only
 `RemoteImageLoadTest_WorkspaceWithMesh` (remote flake).
@@ -50,6 +51,10 @@ branch moves. As of this snapshot:
 - #3 must come before #4, because #4 on its own fails upstream's never-registered
   `RandomForestBailOut`;
 - #3 cannot be split: its test registration alone SEGFAULTs.
+
+**Ninth branch, added 2026-09-28:** `bug/remote-cache-test-datadir` is **not in `staging/v460` yet**.
+Rebuilding staging to include it needs a force-push, which is Jilei's call. The local merge `22b009e0`
+(`d02236c3` + this branch) ran 41/41 on Windows. See §9 and [MERGE_ORDER.md](MERGE_ORDER.md).
 
 `staging/v460` = `upstream/master` + all eight. Its diff from the five-branch tip
 `archive/staging-v460-0924` is exactly the three new branches (14 files, +1208/−11).
@@ -478,6 +483,60 @@ copied in as it is. How that case should behave is an open question.
 
 ---
 
+## 9 · `bug/remote-cache-test-datadir` — `RemoteImageLoadTest_Cache` on Windows and Linux (W8 3)
+
+### PR description
+
+**Title:** Keep the remote-image tests inside the build tree, and fix `RemoteImageLoadTest_Cache` on
+Windows and Linux
+
+`RemoteImageLoadTest_Cache` failed on Windows and Linux and passed only on macOS. The download cache
+itself works fine; the test was looking in the wrong folder. It assumed that ITK-SNAP keeps its data
+in `.itksnap_test`, which is only true on macOS. On Windows and Linux, ITK-SNAP uses the user's own
+settings folder (`%APPDATA%\itksnap.org\ITK-SNAP`, or `~/.itksnap.org/ITK-SNAP`). The test never saw
+the cache there, so it failed. As a side effect, every test run on those systems wrote cache files
+into the developer's real ITK-SNAP settings.
+
+**What changes (the test only; ITK-SNAP itself is untouched):**
+- The test asks ITK-SNAP where its data folder is, instead of assuming.
+- At startup, the test points that folder at `.itksnap_test` inside the build tree, through
+  `%APPDATA%` on Windows and `$HOME` elsewhere. So all three remote-image tests keep their files there
+  on every platform.
+- Before clearing a cache, the test checks that the folder really is inside `.itksnap_test`. If a
+  future change broke the redirect, the test would fail instead of deleting someone's real cache.
+
+**Testing:** on Windows, the full test suite together with the other 4.6 branches passes 41/41,
+including `RemoteImageLoadTest_Cache`, which failed on every run before. _Standalone, Linux and macOS
+runs are still to come; update this line when they are done._
+
+### Review notes (planning meeting)
+
+- **Origin:** written on 2026-09-25 by another Claude session on the Windows box. That session ended
+  before recording it, so the PR #241 session pushed it on 2026-09-28 at Jilei's request.
+- **Commit:** `6ff7a582`, one file (`Testing/Logic/RemoteImageLoadTest.cxx`, +38/−6), off
+  `upstream/master` @ `52ee94fa`. No upstream tracking.
+- **Evidence so far:**
+  - The local merge `22b009e0` (`d02236c3` + this branch) ran **41/41** on Windows (13.4 min, with
+    `APPDATA` pointed at a scratch folder). Before the fix, `_Cache` failed on 5 of 5 runs (W8 3).
+  - The authoring session reported the real profile unchanged: 170 entries before and after.
+- **Not yet verified:**
+  - a standalone run (`upstream/master` + this branch, full `ctest`);
+  - Linux, which is the other platform it fixes;
+  - macOS, where it must keep passing. There the redirect goes through `$HOME`, so check that
+    nothing else in the test run depends on `$HOME`.
+  - `verified-at` in `MERGE_ORDER.md` stays `-` until these are done.
+- **Merges:** clean with all eight branches and with PR #241 (`git merge-tree`, 2026-09-28).
+- **Interaction with #241:** compatible. On Windows the redirect relies on `GetApplicationDataDirectory()`
+  reading `%APPDATA%` through `GetEnvironmentVariableW`, and #241 keeps that. If that function ever
+  switches to `SHGetKnownFolderPath` or the Qt delegate, the redirect stops working, and the test's
+  guard then fails loudly.
+- **Rejected alternative** (from the commit message): make `GetApplicationDataDirectory()` ask the
+  delegate on every platform. That would change where the real application keeps its data.
+- **Not covered:** W8 3b (`_WorkspaceWithMesh` compares an approximate quantile exactly) stays open.
+- **For Paul:** a test-only change; no behaviour change in ITK-SNAP.
+
+---
+
 ## Not branched
 
 | What | Why |
@@ -509,3 +568,6 @@ The old tips survive as the local tags `archive/feature-cardiac-io-pre-rebase` a
   `62588ffc`.
 
 The old staging tip is the local tag `archive/staging-v460-0924`, which is not pushed.
+
+**Pushed 2026-09-28 to `jilei-hao/itksnap`:**
+- `bug/remote-cache-test-datadir` (`6ff7a582`), without `-u`, so it has no upstream tracking.

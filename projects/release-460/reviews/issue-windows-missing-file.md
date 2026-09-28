@@ -12,7 +12,7 @@ A user sees this when opening a file that has been moved or renamed since, for e
 
 **Expected:** the usual "Image IO Error: Failed to load image …" dialog, which is what `main()` shows when loading fails. On macOS and Linux, where `DecodeFilename()` does nothing, the missing file reaches that code.
 
-Reproduced on Windows 11 (MSVC 2022, Qt 6.9.3, ITK 5.4.0) with `master` @ 52ee94fa plus #241. The Windows Application event log records a fail-fast in `ucrtbase.dll`.
+Reproduced on Windows 11 (MSVC 2022, Qt 6.9.3, ITK 5.4.0) in two builds: one of `master` @ 52ee94fa plus our pending 4.6 branches, none of which touch `main.cxx`, and one of the head of #241. The Windows Application event log records a fail-fast in `ucrtbase.dll`.
 
 ### Cause
 

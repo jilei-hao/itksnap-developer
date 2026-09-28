@@ -2,10 +2,13 @@
 
 ## Current state (read this paragraph first)
 
-The 4.6.0 work still lives on **eight topic branches**, unchanged since 2026-09-25. Each is cut from
-`upstream/master` @ `52ee94fa` and pushed to `jilei-hao/itksnap`. **`staging/v460` @ `d02236c3`**
-(all eight merged) is pushed. `MERGE_ORDER.md` reads "Needs attention: nothing", but see loose end 1
-below.
+The 4.6.0 work now lives on **nine topic branches**, each cut from `upstream/master` @ `52ee94fa` and
+pushed to `jilei-hao/itksnap`:
+- the eight from 2026-09-25, unchanged;
+- **the ninth, `bug/remote-cache-test-datadir`** (`6ff7a582`, W8 3), pushed and recorded 2026-09-28.
+
+**`staging/v460` @ `d02236c3`** holds the first eight only. **`MERGE_ORDER.md` Status is stale**: the
+Windows box has no Python to regenerate it. See "The ninth branch" below.
 
 The last session ran on the **Windows build box** (2026-09-25 → 28). It did not work on the previous
 goal (manual tests of our branches, code review, agent guide), because Jilei redirected it to an
@@ -22,14 +25,22 @@ goal (manual tests of our branches, code review, agent guide), because Jilei red
 - **W8 43 and 44 are new** (`workstreams/bugfixes.md`). 44 (`-g` with a missing file closes ITK-SNAP
   silently on Windows) has an issue draft ready.
 
-**Loose ends from the Windows box:**
-1. **`bug/remote-cache-test-datadir` @ `6ff7a582`**: another session's fix for W8 3
-   (`RemoteImageLoadTest_Cache`), one commit off `52ee94fa`. It merges cleanly with all eight branches
-   and with #241. At handoff it existed **only locally on the Windows box**, unpushed and not in
-   `MERGE_ORDER.md` or `branches.md`. Check `git ls-remote origin bug/remote-cache-test-datadir`: if it
-   has been pushed, it is the ninth topic branch, and rule 3 applies.
-2. `pr/241-update` exists only on the Windows box too. On the Mac, fetch the PR itself:
-   `git -C itksnap fetch upstream pull/241/head:pr/241`. It includes our four commits.
+**#241 is based on master as of 2026-08-19 (`a86e42da`), 19 commits behind today's master.** Its
+merge commit merged master before seg_anchor #247–#249 landed. GitHub reports it mergeable. The
+Windows staging + PR build was the test against current master: 40/42, with no PR-caused failures.
+`pr/241-update` exists only on the Windows box. On the Mac, fetch the PR itself with
+`git -C itksnap fetch upstream pull/241/head:pr/241`; it includes our four commits.
+
+**The ninth branch: rule 3 is not finished.** It is recorded in Queue (`verified-at` = `-`), in
+`branches.md` §9 and in W8 3. Still to do, in `MERGE_ORDER.md`'s "How to update" order:
+1. **Regenerate Status.** `git fetch origin` fires the hook. Then delete the "Stale since 2026-09-28"
+   note above the AUTO block.
+2. **Verify it standalone:** `upstream/master` + branch, full `ctest`, comparing the failure set. Do it
+   on macOS, where the test must keep passing and the redirect goes through `$HOME`. Then set
+   `verified-at` to `6ff7a582` and update `branches.md` §9's "Testing" line.
+3. **Rebuild `staging/v460`** with all nine (SPRINT_PLAN §7). That is a **force-push, so it needs
+   Jilei**: hand over the exact `--force-with-lease=staging/v460:d02236c3` command. The evidence so far
+   is the Windows local merge `22b009e0` (`d02236c3` + this branch), which ran 41/41.
 
 ## This session's goal — named by Jilei at the 2026-09-28 handoff
 
@@ -44,8 +55,8 @@ Ask Jilei before starting (rule 2):
 2. **Then what?** Possibilities:
    - the W8 44 fix, on a new topic branch off `upstream/master` with "Fixes #N". The code is
      `#ifdef WIN32`, so it can only be verified on the Windows box;
-   - loose end 1;
-   - the previous goal: manual tests and code review of the eight branches, and the agent guide.
+   - the ninth branch's remaining rule-3 steps (above);
+   - the previous goal: manual tests and code review of the topic branches, and the agent guide.
 
 **Never merge a PR, ours or an outside one, through `gh`, the API or the web UI.** Merges happen only
 at the planning meeting, in person (Jilei, 2026-09-28; the rule is in `upstream.md` too). After Jilei
@@ -63,7 +74,7 @@ says #241 is merged, do `upstream.md` action 5:
   item 4 is Paul's call.
 - #241: comment, then the meeting.
 
-**Getting the eight branches merged** (live state: `MERGE_ORDER.md`)
+**Getting the nine branches merged** (live state: `MERGE_ORDER.md`)
 - SPRINT_PLAN §2 still shows five branches and the old staging tip. Refresh it with §7.
 - **Measured order constraint:** `bug/rf-layer-crashes` must merge before `test/harness-false-green`,
   and it cannot be split.
@@ -89,7 +100,7 @@ says #241 is merged, do `upstream.md` action 5:
 - **Older clusters:**
   - harness can't report failure: 22, 23, 31–34;
   - crashes: 26–30, 35, 15b;
-  - flaky: 2, 3 (fix on the loose-end branch), 3b;
+  - flaky: 2, 3 (fixed on `bug/remote-cache-test-datadir`), 3b;
   - Linux-only: 18–20;
   - cardiac metadata: 8–11;
   - other: 12, 16, 42.

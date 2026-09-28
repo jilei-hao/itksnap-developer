@@ -66,5 +66,5 @@ Do these in order. Actions 1–2 come first so that action 3 can cite their numb
 | [#241](https://github.com/pyushkevich/itksnap/pull/241) | Support non-ASCII characters in Windows user names | marcoduering (outside) | open, milestone v4.6.0. Jilei's 4 commits pushed 2026-09-27; head `b287abe6` | review: [reviews/pr-241.md](reviews/pr-241.md); comment: [reviews/pr-241-comment.md](reviews/pr-241-comment.md) | Action 3 (comment). Merge at the planning meeting (action 4), then action 5. |
 | [#244](https://github.com/pyushkevich/itksnap/pull/244) | DOC: Add contributing, governance, code of conduct, and developer guide | jilei-hao | merged | W2 | — |
 
-Our eight topic branches ([branches.md](branches.md)) have **no PRs yet**: Paul's go-ahead comes
+Our nine topic branches ([branches.md](branches.md)) have **no PRs yet**: Paul's go-ahead comes
 first (NEXT_SESSION_PROMPT, "Talk to Paul before opening PRs"). When one is opened, give it a row here.

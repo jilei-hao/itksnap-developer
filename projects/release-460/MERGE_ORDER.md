@@ -21,6 +21,7 @@ The script reads this block: keep one branch per line, as `branch  verified-at  
 ```text
 # branch                    verified-at  why this position
 bug/linux-gcc-build         fb65f2b9     smallest; no behavior change; the VTK-floor commit can be dropped on its own
+bug/remote-cache-test-datadir  -         test only, one file (W8 3); fixes RemoteImageLoadTest_Cache on Windows/Linux and keeps ctest out of the real profile
 bug/rf-layer-crashes        9e80001f     crash fixes + the test that catches them; indivisible; must precede harness-false-green
 test/harness-false-green    83c44f62     after rf-layer-crashes (constraint below)
 test/seg-anchor-4d          0b671e86     tests only (seg_anchor with 4D data); passes on upstream as is
@@ -57,6 +58,14 @@ backticked branch names.
 ---
 
 ## Status
+
+> ⚠️ **Stale since 2026-09-28. Delete this note once Status is regenerated.** The ninth branch,
+> `bug/remote-cache-test-datadir`, was added to Queue on the Windows box, which has no Python, so
+> `scripts/merge_order_status.py` could not run there. On the Mac, `git fetch origin` fires the hook;
+> otherwise run the script by hand. Expect ⚠️ for three things:
+> - the new branch is unverified (`verified-at` is `-`);
+> - `staging/v460` lacks it: rebuilding staging needs a force-push, which is Jilei's call;
+> - the pair count goes from 28 to 36. All 8 new pairs merge cleanly (`git merge-tree`, 2026-09-28).
 
 <!-- AUTO:BEGIN -->
 _Generated 2026-09-24 15:59 EDT by `scripts/merge_order_status.py` — do not edit by hand._
