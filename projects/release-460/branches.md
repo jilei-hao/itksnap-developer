@@ -2,7 +2,7 @@
 
 **Snapshot:** 2026-09-24 · **Base for every branch:** `upstream/master` @ `52ee94fa` · **Pushed:** all eight
 branches, plus `staging/v460` @ `d02236c3` (2026-09-25), to `jilei-hao/itksnap`. **Merge order and live branch
-state:** [MERGE_ORDER.md](MERGE_ORDER.md). · **Meeting page (private):**
+state:** [MERGE_ORDER.md](MERGE_ORDER.md). · **Upstream issues and PRs:** [upstream.md](upstream.md). · **Meeting page (private):**
 https://claude.ai/artifact/QyivAN8NiDzadZ7hPKn6ut — a rendered copy of this file as of 2026-09-24; this file stays the
 source of truth.
 

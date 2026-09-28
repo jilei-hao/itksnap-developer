@@ -1038,3 +1038,142 @@ New scripts: `scripts/windows/{build-deps,build-release,run-tests}.cmd` (+ `vsen
 
 **Left on disk (untracked):** `lib/` (deps, gitignored), `build-release/` (gitignored). The build
 logs are `lib/*.log`. A provisional Qt 6.7.3 build was deleted after Qt 6.7.3 was uninstalled.
+
+## 2026-09-25 (PR #241) — Tested and reviewed upstream PR #241 (non-ASCII Windows user names)
+
+**Goal (Jilei's choice, not in NEXT_SESSION_PROMPT):** find a way to test
+[pyushkevich/itksnap#241](https://github.com/pyushkevich/itksnap/pull/241). It comes from outside the
+team (Marco Duering, AI-assisted), so the review covers correctness, code style and project norms. The
+PR is milestoned v4.6.0. The review is in [reviews/pr-241.md](reviews/pr-241.md), with a draft
+GitHub comment that was **not posted**.
+
+**What was built:** `staging/v460` + `pr/241` as a local detached merge `a3bc912c`. It was never
+pushed and is on no branch. Worktree `C:\dev\snapwt\pr241`, build `C:\dev\snapwt\build-pr241`:
+779/779, 0 errors, no warnings from the PR's files. There was one conflict, with `test/seg-anchor-4d`
+in `CMakeLists.txt`: both add a test after `IRISApplicationTest`, and keeping both resolves it. The PR
+merges cleanly with the other seven branches.
+
+**Result: request small changes. The code works, but its stated mechanism is wrong.**
+- **Removing the guard alone fixes the reported bug.** ITK 5.4.0 and VTK build kwsys with
+  `KWSYS_ENCODING_DEFAULT_CODEPAGE=CP_UTF8`, and `main.cxx` covers the CRT with `setlocale(".UTF8")`.
+  Measured three ways:
+  - `logic_api_test` without a manifest, with a non-ASCII `APPDATA`: staging crashes 0xC0000409; the
+    PR creates the right Unicode folder.
+  - The PR's `ITK-SNAP.exe` with its manifest stripped (`mt.exe -outputresource`) starts and saves
+    `UserPreferences.xml` under `…\Müller_日本\…`.
+  - Staging refuses with the 2014 message.
+- **What the manifest really fixes is command-line paths.** Without it, `-g …\Brücke_日本.gipl.gz`
+  crashes silently (0xC0000409): `argv` arrives as CP1252 ("日本" → "??"), and `DecodeFilename()`'s
+  `GetLongPathNameA` fails. With it, the image opens, and the history is stored as UTF-8.
+- **The new `NonAsciiPathTest` passes, but does not test the manifest.** With the manifest stripped,
+  its itksys checks still pass. Only its Registry checks fail, because the test skips the `setlocale`
+  that `main.cxx` does.
+- **Full suite with a non-ASCII `APPDATA`: 40/42.** The failures are the known remote pair: `_Cache`
+  (W8 3) and `_SingleImage` (the W8 3b p25 flake). All 26 GUI tests pass with real run times.
+- **Style:** clang-format finds nothing on the added lines. That is with 18.1.8 and an adapted config;
+  exact 19.1.4 is not on this box. Also: no whitespace errors, ASCII-only sources, CMake and naming
+  match their neighbours. Norms: no `BUG:` prefix (recommended only), no issue opened for a
+  process-wide / CLI behaviour change (`CONTRIBUTING.md`; the author disclosed it in a comment), and a
+  merge of master into the branch (allowed).
+
+**Found on the way (not the PR's), a W8 candidate:** on Windows, `ITK-SNAP.exe -g <missing file>`
+crashes silently (0xC0000409). `DecodeFilename()` (`main.cxx:439`) throws when `GetLongPathNameA`
+fails; it is called from `parse()`, outside `main()`'s `try`, and it leaks `buffer`.
+
+**Traps (Windows):**
+- **No `gh` on this box.** Use `git fetch upstream pull/N/head:pr/N` and the REST API through
+  `Invoke-RestMethod`. Actions job logs return 403 without auth.
+- **CI's Gatekeeper never gates on tests.** It checks only `ctest-config` and `ctest-submit`, and the
+  test step is `continue-on-error`. So a green run, like the fork's `32709348336`, says nothing about
+  test results.
+- **A fresh `APPDATA` triggers two first-run modals** outside test mode: "Allow Automatic Update
+  Checks?" and "Layout Preference Reminder". They block `CloseMainWindow`, and then the preferences are
+  not saved. `e2e-appdata.ps1` declines them through UI Automation.
+- **PowerShell 5.1 `Start-Process -PassThru` returns an empty `ExitCode`** unless `$p.Handle` is read
+  before the process exits. **PowerShell variables are case-insensitive:** a `$sp` splat overwrote
+  `$SP`.
+
+**Left on disk (untracked):**
+- the worktree `C:\dev\snapwt\pr241`;
+- the build `C:\dev\snapwt\build-pr241`, including `ITK-SNAP-noutf8.exe` and
+  `nonascii_path_test_noutf8.exe` (manifest-stripped copies, for T8c/T8d);
+- the local ref `pr/241` in `itksnap`.
+Scripts are copied to [reviews/pr-241-scripts/](reviews/pr-241-scripts/).
+
+## 2026-09-25 (PR #241, update) — Jilei chose to update PR #241 and merge it
+
+Instead of a review round with the contributor, Jilei will push commits to the PR branch
+(`maintainer_can_modify` is true) and merge. Four commits on top of `88def486`, on the local branch
+`pr/241-update` (worktree `C:\dev\snapwt\pr241-pure`). **Not pushed yet.**
+- `7a52c360` DOC: correct mechanism in comments;
+- `cbf33e51` BUG: APPDATA length off by one;
+- `3a4ab933` ENH: `NonAsciiPathTest` covers `%APPDATA%`, `GetACP`, `GetLongPathNameA`, `argv`;
+- `b287abe6` ENH: `itksnap-wt` gets the manifest.
+
+Details and evidence are in [reviews/pr-241.md](reviews/pr-241.md) §7.
+- Each new check was proven to fail for the right reason:
+  - with the manifest stripped, the 3 manifest checks fail;
+  - with the 2014 guard put back, the `%APPDATA%` check fails.
+- `pr/241-update` builds 773/773. Console tests with a non-ASCII `APPDATA`: 12/13, only W8 3's
+  `_Cache` failing.
+- The GUI end-to-end launch passes.
+
+The comment explaining the changes is [reviews/pr-241-comment.md](reviews/pr-241-comment.md), not posted.
+**After the merge,** `test/seg-anchor-4d` conflicts with master in `CMakeLists.txt`: rebase it and
+update `MERGE_ORDER.md` (rule 3).
+
+## 2026-09-27 (PR #241) — Review commits pushed
+
+On Jilei's instruction, `pr/241-update` was pushed to `marcoduering/itksnap:fix-nonascii-username`
+(`88def486..b287abe6`, fast-forward, no force). PR #241 now has 7 commits (+344/−15, 5 files) and
+GitHub reports it mergeable. Still Jilei's to do in the GitHub UI:
+- post [reviews/pr-241-comment.md](reviews/pr-241-comment.md);
+- merge with "Create a merge commit".
+
+Afterwards, rebase `test/seg-anchor-4d` and update `MERGE_ORDER.md`.
+
+## 2026-09-28 — Upstream tracker; two issue drafts; W8 43–44
+
+- **New [upstream.md](upstream.md):** one place for everything on GitHub, meaning upstream issues and
+  PRs, ours and outside ones. Jilei wants GitHub actions done on the main workstation, where `gh` is
+  logged in; the Windows box has none. So it opens with a numbered list of pending `gh` commands:
+  - create the 2 issues;
+  - comment on #241, then merge it;
+  - the post-merge chores.
+  It is linked from `README.md`, from the `branches.md` header, from W8 44 and from `reviews/pr-241.md` §7.
+- **Issue drafts** (body-only, so `--body-file` takes them as they are):
+  - [reviews/issue-windows-missing-file.md](reviews/issue-windows-missing-file.md): reproduced again
+    on `master` + #241 (`b287abe6`) for `-g`, a bare argument, and `-w`;
+  - [reviews/issue-ci-fork-prs.md](reviews/issue-ci-fork-prs.md): #244 fails at exactly the same steps
+    as #241, while `master`'s push builds are green. The Gatekeeper logic was checked in `build.yml`.
+- **W8 43** records the other session's `%APPDATA%` finding, which it had numbered but never written
+  down. **W8 44** is the missing-file exit.
+- **Correction (Jilei, 2026-09-28): every PR merge, ours and outside ones, happens at the planning
+  meeting, in person.** Never through `gh` or the web UI by a session. This replaces "merge in the
+  GitHub UI" in the two PR #241 entries above. `upstream.md` action 4 is now a meeting item, not a
+  command.
+
+## 2026-09-28 (handoff) — Session closed on the Windows box; Jilei continues on the Mac
+
+**Next goal (Jilei's words):** "I'll continue the work on my mac", meaning the PR #241 / upstream
+follow-up. `NEXT_SESSION_PROMPT.md` was rewritten for it.
+
+**Checkpoint:**
+- **Commit:** docs only, in `projects/release-460/`:
+  - `reviews/`, `upstream.md`;
+  - README, `branches.md` header, W8 43–44, this log, `NEXT_SESSION_PROMPT.md`.
+- **Tests:** the last code tested is the pushed #241 head `b287abe6`: 773/773, `NonAsciiPathTest`
+  13/13, console tests 12/13 (W8 3 only), GUI end-to-end passed. Only docs changed after that.
+- **`itksnap` pointer:** unchanged (`d02236c3`). `MERGE_ORDER.md` was not touched; its Status still
+  reads "Needs attention: nothing".
+- **Loose end, not ours:** another session's `bug/remote-cache-test-datadir` @ `6ff7a582` (W8 3 fix) is
+  a local branch on the Windows box only. It is unpushed and not in `MERGE_ORDER.md`. See
+  NEXT_SESSION_PROMPT, loose end 1.
+- **SPRINT_PLAN:** nothing ticked.
+
+**Left on the Windows box (untracked):**
+- worktrees `C:\dev\snapwt\pr241` (detached `a3bc912c`, staging + #241) and `C:\dev\snapwt\pr241-pure`
+  (`pr/241-update`);
+- builds `C:\dev\snapwt\build-pr241` (with `*-noutf8.exe` test copies) and `build-pr241-pure`;
+- local refs `pr/241`, `pr/241-update`;
+- the other session's worktree `C:\dev\snapwt\rc` and `build-rc`.
