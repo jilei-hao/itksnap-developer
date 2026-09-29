@@ -5,6 +5,7 @@
 | Reviewed | 2026-09-29, on macOS arm64 (Apple Clang, Homebrew Qt 6.9.3, ITK 5.4, VTK 9.5.2) |
 | Base | `upstream/master` @ `52ee94fa`. #251–#255 are cut from it. #243 is cut from `679ba76a`, so it was merged onto `52ee94fa` locally for testing (clean) |
 | Method | An independent review agent read each PR (read-only), judging it against the linked issue before reading the PR text. I then built each PR, ran its test, and **undid the fix on purpose to see whether the test fails**. Each claim is marked **measured** (I ran it), **read** (I checked the code) or **agent** (the agent's reading, not re-checked) |
+| Meeting page | https://claude.ai/artifact/KjsGnpqcBdf2P1G2RyGbCs (private). A rendered copy of this file as of 2026-09-29; this file stays the source of truth |
 | Status | **Nothing is posted to GitHub.** The draft comment in each section needs Jilei's OK. Merges happen only at the planning meeting |
 | On GitHub | All six were assigned to Jilei on 2026-09-25, and none has a milestone. CI has not run on any of them: each waits for a maintainer's "Approve and run", and would be red anyway (#259) |
 | Scratch | Worktree `worktrees/pr-review` (detached; local merge commits only) and build `build-pr-review`. Probe programs are in the session scratchpad; none is committed anywhere |
