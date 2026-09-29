@@ -21,7 +21,7 @@ The script reads this block: keep one branch per line, as `branch  verified-at  
 ```text
 # branch                    verified-at  why this position
 bug/linux-gcc-build         fb65f2b9     smallest; no behavior change; the VTK-floor commit can be dropped on its own
-bug/remote-cache-test-datadir  -         test only, one file (W8 3); fixes RemoteImageLoadTest_Cache on Windows/Linux and keeps ctest out of the real profile
+bug/remote-cache-test-datadir  6ff7a582  test only, one file (W8 3); fixes RemoteImageLoadTest_Cache on Windows/Linux and keeps ctest out of the real profile
 bug/rf-layer-crashes        9e80001f     crash fixes + the test that catches them; indivisible; must precede harness-false-green
 test/harness-false-green    83c44f62     after rf-layer-crashes (constraint below)
 test/seg-anchor-4d          0b671e86     tests only (seg_anchor with 4D data); passes on upstream as is
@@ -59,35 +59,28 @@ backticked branch names.
 
 ## Status
 
-> ⚠️ **Stale since 2026-09-28. Delete this note once Status is regenerated.** The ninth branch,
-> `bug/remote-cache-test-datadir`, was added to Queue on the Windows box, which has no Python, so
-> `scripts/merge_order_status.py` could not run there. On the Mac, `git fetch origin` fires the hook;
-> otherwise run the script by hand. Expect ⚠️ for three things:
-> - the new branch is unverified (`verified-at` is `-`);
-> - `staging/v460` lacks it: rebuilding staging needs a force-push, which is Jilei's call;
-> - the pair count goes from 28 to 36. All 8 new pairs merge cleanly (`git merge-tree`, 2026-09-28).
-
 <!-- AUTO:BEGIN -->
-_Generated 2026-09-24 15:59 EDT by `scripts/merge_order_status.py` — do not edit by hand._
+_Generated 2026-09-28 15:26 EDT by `scripts/merge_order_status.py` — do not edit by hand._
 
 `upstream/master` = `52ee94fa` (2026-09-03).
 
 | # | Branch | Tip | Ahead | Base | On `origin` | Verified | Why this position |
 |---:|---|---|---:|---|---|---|---|
 | 1 | `bug/linux-gcc-build` | `fb65f2b9` | 2 | current | ✅ in sync | ✅ `fb65f2b9` | smallest; no behavior change; the VTK-floor commit can be dropped on its own |
-| 2 | `bug/rf-layer-crashes` | `9e80001f` | 4 | current | ✅ in sync | ✅ `9e80001f` | crash fixes + the test that catches them; indivisible; must precede harness-false-green |
-| 3 | `test/harness-false-green` | `83c44f62` | 1 | current | ✅ in sync | ✅ `83c44f62` | after rf-layer-crashes (constraint below) |
-| 4 | `test/seg-anchor-4d` | `0b671e86` | 1 | current | ✅ in sync | ✅ `0b671e86` | tests only (seg_anchor with 4D data); passes on upstream as is |
-| 5 | `bug/full-extent-off-by-one` | `6a72f6a1` | 1 | current | ✅ in sync | ✅ `6a72f6a1` | small fix in Paul's seg_anchor code, with its test |
-| 6 | `bug/seg3d-into-4d-check` | `635bd1ac` | 1 | current | ✅ in sync | ✅ `635bd1ac` | small fix in Paul's seg_anchor code, with its test |
-| 7 | `feature/cardiac-io` | `2fc0d9b8` | 12 | current | ✅ in sync | ✅ `2fc0d9b8` | largest; add the %R-R round-trip test before the PR |
-| 8 | `test/harness-gui-thread` | `8a28d50c` | 1 | current | ✅ in sync | ✅ `8a28d50c` | last: discuss with Paul first, it competes with upstream dbf8e79f |
+| 2 | `bug/remote-cache-test-datadir` | `6ff7a582` | 1 | current | ✅ in sync | ✅ `6ff7a582` | test only, one file (W8 3); fixes RemoteImageLoadTest_Cache on Windows/Linux and keeps ctest out of the real profile |
+| 3 | `bug/rf-layer-crashes` | `9e80001f` | 4 | current | ✅ in sync | ✅ `9e80001f` | crash fixes + the test that catches them; indivisible; must precede harness-false-green |
+| 4 | `test/harness-false-green` | `83c44f62` | 1 | current | ✅ in sync | ✅ `83c44f62` | after rf-layer-crashes (constraint below) |
+| 5 | `test/seg-anchor-4d` | `0b671e86` | 1 | current | ✅ in sync | ✅ `0b671e86` | tests only (seg_anchor with 4D data); passes on upstream as is |
+| 6 | `bug/full-extent-off-by-one` | `6a72f6a1` | 1 | current | ✅ in sync | ✅ `6a72f6a1` | small fix in Paul's seg_anchor code, with its test |
+| 7 | `bug/seg3d-into-4d-check` | `635bd1ac` | 1 | current | ✅ in sync | ✅ `635bd1ac` | small fix in Paul's seg_anchor code, with its test |
+| 8 | `feature/cardiac-io` | `2fc0d9b8` | 12 | current | ✅ in sync | ✅ `2fc0d9b8` | largest; add the %R-R round-trip test before the PR |
+| 9 | `test/harness-gui-thread` | `8a28d50c` | 1 | current | ✅ in sync | ✅ `8a28d50c` | last: discuss with Paul first, it competes with upstream dbf8e79f |
 
-**Pairwise merges:** all 28 pairs merge cleanly.
+**Pairwise merges:** all 36 pairs merge cleanly.
 **Ordering constraints:** queue order satisfies 1 of 1.
-**`staging/v460`** (`d02236c3`): contains `upstream/master` and every queue tip, and nothing else. ✅
+**`staging/v460`** (`d02236c3`): ⚠️ rebuild — missing `bug/remote-cache-test-datadir` (SPRINT_PLAN §7).
 
-**Needs attention:** nothing.
+**Needs attention:** `staging/v460` needs a rebuild.
 <!-- AUTO:END -->
 
 ---

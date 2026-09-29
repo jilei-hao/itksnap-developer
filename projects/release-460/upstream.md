@@ -21,28 +21,23 @@ workstation**, since the Windows box has no `gh`. Run the commands from the wrap
 
 ## Pending actions
 
-Do these in order. Actions 1–2 come first so that action 3 can cite their numbers.
+Actions 1–3 are done; 4–5 wait for the planning meeting.
 
-1. **Create the Windows missing-file issue**, then put its number in the Issues table below and in
-   W8 44.
-   ```bash
-   gh issue create -R pyushkevich/itksnap \
-     --title "Windows: ITK-SNAP closes silently when a file given on the command line does not exist" \
-     --body-file projects/release-460/reviews/issue-windows-missing-file.md
-   ```
-2. **Create the CI issue.** Optionally check first, in the Actions log of a fork PR (#241 or #244),
-   that `ExperimentalUpdate` fails in `git fetch`. If it does, delete "and this still needs confirming
-   from a log" from section 1 of the draft.
-   ```bash
-   gh issue create -R pyushkevich/itksnap \
-     --title "CI: pull requests from forks always fail, and failing tests never fail a run" \
-     --body-file projects/release-460/reviews/issue-ci-fork-prs.md
-   ```
-3. **Comment on #241.** Optionally add the two new issue numbers to the last paragraph of the
-   comment first, after "we'll look at them separately" and "we'll fix it on our side".
-   ```bash
-   gh pr comment 241 -R pyushkevich/itksnap --body-file projects/release-460/reviews/pr-241-comment.md
-   ```
+1. ✅ **Done 2026-09-28:** the Windows missing-file issue is [#257](https://github.com/pyushkevich/itksnap/issues/257).
+2. ✅ **Done 2026-09-29:** the CI issue is [#259](https://github.com/pyushkevich/itksnap/issues/259). Before
+   filing, the draft was corrected against the Actions logs:
+   - **every** PR fails, not only fork PRs (#247, from `seg_anchor`, fails the same way), so the title
+     changed;
+   - the `git fetch` failure comes from a greedy submodule pin (`a88a4f3e`, set by `7ee09def`) that
+     no longer exists in pyushkevich/greedy;
+   - on macOS the same fetch fails, but `ctest` exits 0 there, so the build still runs;
+   - the green `master` build had 3 failing tests, and the `Remote` test label offers a way to gate
+     without the flaky tests (`-LE Remote`).
+3. ✅ **Done 2026-09-28** (03:49 UTC, as `jilei-hao`, before actions 1–2, so it cites no issue
+   numbers). The posted text is an edited version of
+   [reviews/pr-241-comment.md](reviews/pr-241-comment.md); GitHub holds the final wording. Marco
+   replied the same day: he agrees the guard removal is the real fix and the manifest's value is UTF-8
+   `argv`, and invites us to **update the PR title and description when merging** (action 4).
 4. **Merge #241 at the planning meeting, in person.** Every PR merge happens there, and never through
    `gh` or a script. Bring [reviews/pr-241.md](reviews/pr-241.md) §7 as the evidence, since CI is red
    for the reasons in action 2.
@@ -56,14 +51,15 @@ Do these in order. Actions 1–2 come first so that action 3 can cite their numb
 
 | Issue | Title | State | Tracks | Body | Next |
 |---|---|---|---|---|---|
-| _not yet created_ | Windows: ITK-SNAP closes silently when a file given on the command line does not exist | draft, 2026-09-28 | W8 44 | [reviews/issue-windows-missing-file.md](reviews/issue-windows-missing-file.md) | Action 1. Then fix it on a new topic branch off `upstream/master`, with a PR that says "Fixes #N". |
-| _not yet created_ | CI: pull requests from forks always fail, and failing tests never fail a run | draft, 2026-09-28 | upstream only | [reviews/issue-ci-fork-prs.md](reviews/issue-ci-fork-prs.md) | Action 2. Its item 4 (gating on tests) is Paul's decision. |
+| [#257](https://github.com/pyushkevich/itksnap/issues/257) | Windows: ITK-SNAP closes silently when a file given on the command line does not exist | open, filed 2026-09-28 | W8 44 | [reviews/issue-windows-missing-file.md](reviews/issue-windows-missing-file.md) | Fix it on a new topic branch off `upstream/master`, with a PR that says "Fixes #257". Verify on the Windows box. |
+| [#258](https://github.com/pyushkevich/itksnap/issues/258) | Tests: RemoteImageLoadTest_Cache fails on Windows and Linux, and the remote-image tests write into the real ITK-SNAP settings folder | open, filed 2026-09-28 | W8 3 | [reviews/issue-remote-cache-test.md](reviews/issue-remote-cache-test.md) | Fixed by `bug/remote-cache-test-datadir` (branches.md §9); its PR says "Fixes #258". Linux run still to do. |
+| [#259](https://github.com/pyushkevich/itksnap/issues/259) | CI: pull request builds always fail, and failing tests never fail a run | open, filed 2026-09-29 | upstream only | [reviews/issue-ci-fork-prs.md](reviews/issue-ci-fork-prs.md) | Paul's call, especially item 4 (gating on tests). Open question: why the second `git fetch` passes on `master`, and why `ctest` exits 0 on macOS after a failed Update. |
 
 ## Pull requests
 
 | PR | Title | Author | State | Local | Next |
 |---|---|---|---|---|---|
-| [#241](https://github.com/pyushkevich/itksnap/pull/241) | Support non-ASCII characters in Windows user names | marcoduering (outside) | open, milestone v4.6.0. Jilei's 4 commits pushed 2026-09-27; head `b287abe6` | review: [reviews/pr-241.md](reviews/pr-241.md); comment: [reviews/pr-241-comment.md](reviews/pr-241-comment.md) | Action 3 (comment). Merge at the planning meeting (action 4), then action 5. |
+| [#241](https://github.com/pyushkevich/itksnap/pull/241) | Support non-ASCII characters in Windows user names | marcoduering (outside) | open, milestone v4.6.0, mergeable. Jilei's 4 commits pushed 2026-09-27; head `b287abe6`. Our comment posted 2026-09-28; Marco agreed the same day | review: [reviews/pr-241.md](reviews/pr-241.md); comment: [reviews/pr-241-comment.md](reviews/pr-241-comment.md) (draft; posted text edited) | Merge at the planning meeting (action 4), retitling and rewriting the description as Marco invited; then action 5. |
 | [#244](https://github.com/pyushkevich/itksnap/pull/244) | DOC: Add contributing, governance, code of conduct, and developer guide | jilei-hao | merged | W2 | — |
 
 Our nine topic branches ([branches.md](branches.md)) have **no PRs yet**: Paul's go-ahead comes

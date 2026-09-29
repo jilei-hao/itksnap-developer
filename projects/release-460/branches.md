@@ -30,7 +30,7 @@ Each branch section has two parts:
 | 6 | `test/seg-anchor-4d` | `0b671e86` | 1 | seg_anchor 4D goal | ✅ builds, 37/38: only the remote flake. The four new tests pass (SegAnchor4DSwitching 72 s, Load3D 54 s, Mesh 44 s, Workspace 0.8 s) |
 | 7 | `bug/full-extent-off-by-one` | `6a72f6a1` | 1 | W8 · 36 | ✅ builds, 34/35: only the remote flake. `FullExtentRegion` passes; `SegmentationSwitching` and `MeshWorkspace` unaffected |
 | 8 | `bug/seg3d-into-4d-check` | `635bd1ac` | 1 | W8 · 37 | ✅ builds, 34/35: only the remote flake. `Seg3DInto4D` passes |
-| 9 | `bug/remote-cache-test-datadir` | `6ff7a582` | 1 | W8 · 3 | ⏳ **not run standalone yet.** Windows, merged into staging (local `22b009e0`): **41/41**, including `RemoteImageLoadTest_Cache` (2026-09-25) |
+| 9 | `bug/remote-cache-test-datadir` | `6ff7a582` | 1 | W8 · 3 · [#258](https://github.com/pyushkevich/itksnap/issues/258) | ✅ builds, 33/34 on macOS: only `RemoteImageLoadTest_SingleImage` (remote flake, passed on rerun). `_Cache` passes; real profile unchanged. Windows staging + branch (local `22b009e0`): 41/41. **Linux ⏳** |
 
 **All eight merged (`staging/v460` @ `d02236c3`): 40/41**, failing only
 `RemoteImageLoadTest_WorkspaceWithMesh` (remote flake).
@@ -505,9 +505,13 @@ into the developer's real ITK-SNAP settings.
 - Before clearing a cache, the test checks that the folder really is inside `.itksnap_test`. If a
   future change broke the redirect, the test would fail instead of deleting someone's real cache.
 
+Fixes #258.
+
 **Testing:** on Windows, the full test suite together with the other 4.6 branches passes 41/41,
-including `RemoteImageLoadTest_Cache`, which failed on every run before. _Standalone, Linux and macOS
-runs are still to come; update this line when they are done._
+including `RemoteImageLoadTest_Cache`, which failed on every run before. On macOS, this branch on its
+own passes the full test suite; the only failures were single runs of the other two remote-image
+tests, which also fail now and then without this change. ITK-SNAP's real settings folder is left
+untouched on both. _Linux is still to come; update this line when it is done._
 
 ### Review notes (planning meeting)
 
@@ -519,12 +523,19 @@ runs are still to come; update this line when they are done._
   - The local merge `22b009e0` (`d02236c3` + this branch) ran **41/41** on Windows (13.4 min, with
     `APPDATA` pointed at a scratch folder). Before the fix, `_Cache` failed on 5 of 5 runs (W8 3).
   - The authoring session reported the real profile unchanged: 170 entries before and after.
-- **Not yet verified:**
-  - a standalone run (`upstream/master` + this branch, full `ctest`);
-  - Linux, which is the other platform it fixes;
-  - macOS, where it must keep passing. There the redirect goes through `$HOME`, so check that
-    nothing else in the test run depends on `$HOME`.
-  - `verified-at` in `MERGE_ORDER.md` stays `-` until these are done.
+  - **macOS standalone, 2026-09-28** (`upstream/master` @ `52ee94fa` + this branch; worktree
+    `worktrees/remote-cache-test-datadir`, build `build-remote-cache-test-datadir`): 770/770, 0
+    errors, no warnings from the changed file. Full `ctest` **33/34**, only
+    `RemoteImageLoadTest_SingleImage` failing (output not captured; passed on rerun). That is the
+    rotating remote flake the upstream-based runs of 2026-09-24 also showed. A separate run of the three remote
+    tests failed `_WorkspaceWithMesh` once on the p25 quantile (W8 3b), then passed 3 of 3.
+    `_Cache` output shows the clear, the download and the 304 conditional GET, with everything
+    under `<build>/.itksnap_test`. `~/Library/Application Support/itksnap.org/ITK-SNAP` was
+    byte-for-byte unchanged (2881 entries, sizes and mtimes). So the `$HOME` redirect breaks
+    nothing on macOS. `verified-at` set to `6ff7a582`.
+- **Not yet verified: Linux**, the other platform it fixes. Recipe in NEXT_SESSION_PROMPT, "The
+  ninth branch". It is blocked on W8 42 (Qt ≥ 6.9.3), unless the floor is relaxed locally for a
+  test-only build.
 - **Merges:** clean with all eight branches and with PR #241 (`git merge-tree`, 2026-09-28).
 - **Interaction with #241:** compatible. On Windows the redirect relies on `GetApplicationDataDirectory()`
   reading `%APPDATA%` through `GetEnvironmentVariableW`, and #241 keeps that. If that function ever

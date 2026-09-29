@@ -1209,3 +1209,100 @@ Its `88def486` merged master before seg_anchor #247–#249.
   the test of #241 against current master.
 - The missing-file crash reproduces in both trees. `main.cxx` differs between `a86e42da` and `master`
   only by two `OpenProject` → `OpenWorkspace` renames.
+
+## 2026-09-28 → 29 (Mac) — Synced from the Windows box; three upstream issues filed; ninth branch verified on macOS
+
+**Goals (Jilei's, in order):**
+- pull the Windows box's work and update the status;
+- file the upstream issues;
+- test the ninth branch on the Mac, and record the Linux test for later;
+- explain the CI issue, then correct and file it.
+
+**Sync.** The wrapper fast-forwarded to `94f0187` (3 commits from the Windows box: docs and
+`scripts/windows/`). The `itksnap` pointer is unchanged at `d02236c3`, and `upstream/master` is still
+`52ee94fa`.
+- `bug/remote-cache-test-datadir` had no local branch on the Mac, so Status showed it as "missing". I
+  created it from `origin`, with tracking.
+- `MERGE_ORDER.md` Status regenerated through the hook. All 36 pairs merge cleanly. The "Stale since
+  2026-09-28" note is deleted.
+
+**GitHub** (details in `upstream.md`):
+- **The #241 comment was already posted**, by Jilei on 2026-09-28 at 03:49 UTC, as an edited version of
+  the draft. Marco agreed the same day, and invited us to retitle the PR and rewrite its description
+  at merge time.
+- **#257** (W8 44, Windows missing-file exit) is filed from the draft as it was.
+- **#258** (W8 3, the ninth branch's bug) is filed from the new draft `reviews/issue-remote-cache-test.md`.
+  The branch's PR description now says "Fixes #258".
+- **#259** (CI) is filed after two rounds of correction (next point).
+- **Not tracked yet:** PRs #251–#255 (aycibatuhan, five `BUG:` fixes, opened 2026-09-13) and issue #256
+  (Windows decimal comma breaks NRRD loading, with a proposed one-line fix in `main.cxx`). The CI runs
+  for #251–#255 and for #241's newest head `b287abe6` are waiting for a maintainer to click "Approve and
+  run".
+
+**The CI draft was wrong, and the logs changed it.** I read the Actions logs of #241 (run
+`32708806495`, Ubuntu, Windows and macOS jobs) and of the green manual `master` build `33828015849`.
+- **Every PR fails, not only fork PRs.** Paul's same-repository #247 (`seg_anchor`) fails at the same
+  steps. The old claim "the push builds of master are green" was also wrong: the push build of
+  `52ee94fa` was cancelled, and the green one is a manual run. The title changed.
+- **Root cause of the `git fetch` failure: a dead submodule pointer.** `7ee09def` (Paul, 2025-03-18)
+  pins greedy to `a88a4f3e`, a commit that does not exist in pyushkevich/greedy. `1ac1ecb6` moved the
+  pin on the next day, but the old commit stays in history.
+  - A fresh `git fetch` fetches submodule commits "on demand", so it asks greedy for `a88a4f3e` and gets
+    `not our ref`.
+  - `master` hits this in `Post-checkout fetch` too; that step's comment already calls it "some bizarre
+    git error with greedy submodule".
+- **The second fetch (inside `ExperimentalUpdate`) behaves differently by case, and I don't know why:**
+  - `master`, Ubuntu: it passes;
+  - PRs, Ubuntu and Windows: it fails, `ctest` exits 1, `bash -e` stops the script, nothing is built,
+    and 0/34 tests pass;
+  - PRs, macOS: it fails too, but `ctest` exits 0, so the build and tests run (33/34). The job then
+    fails only at `Cleanup secrets`.
+  - The only checkout difference I found: `master` checks out onto a branch (`checkout -B master`), and
+    PRs onto a bare commit. Not tested. None of the proposed fixes depends on the answer.
+- **The green `master` run had 3 failing tests** (all three `RemoteImageLoadTest_*`, test step exit 8).
+  So `ctest` already exits non-zero on test failure, and the Gatekeeper just never looks at it.
+- **The remote tests already carry the CTest label `Remote`** (`CMakeLists.txt:1460`, "so CI can skip
+  them easily"). #259 item 4 now suggests gating with `-LE Remote`.
+
+**Ninth branch verified standalone on macOS** (`6ff7a582` = `upstream/master` `52ee94fa` + 1 commit):
+- worktree `worktrees/remote-cache-test-datadir`, build `build-remote-cache-test-datadir`; 770/770, 0
+  errors, no warnings from the changed file;
+- full `ctest` **33/34**, only `RemoteImageLoadTest_SingleImage` failing, once. Its output was not
+  captured, and it passed on rerun. `RandomForestBailOut` (0.9 s) and `4DContinuousRenderingD` (1.0 s)
+  are upstream's two known false passes;
+- a separate run of the three remote tests failed `_WorkspaceWithMesh` once on the p25 quantile (W8 3b),
+  then passed 3 of 3;
+- `_Cache` run verbosely: it clears the cache, downloads, then gets a 304 on the second fetch, all under
+  `<build>/.itksnap_test`;
+- `~/Library/Application Support/itksnap.org/ITK-SNAP` byte-for-byte unchanged (2881 entries, sizes
+  and mtimes), so the `$HOME` redirect breaks nothing on macOS;
+- `verified-at` set to `6ff7a582`. Status: **"Needs attention: `staging/v460` needs a rebuild"**, which
+  is a force-push and therefore Jilei's.
+
+**Linux run recorded, not done.** The recipe is in NEXT_SESSION_PROMPT. It is blocked by W8 42 (Qt ≥
+6.9.3) unless the Qt floor is lowered locally for a test-only build of `remote_image_load_test`.
+
+**Decisions:**
+- "Create a GitHub issue for it" was read as the ninth branch's bug. Jilei approved the CI issue
+  separately, after the explanation.
+- `verified-at` is set on the macOS standalone run, as for the other eight branches. Linux is extra
+  evidence and is tracked in `branches.md` §9.
+
+**Traps found:**
+- **In the Actions API, a `continue-on-error` step always reports `conclusion: success`.** Only
+  `outcome`, which the Gatekeeper reads, shows the failure.
+- **zsh expands a bare `====` as `=cmd`**, which aborts the command. Quote separators.
+- **`ctest` runs longer than the Bash tool's 10-minute limit.** Split it with `ctest -I 1,22` and
+  `-I 23,34`.
+
+**Checkpoint:**
+- **Tests:** the only code touched is `6ff7a582`, tested above (33/34, the remote flake only). This
+  session changed no code after that, so nothing was re-run.
+- **Commit:** docs only, in `projects/release-460/`. The `itksnap` pointer is unchanged. The
+  `itksnap-dls` pointer drift is another session's and is left alone.
+- **SPRINT_PLAN:** nothing ticked. No workstream or release-engineering item finished.
+
+**Left on disk (untracked):**
+- worktree `worktrees/remote-cache-test-datadir` and build `build-remote-cache-test-datadir`;
+- logs `build-remote-cache-test-datadir.*.log` (gitignored);
+- local refs `pr/241` (fetched from `upstream pull/241/head`) and `bug/remote-cache-test-datadir`.
