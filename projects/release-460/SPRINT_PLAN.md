@@ -37,7 +37,7 @@ when the demo needs release code. Do not merge it, and do not merge `itksnap-mcp
 
 ---
 
-## 2. State of the tree — verified 2026-09-24
+## 2. State of the tree — verified 2026-09-29
 
 > Re-verify with §7 and update in place. This is the one section that changes without being a
 > re-plan; the numbers are observations, not commitments.
@@ -45,12 +45,18 @@ when the demo needs release code. Do not merge it, and do not merge `itksnap-mcp
 ### Branch model (from 2026-09-24)
 
 ```
-upstream/master (52ee94fa) ──┬── feature/cardiac-io        ─┐
-                             ├── bug/linux-gcc-build        │
-                             ├── bug/rf-layer-crashes       ├─ merge --no-ff each ─► staging/v460  (testing only)
-                             ├── test/harness-false-green   │
-                             └── test/harness-gui-thread   ─┘
+upstream/master (52ee94fa) ──┬── bug/linux-gcc-build            ─┐
+                             ├── bug/remote-cache-test-datadir   │
+                             ├── bug/rf-layer-crashes            │
+                             ├── test/harness-false-green        │
+                             ├── test/seg-anchor-4d              ├─ merge --no-ff each ─► staging/v460  (testing only)
+                             ├── bug/full-extent-off-by-one      │
+                             ├── bug/seg3d-into-4d-check         │
+                             ├── feature/cardiac-io              │
+                             └── test/harness-gui-thread        ─┘
 ```
+
+Listed in MERGE_ORDER.md queue order.
 
 - **Every piece of work lives on its own topic branch off `upstream/master`**, named with the
   repo's existing prefixes: `feature/`, `bug/`, `test/`. One branch = one PR = one decision in the
@@ -70,20 +76,27 @@ upstream/master (52ee94fa) ──┬── feature/cardiac-io        ─┐
 |---|---|
 | Branch | `staging/v460` (itksnap) |
 | Base | `upstream/master` @ `52ee94fa` (26 commits past the July base `679ba76a`) |
-| Local | `62588ffc` = `upstream/master` + five topic merges. **Tree byte-identical** to the pre-split tip `archive/staging-v460-0904` (`6f5ae27c`) |
-| Remote | **Pushed 2026-09-24** — `origin/staging/v460` = `62588ffc` (force-pushed with a lease from `038fa32b`) |
+| Local | **`dc2ad59a`** = `upstream/master` + all **nine** topic merges, rebuilt 2026-09-29 (with `feature/cardiac-io` at `ffb95b5e`). macOS `ctest` **41/42**, only the p25 remote flake. The eight-branch tip `d02236c3` is tag `archive/staging-v460-0929`; the five-branch tip `62588ffc` is `archive/staging-v460-0924` |
+| Remote | **Pushed 2026-09-29** by Jilei (the session's permission guard blocks force-pushes): `origin/staging/v460` = `dc2ad59a`, in sync |
 
 ### itksnap — topic branches (the review queue)
 
 Full detail, evidence and discussion points per branch: **[branches.md](branches.md)**. Merge order,
 constraints and live state: **[MERGE_ORDER.md](MERGE_ORDER.md)**.
 
+All nine are based on `52ee94fa`, pushed and in sync with `origin`, and verified standalone on macOS.
+None has a PR yet. In MERGE_ORDER.md queue order:
+
 | Branch | Ahead | Content | Pushed |
 |---|---:|---|---|
-| `feature/cardiac-io` | 12 | 4D cardiac CTA + echo phase/metadata I/O (W1 D1). Rebased onto `52ee94fa`; old tip `archive/feature-cardiac-io-pre-rebase` | yes (forced) |
 | `bug/linux-gcc-build` | 2 | GCC portability + VTK floor 9.5.2 (W1 D2, Q2) | yes |
+| `bug/remote-cache-test-datadir` | 1 | `RemoteImageLoadTest_Cache` fixed on Windows/Linux; ctest kept out of the real profile (W8 3, #258). **Not in staging yet; Linux run to do** | yes |
 | `bug/rf-layer-crashes` | 4 | RF-cancel and layer-teardown crashes + the test that catches them (W8 14, 15, 15d, 24) | yes |
 | `test/harness-false-green` | 1 | missing GUI-test script reported Passed; `GUI_TESTS` typo (W8 1, 13) | yes |
+| `test/seg-anchor-4d` | 1 | four tests of seg_anchor with 4D data | yes |
+| `bug/full-extent-off-by-one` | 1 | full-extent region one voxel low (W8 36) — Paul's seg_anchor code | yes |
+| `bug/seg3d-into-4d-check` | 1 | 3D seg into a mismatched 4D seg: clear error (W8 37) — Paul's seg_anchor code | yes |
+| `feature/cardiac-io` | 12 | 4D cardiac CTA + echo phase/metadata I/O (W1 D1). Rebased onto `52ee94fa`; old tip `archive/feature-cardiac-io-pre-rebase`. **No round-trip test yet** | yes (forced) |
 | `test/harness-gui-thread` | 1 | `TestObjectProxy` on top of upstream `dbf8e79f` (W8 17, 25) — **discuss with Paul first** | yes |
 
 ### itksnap — other branches
@@ -128,9 +141,9 @@ upstream/master (679ba76a)
 
 | Repo | Wrapper tracks | Head | Needed for | State |
 |---|---|---|---|---|
-| **itksnap-dls** | `feature/agentic-api` | `bbaac51` | W4, W5 | ⚠️ 4-branch tangle; the refactor is **already written** — [dls-refactor.md](workstreams/dls-refactor.md). Checkout currently on `developer-doc` @ `76f609f` (W2 docs, already in `origin/main`), so the wrapper shows the pointer as modified — uncommitted |
-| **segflow4d** | `main` | `ed143db` | W5 | Integrated into itksnap-dls at `7ecf586`; 4 unmerged side branches to triage |
-| **convert-mesh** (`cmesh`) | `main` | `45482ca` | W7 | Reorganized under `src/cmesh/`; **no release tag**; not yet an itksnap submodule |
+| **itksnap-dls** | `feature/agentic-api` | `bbaac51` | W4, W5 | ⚠️ 4-branch tangle; the refactor is **already written** — [dls-refactor.md](workstreams/dls-refactor.md). Checkout currently on `developer-doc` @ `76f609f` (W2 docs, already in `origin/main` = `5371ade`, PR #6), so the wrapper shows the pointer as modified — uncommitted. Unchanged on 2026-09-29 |
+| **segflow4d** | `main` | `ed143db` | W5 | Integrated into itksnap-dls at `7ecf586`. **`origin/main` is 12 commits ahead** (`6c93cdb`, 2026-07-28: ROI crop #21, mesh-warp aliasing fix #20, low-res clamp #18); the wrapper pointer and checkout still sit at `ed143db`. Side branches `prototype/sasd-high-res` + the merged PR branches remain |
+| **convert-mesh** (`cmesh`) | `main` | `45482ca` | W7 | Reorganized under `src/cmesh/`; **no release tag**; not yet an itksnap submodule. No new commits since 2026-06-25 |
 | **itksnap-mcp** | `main` | `1228618` | — | Agentic-API only; **not in 4.6.0** |
 | **greedy_python** / **cmrep** / **FireANTs** | — | — | — | Not in scope |
 
@@ -153,11 +166,11 @@ works on is Jilei's call (rule 2 at the top).
 | ☐ **W5** | [Propagation UI](workstreams/propagation-ui.md) | none yet | W3 | Not started |
 | ☐ **W6** | [Free-rotation 2D/3D sync](workstreams/free-rotation-sync.md) — [#229](https://github.com/pyushkevich/itksnap/issues/229) | none yet | — | Not started — this is a **bug** |
 | ☐ **W7** | [cmesh integration](workstreams/cmesh-integration.md) — tag, submodule, refactor `Logic/Mesh/` | `convert-mesh:main` | cmesh tag | Library exists; itksnap side not started |
-| ☐ **W8** | [Bugfixes & small improvements](workstreams/bugfixes.md) | `bug/rf-layer-crashes`, `test/harness-false-green`, `test/harness-gui-thread`; one new branch per future fix | — | Rolling — 3 branches ready for review; open items in the workstream file |
+| ☐ **W8** | [Bugfixes & small improvements](workstreams/bugfixes.md) | `bug/rf-layer-crashes`, `test/harness-false-green`, `test/harness-gui-thread`; one new branch per future fix | — | Rolling — 7 branches ready for review (the 3 above + `test/seg-anchor-4d`, `bug/full-extent-off-by-one`, `bug/seg3d-into-4d-check`, `bug/remote-cache-test-datadir`); open items in the workstream file |
 
 ### Release engineering
 
-- [x] `staging/v460` created and pushed (2026-07-30). **Rebuilt 2026-09-24 as a testing-only branch** (§2); not yet re-pushed
+- [x] `staging/v460` created and pushed (2026-07-30). **Rebuilt 2026-09-24 as a testing-only branch** (§2); last pushed 2026-09-25 with eight branches
 - [ ] Version bumped from `4.6.0-alpha.1` to a beta, then to `4.6.0`
 - [x] **VTK floor decided** — raised to **9.5.2** (`7cc60053`), matching upstream CI. **Both build
       paths upgraded and verified 2026-07-31**: macOS arm64 (31/33) and Linux/GCC (30/33), each
@@ -340,7 +353,9 @@ Run from `itksnap/`. Tag the old tip first so nothing is lost. The branch list i
 
 ```bash
 git tag -a archive/staging-v460-$(date +%m%d) staging/v460 -m "staging/v460 before rebuild"
-T=(feature/cardiac-io bug/linux-gcc-build bug/rf-layer-crashes test/harness-false-green test/harness-gui-thread)
+T=(bug/linux-gcc-build bug/remote-cache-test-datadir bug/rf-layer-crashes test/harness-false-green
+   test/seg-anchor-4d bug/full-extent-off-by-one bug/seg3d-into-4d-check feature/cardiac-io
+   test/harness-gui-thread)   # MERGE_ORDER queue order
 for b in $T; do git rebase upstream/master $b; done          # only if upstream moved
 for a in $T; do for b in $T; do [[ $a < $b ]] &&             # every pair must merge alone
   { git merge-tree --write-tree $a $b >/dev/null || echo "CONFLICT $a + $b"; }; done; done

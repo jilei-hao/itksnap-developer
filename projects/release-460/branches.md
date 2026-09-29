@@ -1,7 +1,7 @@
 # Topic branches — the upstream review queue
 
-**Snapshot:** 2026-09-24 · **Base for every branch:** `upstream/master` @ `52ee94fa` · **Pushed:** all eight
-branches, plus `staging/v460` @ `d02236c3` (2026-09-25), to `jilei-hao/itksnap`. **Merge order and live branch
+**Snapshot:** 2026-09-29 · **Base for every branch:** `upstream/master` @ `52ee94fa` · **Pushed:** all nine
+branches, plus `staging/v460` @ `dc2ad59a` (2026-09-29), to `jilei-hao/itksnap`. **Merge order and live branch
 state:** [MERGE_ORDER.md](MERGE_ORDER.md). · **Upstream issues and PRs:** [upstream.md](upstream.md). · **Meeting page (private):**
 https://claude.ai/artifact/QyivAN8NiDzadZ7hPKn6ut — a rendered copy of this file as of 2026-09-24; this file stays the
 source of truth.
@@ -22,7 +22,7 @@ Each branch section has two parts:
 
 | # | Branch | Tip | Commits | From | Standalone on macOS, 2026-09-24 |
 |---|---|---|---:|---|---|
-| 1 | `feature/cardiac-io` | `2fc0d9b8` | 12 | W1 · D1 | ✅ builds, **34/34** |
+| 1 | `feature/cardiac-io` | `ffb95b5e` | 13 | W1 · D1 | ✅ builds, **34/35** on 2026-09-29, with the new `CardiacFrameAxis` test. Only the remote flake failed (W8 3b) |
 | 2 | `bug/linux-gcc-build` | `fb65f2b9` | 2 | W1 · D2, Q2 | ✅ builds, **34/34** |
 | 3 | `bug/rf-layer-crashes` | `9e80001f` | 4 | W8 · 14, 15, 15d, 24 | ✅ builds, 33/34: only the remote flake. `RandomForestBailOut` **really runs** (20.0 s) and passes |
 | 4 | `test/harness-false-green` | `83c44f62` | 1 | W8 · 1, 13 | ⚠️ builds, 32/34: a remote flake, plus `RandomForestBailOut` **"no such test"** — **needs #3 merged first** |
@@ -32,12 +32,16 @@ Each branch section has two parts:
 | 8 | `bug/seg3d-into-4d-check` | `635bd1ac` | 1 | W8 · 37 | ✅ builds, 34/35: only the remote flake. `Seg3DInto4D` passes |
 | 9 | `bug/remote-cache-test-datadir` | `6ff7a582` | 1 | W8 · 3 · [#258](https://github.com/pyushkevich/itksnap/issues/258) | ✅ builds, 33/34 on macOS: only `RemoteImageLoadTest_SingleImage` (remote flake, passed on rerun). `_Cache` passes; real profile unchanged. Windows staging + branch (local `22b009e0`): 41/41. **Linux ⏳** |
 
-**All eight merged (`staging/v460` @ `d02236c3`): 40/41**, failing only
-`RemoteImageLoadTest_WorkspaceWithMesh` (remote flake).
-- The seven new tests pass with everything merged.
-- The tests that other branches make real do run: `4DContinuousRendering` 37.7 s,
-  `RandomForestBailOut` 20.3 s, `HarnessThreadSafety` 1.7 s.
-- The previous five-branch staging (`62588ffc`, now tag `archive/staging-v460-0924`) ran 34/35.
+**All nine merged (local `staging/v460` @ `dc2ad59a`, rebuilt 2026-09-29): 41/42**, failing only
+`RemoteImageLoadTest_SingleImage` (the p25 quantile flake, W8 3b).
+- All eight new tests pass with everything merged, including `CardiacFrameAxis` (0.9 s).
+- The tests that other branches make real do run: `4DContinuousRendering` 38.1 s,
+  `RandomForestBailOut` 20.4 s, `HarnessThreadSafety` 2.1 s.
+- Its diff from the eight-branch tip (`d02236c3`, now tag `archive/staging-v460-0929`) is exactly
+  branch 9 plus the cardiac test commit: 4 files, +433/−12.
+- Pushed 2026-09-29 by Jilei: `origin/staging/v460` = `dc2ad59a`.
+- Earlier tips: eight branches, `d02236c3`, ran 40/41; five branches, `62588ffc`
+  (`archive/staging-v460-0924`), ran 34/35.
 
 **Baseline — `upstream/master` itself: 34/34, but two of those passes ran nothing.**
 `4DContinuousRenderingD` (0.91 s) and `RandomForestBailOut` (0.89 s) pass without executing. #4
@@ -47,17 +51,10 @@ Compare failure *sets*, not totals.
 
 **Merge order lives in [MERGE_ORDER.md](MERGE_ORDER.md)**, which keeps itself current whenever a
 branch moves. As of this snapshot:
-- all 28 pairs merge cleanly;
+- all 36 pairs of the nine branches merge cleanly;
 - #3 must come before #4, because #4 on its own fails upstream's never-registered
   `RandomForestBailOut`;
 - #3 cannot be split: its test registration alone SEGFAULTs.
-
-**Ninth branch, added 2026-09-28:** `bug/remote-cache-test-datadir` is **not in `staging/v460` yet**.
-Rebuilding staging to include it needs a force-push, which is Jilei's call. The local merge `22b009e0`
-(`d02236c3` + this branch) ran 41/41 on Windows. See §9 and [MERGE_ORDER.md](MERGE_ORDER.md).
-
-`staging/v460` = `upstream/master` + all eight. Its diff from the five-branch tip
-`archive/staging-v460-0924` is exactly the three new branches (14 files, +1208/−11).
 
 ---
 
@@ -97,8 +94,14 @@ being copied into exported files.
 - Exported files carry less DICOM information than before. This is intended, and worth a line in
   the release notes.
 
-**Testing:** checked end to end on a set of cardiac CT and echo studies, including the new Layer
-Inspector field. An automated save-and-reload test is still to be added before merging.
+**Testing:** a new automated test, `CardiacFrameAxis`, loads a 10-phase 4D CT and the echo test
+file, saves each as `.seq.nrrd` and as `.nii.gz` with its `.json` file (and the CT as `.nrrd`), and
+loads them again. Every time point must keep its phase or time and its own image data. The `.nrrd`
+copy must no longer contain the patient's name or ID. We made sure the test catches problems by
+breaking the code on purpose in seven ways; each one made it fail. Reading the phase from a real
+cardiac CT DICOM series is not covered by the test, because we have no shareable series to add. That
+part was checked by hand on a set of cardiac CT and echo studies, along with the new Layer Inspector
+field.
 
 ### Review notes (planning meeting)
 
@@ -114,9 +117,27 @@ The existing branch, rebased from `679ba76a` onto `52ee94fa` with no conflicts. 
 - **Evidence:** end-to-end headless against the AVRP cohort, and GUI field checked by hand
   (`projects/4dcta_improvement/`). Built clean with no warnings on macOS and Linux when merged into
   staging.
-- **Gap before a PR:** **no test in `Testing/` covers it.** The work was verified with a one-off
-  driver script, and a one-off script catches no regressions. W1's done-criteria asked for a
-  `.seq.nrrd` + `.nii.gz`/sidecar round-trip test that fails if the `%R-R` axis is dropped.
+- **Test (added 2026-09-29, `ffb95b5e`):** `CardiacFrameAxisTest`, ctest `CardiacFrameAxis`, a Logic
+  test that runs in about 0.3 s. This closes the gap W1's done-criteria named.
+  - **CT:** a synthetic 10-phase image (0–95 %, step 10.56, `Exact = 0`) with patient fields is
+    written by plain ITK as `.nrrd`. It is loaded through `IRISApplication`, and
+    `TimePointProperties` is checked. It is saved through `WriteToFile` as `.seq.nrrd`,
+    `.nii.gz` + sidecar and `.nrrd`, and each file is loaded again. The check covers values, the
+    exact flag and voxel values per frame, and the `.nrrd` must drop the name and ID and top-code
+    the age.
+  - **Echo:** `echo_cartesian_dummy.dcm` (30 frames, ms) through `.seq.nrrd` and `.nii.gz`.
+  - **It can fail:** seven deliberate breaks, and each one failed it:
+    - the `.seq.nrrd` axis dropped;
+    - the sidecar not written;
+    - the sidecar not read;
+    - frames reversed in the `.seq.nrrd` writer;
+    - the curation turned off;
+    - `TimePointProperties` ignoring the `%R-R`;
+    - the echo times dropped.
+  - **Not covered:** deriving the axis from a DICOM `SeriesDescription`, because we have no
+    shareable 4D CTA series.
+  - **Standalone macOS run, `ffb95b5e`: 34/35.** Only `RemoteImageLoadTest_SingleImage` failed,
+    the p25 quantile flake (W8 3b). It passed 4 of 6 reruns.
 - **For Paul:**
   - The export curation changes what metadata users get out; it belongs in the release notes.
   - `TimePointProperties` `FormatVersion` goes 1 → 3. That is **not** a compatibility break: no

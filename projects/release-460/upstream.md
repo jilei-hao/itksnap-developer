@@ -61,6 +61,16 @@ Actions 1–3 are done; 4–5 wait for the planning meeting.
 |---|---|---|---|---|---|
 | [#241](https://github.com/pyushkevich/itksnap/pull/241) | Support non-ASCII characters in Windows user names | marcoduering (outside) | open, milestone v4.6.0, mergeable. Jilei's 4 commits pushed 2026-09-27; head `b287abe6`. Our comment posted 2026-09-28; Marco agreed the same day | review: [reviews/pr-241.md](reviews/pr-241.md); comment: [reviews/pr-241-comment.md](reviews/pr-241-comment.md) (draft; posted text edited) | Merge at the planning meeting (action 4), retitling and rewriting the description as Marco invited; then action 5. |
 | [#244](https://github.com/pyushkevich/itksnap/pull/244) | DOC: Add contributing, governance, code of conduct, and developer guide | jilei-hao | merged | W2 | — |
+| [#243](https://github.com/pyushkevich/itksnap/pull/243) | Fix invalid orientation codes for oblique images (#69) | duchenhe (outside) | open, assigned to Jilei 2026-09-25; no CI run | [reviews/outside-prs-2026-09.md](reviews/outside-prs-2026-09.md) | Merge after one small change: keep the old code whenever it is valid (144 of 576 exact-45° matrices change). Draft comment ready; posting needs Jilei's OK |
+| [#251](https://github.com/pyushkevich/itksnap/pull/251) | BUG: Fix RLEImage::CleanUp() (#216) | aycibatuhan (outside) | open, assigned to Jilei; no CI run | same | Merge. Draft comment ready |
+| [#252](https://github.com/pyushkevich/itksnap/pull/252) | BUG: Show orientation of the selected layer (#185) | aycibatuhan (outside) | open, assigned to Jilei; no CI run | same | Merge. Found the upstream Reorient bug (W8 45) on the way |
+| [#253](https://github.com/pyushkevich/itksnap/pull/253) | BUG: Recognize label files with CRLF or no header (#154) | aycibatuhan (outside) | open, assigned to Jilei; no CI run | same | Merge (two optional tidy-ups) |
+| [#254](https://github.com/pyushkevich/itksnap/pull/254) | BUG: Do not crash when a drop carries no URLs (#212) | aycibatuhan (outside) | open, assigned to Jilei; no CI run | same | Merge after "Fixes #212" becomes "Refs #212" |
+| [#255](https://github.com/pyushkevich/itksnap/pull/255) | BUG: Choose the UI language from preferred languages (#210) | aycibatuhan (outside) | open, assigned to Jilei; no CI run | same | **Paul's decision** (he disagreed in #210). macOS already correct on Qt 6.9.3; Windows/Linux paths never built |
+
+**Also on GitHub, not reviewed here:** #182 (MSVC build speed, +1 line, approved by dzenanz) and #196
+(zh_CN translation, conflicting) are on the v4.6.0 milestone since 2026-09-25. Issue #256 (a Windows
+decimal comma breaks NRRD loading) has a proposed fix in `main.cxx`, the same file as #257's fix.
 
 Our nine topic branches ([branches.md](branches.md)) have **no PRs yet**: Paul's go-ahead comes
 first (NEXT_SESSION_PROMPT, "Talk to Paul before opening PRs"). When one is opened, give it a row here.

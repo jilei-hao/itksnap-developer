@@ -1306,3 +1306,109 @@ Its `88def486` merged master before seg_anchor #247–#249.
 - worktree `worktrees/remote-cache-test-datadir` and build `build-remote-cache-test-datadir`;
 - logs `build-remote-cache-test-datadir.*.log` (gitignored);
 - local refs `pr/241` (fetched from `upstream pull/241/head`) and `bug/remote-cache-test-datadir`.
+
+## 2026-09-29 (Mac, afternoon) — Status review; cardiac test; staging rebuilt locally; six outside PRs reviewed
+
+**Goals (Jilei's):**
+- review the release status and decide what's next (the handoff's goal);
+- then, from the resulting list: 1 = rebuild `staging/v460` with all nine branches, 2 = the
+  `feature/cardiac-io` round-trip test, 4 = review the outside PRs #251–#255 and #243.
+- Order: 2 was done before 1, so staging would be rebuilt and force-pushed only once.
+
+**Status review (facts re-verified):**
+- `upstream/master` is still `52ee94fa`. The nine branches are unchanged and all 36 pairs merge
+  cleanly.
+- GitHub: no new comments on #241 or #257–#259.
+  - On 2026-09-25, Jilei had assigned #251–#256, #243, #182, #128, #196 and #69 to themselves.
+  - #182, #196 and #241 went on the v4.6.0 milestone.
+  - `upstream.md` now records this.
+- Deps: segflow4d `origin/main` is 12 commits ahead of our pointer (July work), which matters for
+  W3/W5 only.
+- SPRINT_PLAN §2 refreshed: nine branches, and the §7 rebuild list.
+- Inconsistency flagged, **not changed**: the release-engineering box "FormatVersion decision" is
+  still open, but W1 Q1 closed it on 07-30. Ticking it is Jilei's call.
+
+**Item 2: `CardiacFrameAxisTest`** (`ffb95b5e` on `feature/cardiac-io`, pushed as a fast-forward).
+- It is a Logic test with no DICOM cohort. It uses:
+  - a synthetic 10-phase CT, written by plain ITK as `.nrrd` with the cardiac keys and patient
+    fields;
+  - the echo test file `echo_cartesian_dummy.dcm`.
+- It loads each through `IRISApplication` and checks `TimePointProperties`. It saves through the
+  layer's `WriteToFile` as `.seq.nrrd` and `.nii.gz` + sidecar (and the CT as `.nrrd`), then loads
+  again.
+- It checks the values, the exact flag, voxel values per frame, and the `.nrrd` curation: name and
+  ID dropped, age top-coded.
+- **Seven deliberate breaks, each failing it:**
+  - the seq axis dropped;
+  - the sidecar not written;
+  - the sidecar not read;
+  - frames reversed;
+  - the curation off;
+  - `TimePointProperties` ignoring `%R-R`;
+  - the echo times dropped.
+- Registered at an anchor no branch or open PR uses (after the Remote `set_tests_properties`).
+- The developer doc §8 now describes it.
+- **Standalone macOS: 34/35**, failing only `RemoteImageLoadTest_SingleImage` on the p25 quantile
+  (W8 3b). That test passed 4 of 6 reruns, with a different p25 value each failure.
+- `verified-at` bumped to `ffb95b5e`. W1's done-criterion ticked.
+- Found and fixed before committing: the test's cleanup helper deleted the `.json` of a *sibling*
+  output. It is now NIfTI-only.
+
+**Item 1: `staging/v460` rebuilt locally** as `dc2ad59a` (nine merges, queue order).
+- The old tip `d02236c3` is local tag `archive/staging-v460-0929`.
+- Its diff from `d02236c3` is exactly branch 9 plus the cardiac commit (4 files).
+- macOS build clean; `ctest` **41/42**, failing only the p25 flake.
+- Real run times: `RandomForestBailOut` 20.4 s, `4DContinuousRendering` 38.1 s, `CardiacFrameAxis`
+  0.9 s.
+- **The force-push was blocked** by the session's auto-mode permission guard ("Git Destructive").
+  It was not retried or worked around. **Jilei runs it:**
+
+  ```bash
+  git -C itksnap push --force-with-lease=staging/v460:d02236c3 origin staging/v460
+  ```
+
+  **Jilei ran it the same afternoon:** `origin/staging/v460` = `dc2ad59a` (forced from `d02236c3`).
+
+**Item 4: six outside PRs** → [reviews/outside-prs-2026-09.md](reviews/outside-prs-2026-09.md).
+- Method:
+  - six read-only review agents, each judging a PR against its issue;
+  - then I built every PR in `worktrees/pr-review` / `build-pr-review`, ran its test, and undid the
+    fix to see the test fail.
+- Verdicts:
+  - #251: merge;
+  - #252: merge;
+  - #253: merge;
+  - #254: merge after "Fixes" becomes "Refs #212";
+  - #243: merge after a 5-line fallback. **144 of 576 exact-45° matrices change their display code**
+    (measured against the real function). Of 200,000 random rotations, 15% are refused today, none
+    with the PR, and none that load today changes;
+  - #255: **Paul's decision.** He disagreed in #210. **Measured:** on macOS with Qt 6.9.3, upstream's
+    own `QTranslator::load(QLocale())` already picks English in #210's setup (English language,
+    German region), and the PR picks the same in all 4 setups tried. Its Windows and Linux code has
+    never been built.
+- No comment was posted. The draft comments in the review need Jilei's OK.
+- **New W8 45, measured on upstream:** Tools › Reorient Image changes only the segmentation / reference
+  space. The main image keeps its direction and is **saved unreoriented**.
+  - `ImageWrapper::SetDirectionMatrix` writes to `m_ReferenceSpace`, which seg_anchor made the active
+    segmentation.
+  - A seg_anchor regression is inferred, not proven (no pre-seg_anchor build).
+  - It is Paul's code.
+- **All six merged together on `52ee94fa`: 38/39**, failing only the p25 flake
+  (`_WorkspaceWithMesh`). The six new tests pass.
+
+**Traps found:**
+- **The session's permission guard blocks `git push --force-with-lease`**, even with Jilei's
+  approval in chat. Hand the command over instead. (Jilei can add a Bash permission rule if they
+  want sessions to do it.)
+- **`LANG` does not affect Qt's locale on macOS.** Qt reads CFLocale. To simulate a region or language
+  for one process, pass `-AppleLocale de_DE -AppleLanguages '(en-US)'` as arguments. This changes no
+  system setting.
+- **An over-wide `s[i:k]` replacement in `branches.md` silently dropped two paragraphs.** Caught by
+  reading the diff, and restored from `HEAD`. Always read the diff of a scripted doc edit.
+
+**Left on disk:**
+- worktrees `worktrees/cardiac-io` (on `feature/cardiac-io`) and `worktrees/pr-review` (detached,
+  local review merges only);
+- builds `build-cardiac-io`, `build-pr-review`, and their logs;
+- local refs `refs/pr/{233,241,243,251,252,253,254,255}`;
+- local tag `archive/staging-v460-0929`.

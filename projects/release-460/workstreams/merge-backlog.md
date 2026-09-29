@@ -219,9 +219,10 @@ properly needs item 17 fixed, or a model-level test against a stub server.
 
 - ~~`staging/v460` contains all 15 accepted commits~~ — superseded by the topic-branch model: each
   accepted commit is on a topic branch that builds and tests standalone (SPRINT_PLAN §4 item 1).
-- A 4D cardiac CTA round-trip test (`.seq.nrrd` and `.nii.gz` + sidecar) exists in `Testing/` and
-  fails if the `%R-R` axis is dropped. The 4DCTA work was verified with a throwaway driver — that
-  does not ratchet.
+- ✅ A 4D cardiac CTA round-trip test (`.seq.nrrd` and `.nii.gz` + sidecar) exists in `Testing/` and
+  fails if the `%R-R` axis is dropped. *(2026-09-29: `CardiacFrameAxisTest`, `ffb95b5e` on
+  `feature/cardiac-io`. Seven deliberate breaks each failed it; see
+  [../branches.md](../branches.md) §1.)*
 - A workspace-compatibility test covers whichever direction Q1 resolves to.
 - A test covers undo after a cancelled async DLS interaction.
 - ✅ Linux/GCC build succeeds with **no** local patches applied on top of `staging/v460`.

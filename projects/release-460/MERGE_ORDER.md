@@ -27,7 +27,7 @@ test/harness-false-green    83c44f62     after rf-layer-crashes (constraint belo
 test/seg-anchor-4d          0b671e86     tests only (seg_anchor with 4D data); passes on upstream as is
 bug/full-extent-off-by-one  6a72f6a1     small fix in Paul's seg_anchor code, with its test
 bug/seg3d-into-4d-check     635bd1ac     small fix in Paul's seg_anchor code, with its test
-feature/cardiac-io          2fc0d9b8     largest; add the %R-R round-trip test before the PR
+feature/cardiac-io          ffb95b5e     largest; its round-trip test (CardiacFrameAxis) is in since 2026-09-29
 test/harness-gui-thread     8a28d50c     last: discuss with Paul first, it competes with upstream dbf8e79f
 ```
 <!-- QUEUE:END -->
@@ -60,7 +60,7 @@ backticked branch names.
 ## Status
 
 <!-- AUTO:BEGIN -->
-_Generated 2026-09-28 15:26 EDT by `scripts/merge_order_status.py` — do not edit by hand._
+_Generated 2026-09-29 13:57 EDT by `scripts/merge_order_status.py` — do not edit by hand._
 
 `upstream/master` = `52ee94fa` (2026-09-03).
 
@@ -73,14 +73,14 @@ _Generated 2026-09-28 15:26 EDT by `scripts/merge_order_status.py` — do not ed
 | 5 | `test/seg-anchor-4d` | `0b671e86` | 1 | current | ✅ in sync | ✅ `0b671e86` | tests only (seg_anchor with 4D data); passes on upstream as is |
 | 6 | `bug/full-extent-off-by-one` | `6a72f6a1` | 1 | current | ✅ in sync | ✅ `6a72f6a1` | small fix in Paul's seg_anchor code, with its test |
 | 7 | `bug/seg3d-into-4d-check` | `635bd1ac` | 1 | current | ✅ in sync | ✅ `635bd1ac` | small fix in Paul's seg_anchor code, with its test |
-| 8 | `feature/cardiac-io` | `2fc0d9b8` | 12 | current | ✅ in sync | ✅ `2fc0d9b8` | largest; add the %R-R round-trip test before the PR |
+| 8 | `feature/cardiac-io` | `ffb95b5e` | 13 | current | ✅ in sync | ✅ `ffb95b5e` | largest; its round-trip test (CardiacFrameAxis) is in since 2026-09-29 |
 | 9 | `test/harness-gui-thread` | `8a28d50c` | 1 | current | ✅ in sync | ✅ `8a28d50c` | last: discuss with Paul first, it competes with upstream dbf8e79f |
 
 **Pairwise merges:** all 36 pairs merge cleanly.
 **Ordering constraints:** queue order satisfies 1 of 1.
-**`staging/v460`** (`d02236c3`): ⚠️ rebuild — missing `bug/remote-cache-test-datadir` (SPRINT_PLAN §7).
+**`staging/v460`** (`dc2ad59a`): contains `upstream/master` and every queue tip, and nothing else. ✅
 
-**Needs attention:** `staging/v460` needs a rebuild.
+**Needs attention:** nothing.
 <!-- AUTO:END -->
 
 ---
