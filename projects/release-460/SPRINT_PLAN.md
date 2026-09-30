@@ -77,7 +77,7 @@ Listed in MERGE_ORDER.md queue order.
 | Branch | `staging/v460` (itksnap) |
 | Base | `upstream/master` @ `52ee94fa` (26 commits past the July base `679ba76a`) |
 | Local | **`b2f46eaa`** = `upstream/master` + all **eleven** topic merges, rebuilt 2026-09-30. macOS `ctest` **43/45**, only the two remote quantile flakes, which each passed on a rerun. The ten-branch rebuild `f2203847` was never pushed. Earlier tips are local tags: `archive/staging-v460-0930` (`dc2ad59a`, nine), `-0929` (`d02236c3`, eight), `-0924` (`62588ffc`, five) |
-| Remote | `origin/staging/v460` = `dc2ad59a` (nine branches) until Jilei force-pushes `b2f46eaa`; the session's permission guard blocks force-pushes |
+| Remote | **Pushed 2026-09-30** by Jilei: `origin/staging/v460` = `b2f46eaa`, in sync. The session's permission guard blocks force-pushes, so Jilei runs them |
 
 ### itksnap — topic branches (the review queue)
 

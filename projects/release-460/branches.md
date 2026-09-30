@@ -1,7 +1,7 @@
 # Topic branches — the upstream review queue
 
 **Snapshot:** 2026-09-30 · **Base for every branch:** `upstream/master` @ `52ee94fa` · **Pushed:** all eleven
-branches, plus `staging/v460` @ `dc2ad59a` (2026-09-29; `b2f46eaa` awaits a force-push), to `jilei-hao/itksnap`. **Merge order and live branch
+branches, plus `staging/v460` @ `b2f46eaa` (2026-09-30), to `jilei-hao/itksnap`. **Merge order and live branch
 state:** [MERGE_ORDER.md](MERGE_ORDER.md). · **Upstream issues and PRs:** [upstream.md](upstream.md). · **Meeting page (private):**
 https://claude.ai/artifact/QyivAN8NiDzadZ7hPKn6ut — a rendered copy of this file as of 2026-09-24; this file stays the
 source of truth.
@@ -44,7 +44,7 @@ passed on one of two reruns.
   (58.6 s).
 - Its diff from the pushed nine-branch tip `dc2ad59a` is exactly branches 10 and 11: 14 files,
   +531/−3.
-- **Not pushed yet:** `origin/staging/v460` is still `dc2ad59a`. The force-push is Jilei's.
+- Pushed 2026-09-30 by Jilei: `origin/staging/v460` = `b2f46eaa`.
 - The nine-branch tip `dc2ad59a` ran 41/42 (2026-09-29).
 - Earlier tips: eight branches, `d02236c3`, ran 40/41; five branches, `62588ffc`
   (`archive/staging-v460-0924`), ran 34/35.

@@ -1564,5 +1564,5 @@ ten-branch `f2203847` was never pushed and is simply replaced.
   git -C itksnap push --force-with-lease=staging/v460:dc2ad59a origin staging/v460
   ```
 
-**Checkpoint:** wrapper docs committed. The `itksnap` pointer stays at `dc2ad59a` until the staging
-push. The `itksnap-dls` drift is left alone, as before.
+**Checkpoint:** wrapper docs committed (`6f1c674`). Jilei then force-pushed staging, so
+`origin/staging/v460` = `b2f46eaa`, and the wrapper's `itksnap` pointer moved to it. The `itksnap-dls` drift is left alone, as before.
