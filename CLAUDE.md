@@ -362,7 +362,7 @@ scripts/build-greedy-python.sh
 **Key paths:**
 - Standalone Greedy build: `build-greedy/` (sources from `itksnap/Submodules/greedy/`)
 - Greedy install: `build-greedy/install/` (contains `GreedyConfig.cmake`)
-- Python extension: `/Users/jileihao/dev/greedy_python/build/_picsl_greedy.cpython-*.so` (copied to `src/picsl_greedy/`)
+- Python extension: `greedy_python/build/_picsl_greedy.cpython-*.so` (copied to `greedy_python/src/picsl_greedy/`)
 
 **Why a separate Greedy build?** itksnap builds greedy as a subproject (`GREEDY_BUILD_AS_SUBPROJECT=ON`) which does not produce a `GreedyConfig.cmake`. The standalone build in `build-greedy/` installs the config and library headers needed by greedy_python.
 
@@ -383,7 +383,9 @@ GP_SRC=/custom/path/greedy_python scripts/run-greedy-python-tests.sh
 
 Tests require `SimpleITK` and `numpy` (`pip install SimpleITK numpy pytest`). Test data is read from `itksnap/Submodules/greedy/testing/data` via `GREEDY_TEST_DATA_DIR`.
 
-**Known test status:** 14/15 pass. `test_propagation_basic` fails due to an in-memory image-passing bug in `src/picsl_greedy/_greedy_api.py` (PropagationWrapper does not yet support in-memory sitk.Image arguments).
+`run-greedy-python-tests.sh` does **not** rebuild the extension: it imports whatever `.so` is already in `src/picsl_greedy/`. After changing `src/GreedyPythonBindings.cxx`, rerun `build-greedy-python.sh`, or the tests silently exercise the old binary.
+
+**Known test status (2026-09-29, macOS):** 21/22 pass. `test_propagation_basic` fails due to an in-memory image-passing bug in `src/picsl_greedy/_greedy_api.py` (PropagationWrapper does not yet support in-memory sitk.Image arguments). `tests/test_affine_input.py` (7 tests) guards the numpy-affine-input fix in `AffineTransformImport`; with the pre-fix bindings, 5 of its 7 fail.
 
 ## Code Style
 
