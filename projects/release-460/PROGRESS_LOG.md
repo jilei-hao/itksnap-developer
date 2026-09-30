@@ -1412,3 +1412,157 @@ Its `88def486` merged master before seg_anchor #247–#249.
 - builds `build-cardiac-io`, `build-pr-review`, and their logs;
 - local refs `refs/pr/{233,241,243,251,252,253,254,255}`;
 - local tag `archive/staging-v460-0929`.
+
+## 2026-09-30 — Issue #260 and `feature/ui-language-setting`; #196 assessed; staging rebuilt with ten branches
+
+**Goals (Jilei's):**
+- "For #255, how about adding a setting item to let users pick their language?" Jilei agreed, then
+  asked me to create an issue linking #255 and start a branch.
+- Mid-task: "also look at #196 to see if it can be adopted."
+
+**Wrapper:** `main` pushed to `86bad53`. The `greedy_python` pointer went to `69270d80`, which is on
+`origin/test/integration`, and CLAUDE.md got the greedy_python status. The `itksnap-dls` pointer drift
+was left out on purpose: its checkout is on `developer-doc`, and the wrapper tracks
+`feature/agentic-api`.
+
+**Issue [#260](https://github.com/pyushkevich/itksnap/issues/260)**, filed from
+`reviews/issue-ui-language-setting.md`. It links #210 and #255, and asks Paul whether the setting
+should also change number formats.
+
+**Branch `feature/ui-language-setting`** (`fee681f9`, W8 46, branches.md §10):
+- **Code:**
+  - `DefaultBehaviorSettings::UILanguage`;
+  - `GUI/Qt/Components/QtUILanguage.{h,cxx}`, with the priority rule, the list of shipped
+    translations, and native names;
+  - the Language drop-down at the top of Preferences › General › Default Behavior;
+  - `main.cxx`: `--lang`, then the preference, then the system, applied after
+    `LoadUserPreferences()`. The preference sets the translation only.
+- **Tests:**
+  - `UILanguage` (unit);
+  - `LanguagePreference` (GUI). It closes the dialog without applying, so it never changes the
+    tester's real preferences.
+  - Both were broken on purpose, and each failed.
+- **Startup checked in five setups** with a scratch profile; see branches.md §10. The real profile
+  was unchanged.
+- **Standalone macOS: 34/36**, failing only the two remote quantile flakes, which pass on reruns.
+- Pushed; `verified-at` is `fee681f9`.
+- **Merges:** clean with all nine branches and with #241, #243, #251–#254. It conflicts with #255
+  (`main.cxx`, `CMakeLists.txt`) by design.
+- Qt names Spanish "Español de España" and English "American English". So the four shipped
+  translations are named explicitly, with Qt's name as the fallback.
+
+**#196 assessed** → [reviews/pr-196.md](reviews/pr-196.md):
+- **It can be adopted.** Of its +3750/−3748 lines, all but 33 translations are Qt Linguist
+  re-formatting.
+- Master added one message since, and changed none of the 33.
+- Ported onto master's layout, it is a 33-line diff that compiles with `lrelease` (1,647
+  translations, all finished).
+- The 33 are good terminology fixes. Four tooltips still use the old volume-rendering and annotation
+  wording.
+- Authors: Yue Li and Feiz Escher. Three ways to adopt it; Jilei and Paul choose.
+- The script and recipe are in `reviews/pr-196-scripts/`.
+- **Jilei chose "push the 33-line version onto their PR branch."**
+  - Done as a *merge* of master into `liyue3780/itksnap:master` (`b934b6aa`, parents `dc64b390` +
+    `52ee94fa`). So there was no force-push, and the contributors' 5 commits are kept.
+  - The conflicted file was resolved with the ported version; `lrelease` passes.
+  - GitHub now reports #196 **mergeable, +33/−33**.
+  - The thank-you comment is drafted in the review and not posted.
+
+**Staging rebuilt locally** as `f2203847`: ten branches, with the new one before `feature/cardiac-io`
+in the queue. The old tip is local tag `archive/staging-v460-0930`. Its diff from `dc2ad59a` is
+exactly the new branch's 11 files.
+- macOS `ctest` **43/44**, failing only the p25 flake. The nine new tests pass, and the real run times
+  hold (`RandomForestBailOut` 20.5 s, `4DContinuousRendering` 37.6 s).
+- **Force-push is Jilei's:**
+
+  ```bash
+  git -C itksnap push --force-with-lease=staging/v460:dc2ad59a origin staging/v460
+  ```
+
+**Traps found:**
+- **On macOS, `HOME` does not move ITK-SNAP's settings folder.** Qt resolves it through
+  CoreFoundation, so use `CFFIXED_USER_HOME` as well. (The remote-image *test* redirect works
+  because that test has its own `SystemInfoDelegate`.)
+- **A preferences file without `System.CreatedBySNAPVersion` is wiped at load.** It counts as
+  version `00000000`, older than the last incompatible release. Hand-made test profiles need that
+  entry.
+- **`git merge-tree` of anything against #196 conflicts**, because #196 itself conflicts with
+  master. That is not a sign of trouble in the other branch.
+
+## 2026-09-30 (cont.) — v4.6.0 milestone; #233 reviewed; #256 fixed; #229 investigated
+
+**Goals (Jilei's, in order):**
+- put every meeting item on the v4.6.0 milestone;
+- then add #256, #229 and #233 to it and work on them;
+- say which milestone issues have no PR.
+
+**Milestone v4.6.0**, all set through the API:
+- the six reviewed PRs (#243, #251–#255);
+- our issues #257–#260;
+- the issues those PRs fix (#69, #216, #185, #154, #212, #210);
+- then #256, #229, #233, and #222, the issue #233 fixes.
+
+That makes 23 open items. Nothing had a conflicting milestone. `upstream.md` now has a Milestone
+section listing the issues that have no PR.
+
+**#233 (Paul's adaptive-brush fix)** → [reviews/pr-233.md](reviews/pr-233.md):
+- **Measured:** on master, an adaptive-brush click aborts ITK-SNAP (uncaught
+  `itk::InvalidRequestedRegionError`) when the segmentation has its own grid, which seg_anchor allows.
+  - Case: `MRIcrop-orig` plus `MRIcrop-seg-hippoL-04mm`, axial slice 85.
+  - Cause: `xTestRegion` is built in the segmentation's indices and then applied to the main image.
+- With #233 merged, the click is refused and nothing crashes.
+- The repro is saved as `reviews/pr-233-scripts/test_AdaptiveBrushSegGrid.js`. It aborts on master and
+  passes with #233; both measured with the saved script.
+- **Read:**
+  - the guard compares region sizes, not spacing, origin or direction;
+  - the refusal is silent.
+  - A same-size check could not be measured: the harness reads values at the cursor but paints under
+    the mouse, and Undo's enabled state does not update in the harness (a control run showed that).
+- The Space key paints with `dragging = true`, which never runs the adaptive brush, so a test needs a
+  mouse press.
+
+**#256** → branch `bug/windows-decimal-comma` (`7e7576fd`, branches.md §11, W8 47), pushed:
+- `SystemInterface::UseCNumericLocale()` sets `"C"`; `main()` calls it. The fix and root cause are
+  the reporter's, and the commit credits them.
+- `NumericLocaleTest`, under `de_DE.UTF-8` on macOS: without the reset, the #256 NRRD fails to load;
+  with it, the spacing is 0.4; with the fix broken on purpose, the test fails.
+- Standalone: 34/35. The one failure was `4DReplayWithMeshUpdate` (W8 2), which passed 2 of 2
+  reruns.
+- The Windows run is still to do; pair it with #257.
+- Clean with all ten other branches and every open PR, so all 55 pairs merge.
+
+**#229** → [workstreams/free-rotation-sync.md](workstreams/free-rotation-sync.md):
+- The cause, found by reading: free rotation puts an ITK transform on the main image and every
+  segmentation. The 2D views resample through it, but the 3D mesh (`VTKMeshPipeline`, actors with no
+  user matrix) and the 3D pick (`IntersectSegmentation` ray-casts raw voxels) ignore it. The volume
+  renderer already applies it correctly.
+- The GUI harness cannot click in the 3D view: `view3d` is a container, and its OpenGL child has no
+  name. Measured: 18 clicks, and the cursor never moved.
+- **Jilei's decisions:**
+  - loaded meshes turn with the image too;
+  - exported meshes stay in the image's own space;
+  - test the pick maths at the model level.
+- Implementation is for a fresh session.
+
+**The machine was swapping heavily** (9.4 of 10 GB swap, load average 60–135). A fresh full build
+crawled. So `bug/windows-decimal-comma` was built and tested in `build-pr-review`, with
+`worktrees/pr-review` checked out at its commit, and `ninja -j4` was used from then on.
+`build-windows-decimal-comma/` is only partly built.
+
+**Crash dialogs:** Jilei saw macOS "quit unexpectedly" dialogs. They were the two deliberate #233
+repro runs on master (15:02, 15:06) and one early `TestUILanguage` abort (13:43). New memory: warn
+before any deliberate crash.
+
+**Staging rebuilt again** as `b2f46eaa`: eleven branches, in queue order from MERGE_ORDER. The
+ten-branch `f2203847` was never pushed and is simply replaced.
+- macOS `ctest` **43/45**. The only failures were the two remote quantile flakes, and each passed on
+  one of two reruns.
+- The ten new tests pass. `RandomForestBailOut` ran 21.0 s and `4DContinuousRendering` 39.0 s.
+- **Force-push is Jilei's:**
+
+  ```bash
+  git -C itksnap push --force-with-lease=staging/v460:dc2ad59a origin staging/v460
+  ```
+
+**Checkpoint:** wrapper docs committed. The `itksnap` pointer stays at `dc2ad59a` until the staging
+push. The `itksnap-dls` drift is left alone, as before.

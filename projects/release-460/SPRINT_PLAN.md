@@ -76,16 +76,15 @@ Listed in MERGE_ORDER.md queue order.
 |---|---|
 | Branch | `staging/v460` (itksnap) |
 | Base | `upstream/master` @ `52ee94fa` (26 commits past the July base `679ba76a`) |
-| Local | **`dc2ad59a`** = `upstream/master` + all **nine** topic merges, rebuilt 2026-09-29 (with `feature/cardiac-io` at `ffb95b5e`). macOS `ctest` **41/42**, only the p25 remote flake. The eight-branch tip `d02236c3` is tag `archive/staging-v460-0929`; the five-branch tip `62588ffc` is `archive/staging-v460-0924` |
-| Remote | **Pushed 2026-09-29** by Jilei (the session's permission guard blocks force-pushes): `origin/staging/v460` = `dc2ad59a`, in sync |
+| Local | **`b2f46eaa`** = `upstream/master` + all **eleven** topic merges, rebuilt 2026-09-30. macOS `ctest` **43/45**, only the two remote quantile flakes, which each passed on a rerun. The ten-branch rebuild `f2203847` was never pushed. Earlier tips are local tags: `archive/staging-v460-0930` (`dc2ad59a`, nine), `-0929` (`d02236c3`, eight), `-0924` (`62588ffc`, five) |
+| Remote | `origin/staging/v460` = `dc2ad59a` (nine branches) until Jilei force-pushes `b2f46eaa`; the session's permission guard blocks force-pushes |
 
 ### itksnap — topic branches (the review queue)
 
 Full detail, evidence and discussion points per branch: **[branches.md](branches.md)**. Merge order,
 constraints and live state: **[MERGE_ORDER.md](MERGE_ORDER.md)**.
 
-All nine are based on `52ee94fa`, pushed and in sync with `origin`, and verified standalone on macOS.
-None has a PR yet. In MERGE_ORDER.md queue order:
+All eleven are based on `52ee94fa`, pushed, and verified standalone on macOS. None has a PR yet. In MERGE_ORDER.md queue order:
 
 | Branch | Ahead | Content | Pushed |
 |---|---:|---|---|
@@ -96,7 +95,9 @@ None has a PR yet. In MERGE_ORDER.md queue order:
 | `test/seg-anchor-4d` | 1 | four tests of seg_anchor with 4D data | yes |
 | `bug/full-extent-off-by-one` | 1 | full-extent region one voxel low (W8 36) — Paul's seg_anchor code | yes |
 | `bug/seg3d-into-4d-check` | 1 | 3D seg into a mismatched 4D seg: clear error (W8 37) — Paul's seg_anchor code | yes |
-| `feature/cardiac-io` | 12 | 4D cardiac CTA + echo phase/metadata I/O (W1 D1). Rebased onto `52ee94fa`; old tip `archive/feature-cardiac-io-pre-rebase`. **No round-trip test yet** | yes (forced) |
+| `bug/windows-decimal-comma` | 1 | NRRD on decimal-comma Windows: "C" instead of "POSIX" (W8 47, #256). Added 2026-09-30; Windows run pending | yes |
+| `feature/ui-language-setting` | 1 | Language preference in Preferences (W8 46, #260). Added 2026-09-30 | yes |
+| `feature/cardiac-io` | 13 | 4D cardiac CTA + echo phase/metadata I/O (W1 D1). Rebased onto `52ee94fa`; old tip `archive/feature-cardiac-io-pre-rebase`. **No round-trip test yet** | yes (forced) |
 | `test/harness-gui-thread` | 1 | `TestObjectProxy` on top of upstream `dbf8e79f` (W8 17, 25) — **discuss with Paul first** | yes |
 
 ### itksnap — other branches

@@ -1,7 +1,7 @@
 # Topic branches — the upstream review queue
 
-**Snapshot:** 2026-09-29 · **Base for every branch:** `upstream/master` @ `52ee94fa` · **Pushed:** all nine
-branches, plus `staging/v460` @ `dc2ad59a` (2026-09-29), to `jilei-hao/itksnap`. **Merge order and live branch
+**Snapshot:** 2026-09-30 · **Base for every branch:** `upstream/master` @ `52ee94fa` · **Pushed:** all eleven
+branches, plus `staging/v460` @ `dc2ad59a` (2026-09-29; `b2f46eaa` awaits a force-push), to `jilei-hao/itksnap`. **Merge order and live branch
 state:** [MERGE_ORDER.md](MERGE_ORDER.md). · **Upstream issues and PRs:** [upstream.md](upstream.md). · **Meeting page (private):**
 https://claude.ai/artifact/QyivAN8NiDzadZ7hPKn6ut — a rendered copy of this file as of 2026-09-24; this file stays the
 source of truth.
@@ -31,15 +31,21 @@ Each branch section has two parts:
 | 7 | `bug/full-extent-off-by-one` | `6a72f6a1` | 1 | W8 · 36 | ✅ builds, 34/35: only the remote flake. `FullExtentRegion` passes; `SegmentationSwitching` and `MeshWorkspace` unaffected |
 | 8 | `bug/seg3d-into-4d-check` | `635bd1ac` | 1 | W8 · 37 | ✅ builds, 34/35: only the remote flake. `Seg3DInto4D` passes |
 | 9 | `bug/remote-cache-test-datadir` | `6ff7a582` | 1 | W8 · 3 · [#258](https://github.com/pyushkevich/itksnap/issues/258) | ✅ builds, 33/34 on macOS: only `RemoteImageLoadTest_SingleImage` (remote flake, passed on rerun). `_Cache` passes; real profile unchanged. Windows staging + branch (local `22b009e0`): 41/41. **Linux ⏳** |
+| 10 | `feature/ui-language-setting` | `fee681f9` | 1 | W8 · 46 · [#260](https://github.com/pyushkevich/itksnap/issues/260) | ✅ builds, **34/36** on 2026-09-30: only the two remote flakes (p50/p25 quantiles, W8 3b); they passed on reruns. `UILanguage` (0.2 s) and `LanguagePreference` (6.9 s) pass and were broken on purpose |
+| 11 | `bug/windows-decimal-comma` | `7e7576fd` | 1 | W8 · 47 · [#256](https://github.com/pyushkevich/itksnap/issues/256) | ✅ builds, **34/35** on macOS 2026-09-30: only `4DReplayWithMeshUpdate`, a known timing flake (W8 2) that passed 2 of 2 reruns. `NumericLocale` reproduces the bug under `de_DE.UTF-8`, passes with the fix, and fails with the fix broken. **Windows ⏳** |
 
-**All nine merged (local `staging/v460` @ `dc2ad59a`, rebuilt 2026-09-29): 41/42**, failing only
-`RemoteImageLoadTest_SingleImage` (the p25 quantile flake, W8 3b).
-- All eight new tests pass with everything merged, including `CardiacFrameAxis` (0.9 s).
-- The tests that other branches make real do run: `4DContinuousRendering` 38.1 s,
-  `RandomForestBailOut` 20.4 s, `HarnessThreadSafety` 2.1 s.
-- Its diff from the eight-branch tip (`d02236c3`, now tag `archive/staging-v460-0929`) is exactly
-  branch 9 plus the cardiac test commit: 4 files, +433/−12.
-- Pushed 2026-09-29 by Jilei: `origin/staging/v460` = `dc2ad59a`.
+**All eleven merged (local `staging/v460` @ `b2f46eaa`, rebuilt 2026-09-30): 43/45**, failing only
+`RemoteImageLoadTest_SingleImage` and `_WorkspaceWithMesh` (the p25 quantile flake, W8 3b). Each
+passed on one of two reruns.
+- All ten new tests pass with everything merged: `NumericLocale` 1.5 s, `UILanguage` 1.3 s,
+  `LanguagePreference` 7.4 s and `CardiacFrameAxis` 1.1 s among them.
+- The tests that other branches make real do run: `4DContinuousRendering` 39.0 s,
+  `RandomForestBailOut` 21.0 s, `HarnessThreadSafety` 2.7 s. `4DReplayWithMeshUpdate` passed
+  (58.6 s).
+- Its diff from the pushed nine-branch tip `dc2ad59a` is exactly branches 10 and 11: 14 files,
+  +531/−3.
+- **Not pushed yet:** `origin/staging/v460` is still `dc2ad59a`. The force-push is Jilei's.
+- The nine-branch tip `dc2ad59a` ran 41/42 (2026-09-29).
 - Earlier tips: eight branches, `d02236c3`, ran 40/41; five branches, `62588ffc`
   (`archive/staging-v460-0924`), ran 34/35.
 
@@ -566,6 +572,155 @@ untouched on both. _Linux is still to come; update this line when it is done._
   delegate on every platform. That would change where the real application keeps its data.
 - **Not covered:** W8 3b (`_WorkspaceWithMesh` compares an approximate quantile exactly) stays open.
 - **For Paul:** a test-only change; no behaviour change in ITK-SNAP.
+
+---
+
+## 10 · `feature/ui-language-setting` — choose the user-interface language in Preferences (W8 46, #260)
+
+### PR description
+
+**Title:** Add a Language setting to Preferences
+
+ITK-SNAP shows its menus and dialogs in the language of your operating system. Some people get a
+language they did not choose. For example, a Mac set to English but located in Germany showed
+ITK-SNAP in German (#210). Until now, the only way to change it was the `--lang` command-line option,
+which is hard to use when ITK-SNAP is started from the Dock, the Start menu, or by double-clicking a
+file.
+
+**What changes**
+
+- **Preferences › General › Default Behavior** has a new **Language** list. The choices are
+  **Automatic**, which is how ITK-SNAP behaved until now, and every language ITK-SNAP ships with:
+  English, Deutsch, Español and 简体中文.
+- Each language is written in that language, so someone who cannot read the current one can still
+  find their own.
+- The change takes effect the next time ITK-SNAP starts, and the dialog says so.
+- `--lang` on the command line still wins over the setting.
+- The setting changes only the language of the words on screen. Numbers and dates keep the format of
+  your region. For example, choosing English on a German computer keeps the decimal comma.
+- Nothing changes for anyone who leaves it on Automatic.
+
+Fixes #260.
+
+**Testing:**
+- A new automated test checks which language wins (`--lang`, then the setting, then the system). It
+  also checks the list of languages, their names, and that the setting is saved and read back.
+- A second, on-screen test opens Preferences and checks that the list shows Automatic and the four
+  languages. It closes the dialog without saving, so it never changes the tester's own settings.
+- We made sure both tests can fail by breaking them on purpose.
+- We also started ITK-SNAP with a separate, temporary settings folder in five setups:
+  - Deutsch;
+  - Deutsch with `--lang en`;
+  - 简体中文;
+  - a language that is not shipped;
+  - no setting.
+
+  Each loaded the expected language.
+
+### Review notes (planning meeting)
+
+- **Origin:** Jilei's idea during the #255 review (2026-09-30). #255 changes the *automatic* choice,
+  and Paul disagreed with it in #210. This adds a user override instead and leaves the automatic
+  choice alone. The two are independent.
+- **Commit:** `fee681f9`, off `upstream/master` @ `52ee94fa`; 11 files. The code pieces:
+  - `DefaultBehaviorSettings::UILanguage`, saved as `UserInterface.DefaultBehavior.UILanguage`;
+  - `GUI/Qt/Components/QtUILanguage.{h,cxx}`, with `ChooseUILanguageSource`,
+    `GetAvailableUILanguages` (read from `:/i18n/itksnap_*.qm`) and `GetUILanguageNativeName`;
+  - the drop-down in `PreferencesDialog`;
+  - the priority rule in `main.cxx`, which runs after `LoadUserPreferences()` and before any window
+    exists.
+- **Standalone macOS, `fee681f9`: 34/36.** Only `RemoteImageLoadTest_SingleImage` and
+  `_WorkspaceWithMesh` failed, on the p50/p25 quantile (W8 3b). Each passed on some of three reruns.
+- **Tests:**
+  - `UILanguage` is a unit test that needs no display.
+  - `LanguagePreference` is a GUI test: 7 s, registered in both `TestingScripts.qrc` and
+    `GUI_TESTS`.
+  - Both were broken on purpose:
+    - expecting 6 items instead of 5 made `LanguagePreference` fail;
+    - listing no translations in the dialog made it fail;
+    - the restored version passed.
+- **Startup, checked end to end** with `HOME` and `CFFIXED_USER_HOME` pointed at a scratch folder.
+  On macOS, Qt finds the settings folder through `CFFIXED_USER_HOME`, not `$HOME`.
+
+  | Setup | Result |
+  |---|---|
+  | preference `de` | `de_DE` |
+  | `de` + `--lang en` | `en_US` |
+  | `zh_CN` | `zh_CN` |
+  | `fr` (not shipped) | system |
+  | none | system |
+
+  The real profile was unchanged. A preferences file with no `System.CreatedBySNAPVersion` entry is
+  wiped at load, so hand-made test profiles need that entry.
+- **Merges:**
+  - clean with all nine topic branches, and with #241, #243 and #251–#254;
+  - **conflicts with #255** in `main.cxx` and `CMakeLists.txt`. That is expected: both change how the
+    language is chosen. Whichever lands second is reconciled by hand.
+- **For Paul:**
+  - Should the setting also change number and date formats, as `--lang` does
+    (`QLocale::setDefault`)? The branch changes the translation only. Switching is a one-line change.
+  - A stored language that is later removed shows a blank drop-down. Startup falls back to the
+    system language.
+- **Not done:** switching language without a restart. No window handles `QEvent::LanguageChange`
+  today.
+
+---
+
+## 11 · `bug/windows-decimal-comma` — NRRD files on Windows with a decimal comma (W8 47, #256)
+
+### PR description
+
+**Title:** Load NRRD files correctly on Windows when the region uses a decimal comma
+
+On Windows, if the regional format writes numbers with a comma, for example German, Austrian or
+French settings, ITK-SNAP could not open NRRD files whose header has decimal numbers. A voxel size of
+0.4 mm was read as 0, and loading failed with "Zero-valued spacing is not supported".
+
+ITK-SNAP already tried to prevent this. At startup it asks the C library to use the plain "POSIX" rules
+for numbers. But the Windows C library does not know the name "POSIX", and quietly ignored the request.
+This change uses the name "C" instead, which means the same thing and which every C library accepts.
+Nothing changes on macOS or Linux.
+
+The root cause and the fix come from @GoCompute-Philipp-Huber, who reported the problem in #256 and
+tested the fix on Windows 11.
+
+Fixes #256.
+
+**Testing:** a new test switches to a decimal-comma locale, checks that the NRRD file from the issue
+does not load correctly without the fix, and then checks that it loads with 0.4 mm voxels with the
+fix. On macOS and Linux it fails if the fix is removed. On Windows it also fails if the old "POSIX"
+name comes back. It is skipped on machines that have no decimal-comma locale installed. We made sure
+it can fail by breaking the fix on purpose.
+
+### Review notes (planning meeting)
+
+- **Commit:** `7e7576fd`, off `upstream/master` @ `52ee94fa`; 5 files.
+  - `SystemInterface::UseCNumericLocale()`: `setlocale(LC_NUMERIC, "C")`. It returns false if the C
+    library refuses.
+  - `main.cxx` calls it where it used to call `setlocale(LC_NUMERIC, "POSIX")` (`8161039e`, 2016,
+    "NRRD spacing fix provided by Johan B"), and warns on failure.
+  - `Testing/Logic/NumericLocaleTest.cxx`, registered as `NumericLocale` with `SKIP_RETURN_CODE 77`.
+- **Why a function instead of the issue's one-line patch:** so the test runs the same call as
+  `main()`. The issue's patch is the same fix, inline.
+- **Measured on macOS:**
+  - under `de_DE.UTF-8`, the NRRD from #256 fails to load (ITK zero-spacing exception) without the
+    reset, and loads with spacing 0.4 with it;
+  - with `UseCNumericLocale()` made a no-op on purpose, the test fails ("the decimal separator is
+    still a comma");
+  - restored, it passes.
+- **Standalone macOS, `7e7576fd`: 34/35.** Only `4DReplayWithMeshUpdate` failed (W8 2, llvm timing),
+  and it passed 2 of 2 reruns. The machine was swapping heavily at the time. Built in
+  `build-pr-review`, with `worktrees/pr-review` checked out at `7e7576fd`.
+- **Not measured: Windows.** macOS accepts "POSIX" too, so only a Windows run shows the
+  "POSIX"→"C" difference itself. The reporter measured it on Windows 11 with `ucrtbase.dll`, and their
+  table is in #256. The Windows box should run `NumericLocale`: it needs a comma locale such as
+  `de-DE`, which Windows has.
+- **Unchanged:** UTF-8 file names on Windows. `LC_CTYPE` stays `.utf8`, and
+  `FileChooserPanelWithHistory::isFilenameNonAscii()` still sees `.utf8` at the end of the locale
+  string (the reporter checked this).
+- **Merges:** clean with all ten topic branches and with #233, #241, #243 and #251–#255.
+- **Pairs well with #257** (W8 44): the same file, and also Windows-only. Both could be verified in
+  one Windows session.
 
 ---
 
