@@ -1566,3 +1566,42 @@ ten-branch `f2203847` was never pushed and is simply replaced.
 
 **Checkpoint:** wrapper docs committed (`6f1c674`). Jilei then force-pushed staging, so
 `origin/staging/v460` = `b2f46eaa`, and the wrapper's `itksnap` pointer moved to it. The `itksnap-dls` drift is left alone, as before.
+
+## 2026-09-30 (handoff) — Session closed
+
+**The session covered 2026-09-29 → 30.** Goals, all Jilei's:
+- the release review;
+- then staging, the cardiac test, the outside-PR review;
+- then #260 with its branch, #196, the milestone, #233, #256 and #229.
+
+Details are in the four entries above.
+
+**What landed:**
+
+| Where | What |
+|---|---|
+| itksnap `feature/cardiac-io` | `ffb95b5e`: CardiacFrameAxisTest |
+| itksnap `feature/ui-language-setting` | `fee681f9`: Language preference (#260) |
+| itksnap `bug/windows-decimal-comma` | `7e7576fd`: "C" numeric locale (#256) |
+| itksnap `staging/v460` | `b2f46eaa`: eleven branches, force-pushed by Jilei |
+| `liyue3780/itksnap:master` (#196) | `b934b6aa`: merge of master, so #196 is mergeable at +33/−33 |
+| GitHub | issue #260 filed; v4.6.0 milestone on 23 items |
+| wrapper | `86bad53` (pushed), `6f1c674`, `84da648`, and this checkpoint |
+
+**Tests:** not re-run for the handoff, because no code has changed since the last full run. The last
+measurement is staging `b2f46eaa` on macOS: **43/45**. The only failures were the two remote quantile
+flakes (W8 3b), and each passed on a rerun. The standalone runs of the three changed branches are in
+branches.md §1, §10 and §11.
+
+**Not posted (each needs Jilei's OK):**
+- the draft comments for #243 and #251–#255 (`reviews/outside-prs-2026-09.md`);
+- the draft comment for #196 (`reviews/pr-196.md`);
+- the draft comment for #233 (`reviews/pr-233.md`).
+
+**Surprises worth remembering:** see Traps in NEXT_SESSION_PROMPT. In short:
+- the session cannot force-push;
+- `HOME` does not move ITK-SNAP's settings folder on macOS;
+- the 3D view cannot be clicked from the GUI harness;
+- the Space key never runs the adaptive brush;
+- the machine is short on memory, so use `ninja -j4`;
+- warn before any deliberate crash.

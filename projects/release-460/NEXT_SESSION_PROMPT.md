@@ -1,226 +1,200 @@
-# RESUME — ITK-SNAP 4.6.0 · Goal (Jilei's words): "review the current status of the release and decide what to do next"
+# RESUME — ITK-SNAP 4.6.0 · no goal chosen yet: ask Jilei first
 
 ## Current state (read this paragraph first)
 
-The 4.6.0 work lives on **nine topic branches**, each cut from `upstream/master` @ `52ee94fa` (still the
-upstream tip on 2026-09-29) and pushed to `jilei-hao/itksnap`. All nine are verified standalone on macOS.
-`MERGE_ORDER.md` Status says: all 36 pairs merge cleanly; the one ordering constraint holds; **"Needs
-attention: `staging/v460` needs a rebuild"**. `staging/v460` @ `d02236c3` has only the first eight.
-Adding the ninth, `bug/remote-cache-test-datadir` (`6ff7a582`, fixes #258), is a force-push, so it is
-Jilei's call. None of the nine has a PR yet: Paul's go-ahead comes first.
+The 4.6.0 work lives on **eleven topic branches**. Each is cut from `upstream/master` @ `52ee94fa`,
+which is still the upstream tip on 2026-09-30, and pushed to `jilei-hao/itksnap`. All eleven are
+verified standalone on macOS, and all 55 pairs merge cleanly. **`staging/v460` @ `b2f46eaa`** is
+upstream plus all eleven. It is pushed, and passed macOS `ctest` **43/45**; the only failures were
+the two remote quantile flakes. `MERGE_ORDER.md` Status reads "Needs attention: nothing". None of the
+eleven has a PR yet: Paul's go-ahead comes first.
 
-On GitHub (`upstream.md`):
-- the outside PR **#241** (non-ASCII Windows user names) has our 4 commits and our comment, and Marco
-  agreed. It waits for the planning meeting;
-- **#257** (Windows missing-file exit), **#258** (the remote-cache test) and **#259** (CI: every PR is
-  red, and tests never gate a run) were filed on 2026-09-28/29.
+On GitHub:
+- the **v4.6.0 milestone** holds everything for the planning meeting: 23 open items;
+- **issue #260** is filed (the Language preference; branch 10);
+- **#196** (zh_CN translation) is now mergeable, after we merged master into its branch;
+- six outside PRs (#243, #251–#255) and Paul's #233 are reviewed, with **draft comments that are not
+  posted**.
 
-Upstream has also had new outside work that **nobody has triaged yet**: PRs #251–#255 and issue #256.
-The last two sessions:
-- the Windows box (2026-09-25 → 28): first MSVC build, the #241 review and fix-up;
-- the Mac (2026-09-28 → 29): sync, the three issues, and the ninth branch's macOS run.
+**#229** (free rotation) is diagnosed and its design is decided, but not implemented.
 
-## This session's goal — named by Jilei at the 2026-09-29 handoff
+## Session goal
 
-> **"Next session let's do a review of the current status of the release and decide what to do
-> next."**
-
-The review is the work. **Deciding is Jilei's** (SPRINT_PLAN rule 2), so don't start code. A way to
-run it:
-
-1. **Refresh the facts first.** SPRINT_PLAN §2 is dated 2026-09-24 and still shows five branches.
-   - Run the fetch loop in SPRINT_PLAN §7 for `itksnap`, `itksnap-dls`, `segflow4d` and
-     `convert-mesh`.
-   - Run `git -C itksnap log --oneline 52ee94fa..upstream/master`. If upstream moved, every branch
-     needs a rebase (MERGE_ORDER "How to update", step 5).
-   - Read MERGE_ORDER Status. The hook refreshes it on `git fetch origin`.
-   - Check GitHub. What moved on #241 and #257–#259? What is new since #256?
-     `gh issue list -R pyushkevich/itksnap --limit 15` and `gh pr list -R pyushkevich/itksnap`.
-2. **Score each workstream** in SPRINT_PLAN §3 against the done-criteria in §4, and the
-   release-engineering list. Use the cut line in §6: the minimum release is W1 + W2 + W8 plus release
-   engineering.
-3. **Sort what is left** into:
-   - what we can do alone;
-   - what needs Paul, which is the planning-meeting agenda;
-   - what needs the Windows or the Linux box.
-4. **Show it to Jilei and let Jilei choose.**
-   - Refreshing SPRINT_PLAN §2 is allowed: it is a re-verified snapshot, not a re-plan.
-   - Changing scope or the cut line is a planning act. Only do it if Jilei says so.
-   - The private meeting page (https://claude.ai/artifact/QyivAN8NiDzadZ7hPKn6ut) still shows five
-     branches. Offer to republish it from `branches.md`, but ask first.
+**None chosen.** Jilei picks each session's goal (SPRINT_PLAN rule 2). Show the open list below,
+grouped as it is, and ask which item to work on before touching code. If the chosen item depends on
+something unfinished, say so first.
 
 ## The open list — a reminder, not a queue
 
-**Planning meeting: Paul's calls**
-- Merge #241, retitling it and rewriting its description as Marco invited. Then `upstream.md`
-  action 5, which includes rebasing `test/seg-anchor-4d`: it will conflict in `CMakeLists.txt`.
-- The go-ahead to open PRs for our nine branches. Points to raise:
+**Planning meeting: Paul's calls** (the meeting pages are below)
+- **Our eleven branches:** the go-ahead to open PRs. Points to raise:
   - `test/harness-gui-thread` competes with Paul's `dbf8e79f`;
-  - branches 5–6 change his seg_anchor code;
-  - W8 38 is a design question.
-- **W8 42:** keep upstream's Qt ≥ 6.9.3 floor, or lower it. It decides how Linux builds work.
-- **#259:** the CI fixes, especially item 4, gating on tests.
-- **W1:** the workspace `FormatVersion` 1→3 decision.
+  - `bug/full-extent-off-by-one` and `bug/seg3d-into-4d-check` change his seg_anchor code;
+  - `feature/ui-language-setting` has one question (see #260 below).
+- **#241:** merge it, retitling it and rewriting its description as Marco invited. Then
+  `upstream.md` action 5, which includes rebasing `test/seg-anchor-4d`: it will conflict in
+  `CMakeLists.txt`.
+- **Outside PRs** (`reviews/outside-prs-2026-09.md`):
+  - #251, #252, #253: merge;
+  - #254: merge after "Fixes" becomes "Refs #212";
+  - #243: merge after a 5-line fallback;
+  - #255: Paul decides. He disagreed in #210, and #260 is the alternative.
+- **#196:** merge. It is mergeable now at +33/−33; see `reviews/pr-196.md`.
+- **#233** (Paul's own PR): merge. It fixes a crash we reproduced on master. There are two
+  suggestions: a grid check, and a message instead of a silent no-op. See `reviews/pr-233.md`.
+- **#260:** should the Language preference also change number and date formats, as `--lang` does?
+  The branch changes the translation only.
+- **W8 45:** Tools › Reorient Image no longer changes the main image (seg_anchor), measured on
+  master. There is **no GitHub issue yet**; filing one needs Jilei's OK.
+- **The rest:**
+  - W8 42: keep the Qt ≥ 6.9.3 floor, or lower it?
+  - #259: CI gating;
+  - W8 38 (a design question);
+  - W8 41: the TEMP DIAGNOSTIC logging;
+  - moving the version to beta;
+  - the W1 `FormatVersion` checkbox. W1 Q1 closed it on 07-30 as not a break; it is Jilei's call to
+    tick it.
 
-**Topic branches** (live state: `MERGE_ORDER.md`)
-- Rebuild `staging/v460` with all nine (SPRINT_PLAN §7). This is a force-push, so it needs Jilei;
-  hand over the exact `--force-with-lease=staging/v460:d02236c3` command.
-- The ninth branch's Linux run. The recipe is below; it is blocked by W8 42 unless the quick route is
-  used.
-- `feature/cardiac-io` has **no test in `Testing/`**. Add a `.seq.nrrd` + `.nii.gz`/sidecar round-trip
-  test that fails if the `%R-R` axis is dropped.
-- A Linux/GCC run of all branches. The last one was in July; it is blocked by W8 42.
-- Manual tests and code review of the branches, and an agent guide. That was the goal Jilei named on
-  2026-09-25; it has not been started.
+**Posting on GitHub (each needs Jilei's OK)**
+- the draft comments for #243 and #251–#255;
+- the draft comment for #196, a thank-you that explains the merge;
+- the draft comment for #233.
 
-**Upstream** (`upstream.md`)
-- #257: needs a fix, on a new topic branch with "Fixes #257". The code is `#ifdef WIN32`, so only the
-  Windows box can verify it.
-- #258: fixed by the ninth branch.
-- #259: filed; the rest is Paul's.
-- **Not triaged:**
-  - PRs #251–#255 (aycibatuhan, five `BUG:` fixes, 2026-09-13);
-  - issue #256 (Windows decimal comma breaks NRRD loading, with a proposed one-line fix in
-    `main.cxx`);
-  - older open PRs #243, #233, #196, #182, #128, #126.
-  - CI for #251–#255 and for #241's head waits for a maintainer's "Approve and run".
+**Code we can do alone on the Mac**
+- **#229, free rotation.** The cause is in `workstreams/free-rotation-sync.md`: the 3D mesh and the
+  3D pick ignore the free-rotation ITK transform, which the 2D views and the volume renderer apply.
+  **Jilei's decisions:**
+  - loaded meshes turn with the image too;
+  - exported meshes stay in the image's own space;
+  - test the click-to-cursor maths at the model level, not through a GUI click.
 
-**W8** (`workstreams/bugfixes.md`)
-- New: 43 (GUI tests write into the real `%APPDATA%`), 44 (= #257).
-- From seg_anchor:
-  - 38: a same-size 3D segmentation with another header is pasted silently. Paul decides;
-  - 39: `GetReferenceSpaceOrigin()` returns the spacing;
-  - 40: adding a 4D segmentation prompts about unsaved changes;
-  - 41: "TEMP DIAGNOSTIC" logging in `upstream/master`.
-- Older clusters:
-  - the harness can't report failure: 22, 23, 31–34;
-  - crashes: 26–30, 35, 15b;
-  - flaky: 2, 3 (= #258, fixed on branch 9), 3b;
-  - Linux-only: 18–20;
-  - cardiac metadata: 8–11;
-  - other: 12, 16, 42.
+  Use a new branch (e.g. `bug/free-rotation-3d-sync`) whose PR says "Fixes #229".
+- W8 crash fixes: 26–30, 35, 15b. W8 test fixes for tests that pass without checking anything: 22,
+  23, 31–34.
+- `change_tracking.md` past `679ba76a`, and a draft of the 4.6 section of `ReleaseNotes.md`.
+- Refresh the meeting pages, but ask first:
+  - branches (https://claude.ai/artifact/QyivAN8NiDzadZ7hPKn6ut) still shows five branches;
+  - outside PRs (https://claude.ai/artifact/KjsGnpqcBdf2P1G2RyGbCs) lacks #196, #233, #256 and
+    #260.
+- Follow-ups that others own: #212 is only partly fixed by #254; #196 left four tooltips with the
+  old wording.
 
-**W1: ready backlog** (`workstreams/merge-backlog.md`)
-- Async DLS (`cb6f692e`, `ea86df0d` on `test/dls_sam2`) is blocked on two defects (W1 Q4). It would
-  get a new branch, `feature/dls-async`.
-- Re-resolve the `Submodules/{c3d,greedy}` bump against current upstream.
-- Delete merged branches: W8 item 7's seven, plus `developer-doc`.
+**Needs the Windows box**
+- **Branch 11 `bug/windows-decimal-comma` (#256):** run `ctest -R NumericLocale` (it needs a
+  decimal-comma locale such as `de-DE`), plus the full suite.
+- **#257 (W8 44):** the fix is known (return the path unchanged when `GetLongPathNameA` fails), in
+  the same file as #256. Put it on a new branch that says "Fixes #257", and verify both together.
+- W8 43: GUI tests write into the real `%APPDATA%`.
+- #255's Windows code path, if Paul wants #255.
 
-**Other workstreams**
-- W3: the itksnap-dls refactor. W4 and W5 (auto-seg and propagation UI) depend on it.
-- W6: free-rotation sync (#229).
-- W7: cmesh.
+**Needs the Linux box** (blocked by W8 42, Qt ≥ 6.9.3, unless the quick route is used)
+- The ninth branch's Linux run: recipe below.
+- A full Linux `ctest` of `staging/v460`. The last one was in July.
+
+**W1 and other workstreams**
+- W1: async DLS is blocked (Q4); the `Submodules/{c3d,greedy}` bump; deleting merged branches (W8
+  item 7, plus `developer-doc`).
+- W3: the itksnap-dls refactor. W4 and W5 depend on it. W7: cmesh.
 
 **Release engineering** (SPRINT_PLAN §3)
-- Version to beta, then `4.6.0`.
-- The 4.6 section of `ReleaseNotes.md`.
-- Refresh `change_tracking.md` past `679ba76a`.
-- Wrapper `SUBMODULE_SYNC.md` / `CLAUDE.md`.
+- the version to beta, then `4.6.0`;
+- `ReleaseNotes.md`;
+- `change_tracking.md`;
+- the wrapper's `SUBMODULE_SYNC.md` and `CLAUDE.md`.
 
-## Linux run of the ninth branch (recorded at Jilei's request, 2026-09-28)
+## Linux run of the ninth branch (`bug/remote-cache-test-datadir`, #258)
 
 What to show: without the branch, `_Cache` fails and writes into `~/.itksnap.org`. With it, the test
 passes and `~/.itksnap.org` is left alone.
 
-- **Blocker, W8 42:** upstream needs Qt ≥ 6.9.3, and the box has apt Qt 6.4.2. Two ways around it:
-  - **(a) Quick, test-only (recommended for this item).** `remote_image_load_test` is a Logic test, and
-    Qt's version does not matter to it.
-    - Make a throwaway detached worktree of `bug/linux-gcc-build`. It carries the GCC fixes and the Qt
-      ≥ 6.7 / ≥ 6.5 guards that apt Qt needs to configure.
-    - In `CMake/standalone.cmake`, lower the five `FIND_PACKAGE(Qt6… 6.9.3 REQUIRED)` calls to `6.4`.
-      **This is local only: never commit it.**
-    - Configure against `vtk-dev/installed/lib/cmake/vtk-9.5`, and build only
-      `ninja remote_image_load_test`.
-    - Run the baseline first. Then `git merge --no-edit bug/remote-cache-test-datadir` on the detached
-      HEAD, rebuild the target, and run again.
-  - **(b) Full.** Install Qt 6.9.3 (aqtinstall), rebuild VTK 9.5.2 against it (its Qt module links Qt),
-    then run the full `xvfb-run -a ctest`. That is the bigger item "A Linux/GCC run of all branches".
-- **Checks, in this order:**
-  1. **Back up `~/.itksnap.org`.** Snapshot it with
-     `find ~/.itksnap.org -exec stat -c '%Y %s %n' {} + | sort`.
-  2. **Baseline:** `ctest -R RemoteImageLoadTest_Cache -V` should fail with
-     `FAIL: CacheMetadata.xml not created after first download`, and new files should appear under
-     `~/.itksnap.org/ITK-SNAP/Cache`.
-  3. **With the branch:**
-     - `ctest -R RemoteImageLoadTest -V` passes all three. Rerun one that fails on the p25 flake
-       (W8 3b).
-     - The log shows `Clearing cache at <build>/.itksnap_test/.itksnap.org/ITK-SNAP`: on Linux the `~`
-       is expanded from the redirected `$HOME`.
-     - The snapshot is unchanged.
-  4. **Guard proof:** comment out `RedirectApplicationDataDirectory();` in `main()`, and rebuild.
-     `_Cache` must fail with "is outside the test directory" before it clears anything, and
-     `~/.itksnap.org` must be unchanged. Then revert.
-  5. **Record** in `branches.md` §9 and W8 3. Commenting on #258 publishes, so ask Jilei first.
+**The quick route**, test-only:
+1. Make a throwaway detached worktree of `bug/linux-gcc-build`.
+2. In `CMake/standalone.cmake`, lower the five `FIND_PACKAGE(Qt6… 6.9.3 REQUIRED)` calls to `6.4`.
+   **Never commit this.**
+3. Configure against `vtk-dev/installed/lib/cmake/vtk-9.5`, and build only
+   `ninja remote_image_load_test`.
+4. Back up `~/.itksnap.org`, and snapshot it with
+   `find ~/.itksnap.org -exec stat -c '%Y %s %n' {} + | sort`.
+5. Run the baseline, `ctest -R RemoteImageLoadTest_Cache -V`. Expect "CacheMetadata.xml not created",
+   and new files in the real profile.
+6. `git merge --no-edit bug/remote-cache-test-datadir`, rebuild, and run
+   `ctest -R RemoteImageLoadTest -V`. Expect all three to pass, the log to say
+   `Clearing cache at <build>/.itksnap_test/...`, and the snapshot to be unchanged.
+7. Guard proof: comment out `RedirectApplicationDataDirectory();`. `_Cache` must then fail with "is
+   outside the test directory".
+8. Record the result in branches.md §9 and W8 3. Commenting on #258 needs Jilei's OK.
 
 ## Files to read first
 
 1. `SPRINT_PLAN.md`:
    - the three rules at the top;
-   - §3, workstreams and release engineering;
-   - §4, the done-criteria;
-   - §6, the cut line;
-   - §7, how to refresh.
+   - §2, the state of the tree (verified 2026-09-30);
+   - §3, the workstreams and release engineering;
+   - §6, the cut line.
 2. `MERGE_ORDER.md`: Status, then Queue.
-3. `branches.md`: the summary table; one row per branch, with its test result.
-4. `upstream.md`: every GitHub item, and the merge rule.
-5. `workstreams/bugfixes.md` (W8) and `workstreams/README.md`.
-6. `change_tracking.md`: what has merged since 4.4.0. It is stale past `679ba76a`.
-7. `PROGRESS_LOG.md`, the entries since "2026-09-24", for how we got here.
+3. `branches.md`: the summary table, with one row per branch; §10 and §11 are new.
+4. `upstream.md`: every GitHub item, the Milestone section, and the list of issues with no PR.
+5. The reviews:
+   - `reviews/outside-prs-2026-09.md`, `reviews/pr-196.md` and `reviews/pr-233.md`;
+   - `workstreams/free-rotation-sync.md` for #229.
+6. `workstreams/bugfixes.md` (W8), with new items 45–47.
+7. `PROGRESS_LOG.md`, the entries dated 2026-09-29 and 2026-09-30.
 
 ## Known traps
 
 **Release and GitHub**
-- **Never merge a PR, ours or an outside one, through `gh`, the API or the web UI.** Merges happen only
-  at the planning meeting, in person. Every issue, comment, PR or push to someone else's branch needs
-  Jilei's OK first.
-- **A green CI run does not mean the tests passed** (#259). The green `master` build of `52ee94fa` had
-  3 failing tests. Every PR is red whatever the change. The Gatekeeper reads step `outcome`, and the
-  Actions API shows a `continue-on-error` step as `success` even when it failed.
-- **Force-pushing `staging/v460` needs Jilei.** Don't bump the wrapper's `itksnap` pointer to an
-  unpushed commit. Push submodules before bumping the wrapper pointer.
-- **SPRINT_PLAN §2 goes stale fastest.** Re-verify it with §7 before trusting a branch count.
+- **Never merge a PR, ours or an outside one**, through `gh`, the API or the web UI. Merges happen
+  only at the planning meeting. Every issue, comment, milestone change, or push to someone else's
+  branch needs Jilei's OK first. (#196's push and the milestone changes were OK'd on 2026-09-30.)
+- **This session cannot force-push.** The auto-mode permission guard blocks
+  `git push --force-with-lease` ("Git Destructive"), even after Jilei approves in chat. Build and test
+  locally, then give Jilei the exact command. Plain pushes work.
+- **To update an outside PR without a force-push**, merge master into its branch. Pushing to the
+  fork's branch works when "maintainers can modify" is on. #196 was done this way.
+- **A green CI run does not mean the tests passed** (#259). Every PR is red, whatever the change.
 
 **Testing**
-- **Compare failure *sets*, never totals.** The three remote-image tests rotate (W8 3b), and
-  `4DReplayWithMeshUpdate` is flaky upstream. `MeshWorkspace` is not a flake.
-- **A GUI test that passes in under a second is not running.** Reference times: `RandomForestBailOut`
-  ≈ 20 s, `MeshWorkspace` ≈ 47 s, `SegmentationSwitching` ≈ 61 s, `SegAnchor4DSwitching` ≈ 73 s.
-  Upstream itself has two false passes: `RandomForestBailOut` and `4DContinuousRenderingD`.
+- **Compare failure *sets*, never totals.** The remote-image tests rotate their failures (W8 3b, the
+  p25/p50 quantile), and `4DReplayWithMeshUpdate` is flaky upstream (W8 2).
+- **A GUI test that passes in under a second is not running.** Reference times:
+  - `RandomForestBailOut` ≈ 20 s;
+  - `4DContinuousRendering` ≈ 38 s;
+  - `LanguagePreference` ≈ 7 s;
+  - `MeshWorkspace` ≈ 47 s.
 - **A branch off `upstream/master` lacks the false-green fix.** Register a new script in BOTH
   `TestingScripts.qrc` and `GUI_TESTS`, and break one assertion to see it fail.
-- **Build each branch in its own worktree and build directory.**
+- **The GUI harness cannot click in the 3D view.** `view3d` is a container, and its OpenGL child,
+  which gets the mouse, has no name. The **Space key paints with `dragging = true`, which never runs
+  the adaptive brush**: use `postMouseEvent(canvas, x, y, "click", "left")`.
+- The harness reads values at the *cursor*, but a click paints under the *mouse*. The Undo action's
+  enabled state does not update in the harness.
+- **On macOS, `HOME` does not move ITK-SNAP's settings folder.** Also set `CFFIXED_USER_HOME` to a
+  scratch folder. A hand-made `UserPreferences.xml` needs `System.CreatedBySNAPVersion`, or it is
+  wiped at load.
+- **Warn Jilei before any deliberate crash.** Each abort pops a macOS crash dialog.
 - **Several branches edit `CMakeLists.txt` and `TestingScripts.qrc`.** Insert at an anchor no other
-  branch uses. `IRISApplicationTest` is used twice: by `test/seg-anchor-4d` and by #241. Check pairs
-  with `git merge-tree --write-tree`.
-- **Test scripts are compiled into the `ITK-SNAP` binary** (qrc). Rebuild after editing a script.
-- **The GUI harness has no scratch directory.** Test save/reload as a C++ Logic test with `${TEMP}`.
-- **Selecting a segmentation row in the Layer Inspector makes it the active segmentation.**
-- **Grids at exactly 2x put voxel centres on 0.5 boundaries.** Pick probe points that are tie-free.
-- **SimpleITK `GetImageFromArray` on a 4D array gives a 3D image.** Use `JoinSeries`.
+  branch or open PR uses, and check with `git merge-tree --write-tree` against all branches and
+  `refs/pr/*`.
 
-**Platforms**
-- **Windows:**
-  - point `APPDATA` at a scratch folder for any `ctest` or GUI run (W8 3, W8 43);
-  - `ITK-SNAP -g <missing file>` exits silently (#257);
-  - there is no `gh` on that box.
-  - More traps are in the Windows section of the wrapper `CLAUDE.md` and `PROGRESS_LOG.md`
-    2026-09-25.
-- **Linux:** apt's Qt 6.4.2 can't configure `upstream/master` (W8 42).
-- **ITK's kwsys already decodes UTF-8 on Windows.** Non-ASCII bugs there are about `argv`, `getenv`
-  and the `A` Win32 functions, which follow the process code page.
+**Machine (Mac)**
+- **Memory is tight.** Swap was 9.4 of 10 GB, with the load average at 60–135. Build with
+  `ninja -j4`. To test a branch commit quickly, check it out detached in `worktrees/pr-review`: its
+  build, `build-pr-review`, is complete, so only the changed files rebuild.
+- **The Bash tool stops at 10 minutes.** Run `ctest` in the background.
+- zsh does not word-split `$var`, and a bare `====` is expanded. Never `pkill -f` from your own shell.
+- **Scripted doc edits that replace a span `s[i:j]` twice dropped paragraphs this session.** Always
+  read `git diff` of a scripted edit.
 
-**Shell (Mac)**
-- zsh does not word-split `$var`. A bare `====` is expanded as `=cmd`, so quote separators.
-- `ctest | tail` returns tail's exit status. Use an absolute `--testdir`.
-- **The Bash tool stops at 10 minutes.** A full `ctest` takes about 9–12, so split it:
-  `ctest -I 1,22`, then `ctest -I 23,34`.
-- Build in the foreground on macOS. A clean branch build fits in one 10-minute call.
-- Never `pkill -f` from your own shell.
-- The `MERGE_ORDER.md` hook fires on any branch ref update in `itksnap`.
+## Left on disk
 
-## How to work
-
-Start by confirming the goal with Jilei. Then refresh the facts, and only then summarize. Keep what
-you checked apart from what you inferred. Lead with the answer, in plain language.
+- **Worktrees** (under `worktrees/`):
+  - `cardiac-io`;
+  - `ui-language-setting`;
+  - `windows-decimal-comma`;
+  - `pr-review` (detached at `52ee94fa`; a clean scratch for review builds);
+  - the four older ones.
+- **Builds:** `build-cardiac-io`, `build-ui-language-setting` and `build-pr-review`.
+  `build-windows-decimal-comma` is only partly built.
+- **Refs:** local `refs/pr/*`, and local tags `archive/staging-v460-{0924,0929,0930}`.
 
 Run `/handoff` at the end.
