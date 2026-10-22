@@ -1,110 +1,84 @@
-# RESUME — ITK-SNAP Agentic API · post-CAIMI-submission
+# RESUME — ITK-SNAP Agentic API · CAIMI26 talk, rehearsal
 
 ## Current state (read this paragraph first)
 
-**The CAIMI sprint is over and the submission is in.** SIIM-CAIMI26 AI Builder Showcase,
-submission ID **`2480386`**, status **Complete**, preferred presentation **Oral**; notifications
-**2026-08-26**; the conference is **Oct 26–27, 2026** at Penn. Authors: Jilei Hao · Alison M.
-Pouch · Paul A. Yushkevich. What was built and submitted: ITK-SNAP made callable by an AI agent
-over the Model Context Protocol, where every edit — by agent or person — returns a structured
-record of what changed and who changed it. Three repos, all pushed and all clone-clean:
-**`itksnap`** (C++ audit record + live socket channel, `sprint/caimi`, `daeeb99`),
-**`itksnap-dls`** (FastAPI model server, `feature/agentic-api`, `bbaac51`), **`itksnap-mcp`**
-(public, `main`, `12286185`). Wrapper `main` is at `9dc1e77` and in sync with origin. The
-submitted text lives in `caimi-submission/caimi_submitted.md`, verified field-by-field against
-the portal preview; treat it as a record, not a draft. **No deadline is now pending** — the next
-session is free work, not a scramble.
+The CAIMI26 talk is **built, uploaded and frozen**. Slot: AI Builder Showcase, Session 1007,
+**Mon 2026-10-26, 4:30 PM ET**, Smilow Center, Penn. **7 minutes + 5 minutes Q&A**, run from a
+Penn Windows PC. Jilei uploaded the 5-slide deck and the 3:50 demo MP4 on 2026-10-21. The video
+plays on its own between slides 3 and 4, not from a slide. Everything lives in
+`projects/agentic-api/presentation/`. The `.md` files are the source of truth: `talk.md`
+(slides + spoken script) → `build.py` → deck and `build/script.html`; `video.md` →
+`build_video.py` → MP4. Since 2026-10-22 `frozen.json` makes the builds refuse any change the
+audience would see. **Only the spoken text (`### Say`, `### Beat`), slide times and `pace` may
+change.** The plan is 6:50 of 7:00.
 
-## The single next goal
+## The next goal (Jilei's choice, named 2026-10-22)
 
-**Decide the post-submission track, then do exactly one of these — do not start all three.**
-In rough priority order:
+**Tweak and rehearse the spoken script.** Work in `talk.md` (`### Say` blocks and the video's
+`### Beat` blocks), rebuild with `python3 build.py`, and rehearse from `build/script.html`. Ask
+Jilei what to start with: which slide or beat feels off, or a timed run-through first.
 
-1. **Close the honesty gap the submission names.** Field 10 says the routing decision "is the
-   point of the design" and is not implemented: the confidence gate in
-   `itksnap-mcp/src/itksnap_mcp/confidence.py` (`agreement_gate`) is unit-tested but **called by
-   nothing** — not by `server.py`, not by `demo/run_p2.py`. Wiring it into an MCP tool so a case
-   is routed by measurement rather than by a person choosing it is the highest-value next
-   increment, and it is what the Q&A will probe.
-2. **Prepare the October demo.** The submitted demo description commits to a **live** run in six
-   steps, applying into a **running** ITK-SNAP session over the socket — not the headless
-   workspace path that `docs/demo_runbook.md` documents as the default. That path needs to be
-   rehearsed end to end on the presentation machine, and there is no pinned inference seed.
-3. **Explicit commit/discard of a correction** (field 10, item 2): after correcting a proposal
-   the operator has no way to accept or reject — the outcome is implied by whether the file is
-   saved. This is the most user-visible of the named limitations.
+## Other open items (reminders, not a priority order)
 
-Everything else — OS4LS Goal 1, the pip-shippable Layer-1 binding, batch triage (P3) — is
-planning work, not this file's business. See `docs/agentic-prototype-plan.md`.
+**Talk logistics**
+- Confirm the email to Anna Zawacki said "Prerecorded Demo" (the upload is done).
+- Play the uploaded deck and MP4 on the Windows machine. Practise slide 3 → video → slide 4.
+- `qa.md` has three "Needs your answer" questions: how this differs from MONAI Label / 3D Slicer;
+  when it reaches a released ITK-SNAP (it is not in 4.6); who runs the model server in a hospital.
+- Optional: a printable script. Nothing produces a .docx today; `build/script.html` prints
+  cleanly. If Word is wanted, generate it from `talk.md` in `build.py`; do not hand-write it.
+
+**Agentic API, after the talk** (from `project_retrospective.md`; none started)
+- Wire the confidence gate (`itksnap-mcp/src/itksnap_mcp/confidence.py`, `agreement_gate`); it is
+  still called by nothing. This is future direction 1 on the closing slide.
+- Explicit accept/discard of a correction (Q&A answer: "not yet").
+- A dedicated demo build. `build-release/` is now `staging/v460` and lacks `--agent-listen`, the
+  audit code and the `itksnap-wt` label commands, so the live demo cannot run on this Mac
+  until `sprint/caimi` (or its six agentic commits, which apply cleanly to `upstream/master`) is
+  built in its own directory.
+- Repoint or remove the broken `itksnap-wt` MCP registration in `~/.claude.json`; it points at
+  a deleted file.
 
 ## Files to read first (in order)
 
-1. **`project_retrospective.md`** — limitations, next steps, and lessons. Start here; it is the
-   condensed form of everything below.
-2. **`caimi-submission/caimi_submitted.md`** — what was actually submitted, including the
-   limitations we committed to in public. Its header lists the edits made in the portal.
-3. **`PROGRESS_LOG.md`** — newest entry (2026-07-25) for this session; the two before it for how
-   the prototype was built.
-4. **`../../SUBMODULE_SYNC.md`** (wrapper root) — which branch each submodule must track, and the
-   two checks to run before pushing anything that bumps a pointer.
-5. `docs/demo_runbook.md` — the recording/demo runbook. Note §254: the default `apply` is
-   headless, so nothing paints into a running window on that path.
-6. `docs/agentic-prototype-plan.md` — the authoritative long-range plan (§8 models, §9 distribution).
+1. `presentation/README.md`: the folder's rule, the freeze, the build commands, the organisers'
+   requirements, the to-do list.
+2. `presentation/talk.md`: the whole talk. `build/script.html` is the same text with a running
+   clock.
+3. `presentation/qa.md`: the answers to have ready.
+4. `PROGRESS_LOG.md`, newest entry (2026-10-05 → 10-22): how the talk got here and what broke.
 
-## Setup (this machine — Linux, RTX 2080 8 GB; a 4090 box is used for full-res)
+## Commands
 
-- **Base env** (DLS server): `source ~/tk/miniconda3/etc/profile.d/conda.sh && conda activate base`.
-- **MCP server env** (isolated): `~/.venvs/itksnap-mcp`. Claude Code's registration points at
-  `~/.venvs/itksnap-mcp/bin/python -m itksnap_mcp.server`.
-- **Tests:** `cd itksnap-mcp && ~/.venvs/itksnap-mcp/bin/python -m pytest tests/ -q` → **12 passed**.
-  `PYTHONPATH=src python3 -m pytest tests/ -q` also works. Plain `python3 -m pytest` from the base
-  env **fails to collect** (`ModuleNotFoundError: itksnap_mcp` — `src` layout, not installed there).
-- **Build FOREGROUND** if C++ changes: `cmake --build build-release --target ITK-SNAP -j`. Never
-  `nohup &` — it reports success instantly while `ninja` is still linking. Confirm the binary mtime
-  advanced before testing.
-- **Live agent-directed run:**
-  1. base env: `cd itksnap-dls && python -m itksnap_dls --port 8911 --device cuda` (poll `/status`).
-  2. `ITK-SNAP -g /tmp/ct3d_bavcta028.nii.gz --agent-listen /tmp/snap-agent.sock` on a real display.
-  3. Start a **fresh** `claude` session in this repo (MCP tools load at session start).
-  4. GPU-free retake: `apply_file /tmp/p2_proposal_10.nii.gz` (label 1).
-  5. Stop the server by port: `lsof -ti:8911 | xargs -r kill`.
-- **Rebuild the submission docs** (only if the record must change — it should not):
-  `python3 docs/build_caimi_submission.py caimi-submission/caimi_submitted.md caimi-submission/caimi_submitted.docx`
+```bash
+cd projects/agentic-api/presentation
+python3 build.py              # deck + script.html; prints the timing table; fails on frozen-content edits
+python3 build_video.py --stills   # only if build/ was cleaned (the slide 2 image); the full video build is refused while frozen
+```
+
+`python3` is the default conda base on this Mac; it has `python-pptx`, `Pillow` and
+`reportlab`. ffmpeg comes from Homebrew.
 
 ## Known traps
 
-- **Never `pip install mcp` into the DLS base env.** It upgrades `starlette` past FastAPI's pin and
-  breaks `itksnap_dls` (`on_startup` TypeError). The two cannot share one environment.
-- **Never `pkill -f "<string>"` from your own shell** — the pattern matches the tool shell's own
-  command line and kills it. Servers by port, GUIs by `setsid` + `kill -TERM -<pid>`, builds by
-  `pgrep -x ninja`.
-- **Push submodules BEFORE recording the pointer in the wrapper.** This was broken for five wrapper
-  commits this sprint: `git clone --recursive` failed because two pointers referenced commits that
-  existed only locally. It is invisible on the machine that made them. Run the reachability check in
-  `SUBMODULE_SYNC.md` §3 before pushing a pointer bump.
-- **Do not "simplify" that check to `git ls-remote | grep <sha>`** — `ls-remote` lists only ref
-  **tips**, so it reports healthy ancestor pointers as missing. Use `git branch -r --contains` after
-  a fetch.
-- **`.docx` output is not byte-reproducible.** `zipfile` stamps entry mtimes, so a rebuild dirties
-  git even when content is identical. Either don't rebuild before committing, or `git checkout --`
-  the file after verifying content. A fixed `ZipInfo.date_time` would fix this properly.
-- **Word comments do not survive regeneration.** The `.docx` is a build artifact of the `.md`. A
-  review round is: comment → save in Word → extract → apply to the `.md` → rebuild → archive the
-  commented copy. Note Word holds the file open; unsaved comments are not on disk.
-- **`.gitmodules` drifts silently.** It declared `itksnap-dls` on `main` for most of the sprint while
-  the work was on `feature/agentic-api`; a bare `git submodule update --remote` would have discarded
-  it. Fixed at `9dc1e77`, but the failure mode recurs whenever a submodule is switched with
-  `git switch` and `.gitmodules` is not updated.
-- **Local body CTs are 4D cardiac CTA** — extract a 3D frame first (`/tmp/ct3d_bavcta028.nii.gz`).
-- **DLS upload drops geometry** — `write_label_mask` restores it via `CopyInformation`. If the
-  proposal and image do not share a grid, `apply` silently reports `changed_voxels: 0`.
-- **The demo depends on one machine and one dataset.** Everything traces to `/tmp` paths and a
-  hardcoded MCP config; nothing has run on a second dataset, scanner, modality, or machine.
-
-## How to work
-
-The deadline pressure is gone; the failure mode now is drift, not haste. Prefer one finished
-increment over three started ones. The submitted text is a public commitment — when the code and
-`caimi_submitted.md` disagree, that is a bug in the code or a note for the Q&A, never a silent edit
-to the record. Commit and **push** inside a submodule first, then bump the wrapper pointer, then run
-the `SUBMODULE_SYNC.md` §3 checks. Run `/handoff` at the end of the session rather than improvising it.
+- **The slides and video are frozen.** If `build.py` stops with "frozen", the edit touched
+  on-slide text: undo it. To truly change a slide, delete `frozen.json`, rebuild, re-upload,
+  then run `python3 build.py --freeze` again. The uploaded originals are in
+  `presentation/final/uploaded_2026-10-21/`.
+- **The uploaded deck keeps the speaker notes from upload day.** Script tweaks reach
+  `build/script.html` and the local deck's notes, not the copy on the podium PC. Rehearse from
+  `script.html`.
+- **Never edit `build/` by hand.** If Jilei comments in or edits the PPTX, a rebuild overwrites
+  it. First copy it to `presentation/review/` with the date in the name, diff its text against a
+  fresh build, and carry the changes into `talk.md`. Watch for a `~$…pptx` lock file in `build/`:
+  it means PowerPoint has the deck open.
+- **Pace:** `build.py` fails if any part needs more than `pace` (150) words per minute. Slide 3
+  is the densest at about 128.
+- **Language is neutral on purpose** (Jilei): no years or download counts, no selling points, no
+  questions to the audience. Keep script tweaks in that register.
+- **The repo is public.** The acceptance email (it holds a private upload link), the SIIM
+  template, `review/` and `final/` stay out of git, enforced by `presentation/.gitignore`.
+- **The footage still shows SAM2** in beat 1's model table. SAM2 is being dropped from the DLS;
+  the narration avoids naming or counting the models.
+- **Poppins (the template font) is not installed on this Mac.** LibreOffice previews use a
+  substitute. Check fit with a Verdana-substituted copy, the conservative case.

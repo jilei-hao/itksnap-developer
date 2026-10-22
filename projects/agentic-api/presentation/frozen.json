@@ -1,0 +1,316 @@
+{
+ "content": {
+  "meta": {
+   "authors": "Jilei Hao, Alison M. Pouch, Paul A. Yushkevich",
+   "degree": "",
+   "institution": "University of Pennsylvania",
+   "output": "CAIMI26_ITK-SNAP_Hao",
+   "presenter": "Jilei Hao",
+   "session": "AI Builder Showcase  \u00b7  Session 1007  \u00b7  October 26, 2026",
+   "subtitle": "Expert Human Correction as a Resumable, Audited Pipeline Step",
+   "title": "ITK-SNAP as an | Agent-Callable Tool"
+  },
+  "parts": [
+   {
+    "props": {
+     "layout": "title"
+    },
+    "sections": [],
+    "slide": 1,
+    "title": "Title slide"
+   },
+   {
+    "props": {
+     "image": "build/still_itksnap.jpg",
+     "layout": "context"
+    },
+    "sections": [
+     [
+      "ITK-SNAP",
+      {
+       "items": [
+        {
+         "lead": null,
+         "text": "Open-source 3D medical image segmentation"
+        },
+        {
+         "lead": null,
+         "text": "Linked 2D views and a 3D view of each image"
+        },
+        {
+         "lead": null,
+         "text": "Manual and semi-automatic segmentation tools"
+        }
+       ],
+       "paras": [],
+       "props": {},
+       "quote": "",
+       "table": [],
+       "url": null
+      }
+     ],
+     [
+      "Deep-learning server",
+      {
+       "items": [
+        {
+         "lead": null,
+         "text": "A separate model server, often on a GPU"
+        },
+        {
+         "lead": null,
+         "text": "Runs an interactive AI model, nnInteractive"
+        },
+        {
+         "lead": null,
+         "text": "A person guides it with clicks and scribbles"
+        }
+       ],
+       "paras": [],
+       "props": {},
+       "quote": "We added an automatic model to the server, and a way for an AI agent to drive ITK-SNAP.",
+       "table": [],
+       "url": null
+      }
+     ]
+    ],
+    "slide": 2,
+    "title": "ITK-SNAP and its deep-learning server"
+   },
+   {
+    "props": {
+     "layout": "problem-solution"
+    },
+    "sections": [
+     [
+      "Today",
+      {
+       "items": [
+        {
+         "lead": "Models are not perfect.",
+         "text": "A person still has to check and correct the result."
+        },
+        {
+         "lead": "The pipeline stops.",
+         "text": "Someone opens the image, fixes it, and passes the file back by hand."
+        },
+        {
+         "lead": "The fix is not recorded.",
+         "text": "It is saved as a new mask. Change history is lost."
+        }
+       ],
+       "paras": [],
+       "props": {},
+       "quote": "",
+       "table": [],
+       "url": null
+      }
+     ],
+     [
+      "What we built",
+      {
+       "items": [],
+       "paras": [],
+       "props": {
+        "arrows": "Request auto segmentation, Auto segmentation result, Route for human correction, audit record"
+       },
+       "quote": "Every edit, by the agent or by the person, comes back as a structured record.",
+       "table": [
+        [
+         "Box",
+         "Role"
+        ],
+        [
+         "Model server",
+         "proposes a segmentation"
+        ],
+        [
+         "AI agent",
+         "calls both as tools (MCP)"
+        ],
+        [
+         "ITK-SNAP",
+         "a person corrects it here"
+        ]
+       ],
+       "url": null
+      }
+     ]
+    ],
+    "slide": 3,
+    "title": "Corrections are manual and unrecorded"
+   },
+   {
+    "beats": [
+     [
+      1,
+      "List models",
+      20
+     ],
+     [
+      2,
+      "Workspace, and ITK-SNAP opens",
+      30
+     ],
+     [
+      3,
+      "The proposal",
+      35
+     ],
+     [
+      4,
+      "Apply into the open window",
+      60
+     ],
+     [
+      5,
+      "The correction",
+      40
+     ],
+     [
+      6,
+      "The audit",
+      45
+     ]
+    ],
+    "props": {
+     "attribution": "CT scan: TotalSegmentator dataset (Wasserthal et al., Radiology: AI, 2023), CC BY 4.0",
+     "file": "build/CAIMI26_ITK-SNAP_Hao_demo.mp4",
+     "time": "3:50"
+    },
+    "video": "Demo"
+   },
+   {
+    "props": {
+     "layout": "record"
+    },
+    "sections": [
+     [
+      "From the demo log",
+      {
+       "items": [],
+       "paras": [
+        "The demo log has 15 records: 11 agent (one shown), 4 human."
+       ],
+       "props": {},
+       "quote": "",
+       "table": [
+        [
+         "Actor",
+         "Operation",
+         "Label",
+         "Voxels"
+        ],
+        [
+         "agent",
+         "apply",
+         "heart",
+         "+242,476"
+        ],
+        [
+         "human",
+         "paintbrush",
+         "heart",
+         "+40"
+        ],
+        [
+         "human",
+         "paintbrush",
+         "heart",
+         "+41"
+        ],
+        [
+         "human",
+         "paintbrush",
+         "aorta",
+         "+64"
+        ],
+        [
+         "human",
+         "paintbrush (erase)",
+         "aorta",
+         "-23"
+        ]
+       ],
+       "url": null
+      }
+     ],
+     [
+      "In every record",
+      {
+       "items": [
+        {
+         "lead": "Shown in the table:",
+         "text": "actor, operation, label, voxels changed."
+        },
+        {
+         "lead": "Also recorded:",
+         "text": "time, bounding box, label counts before and after."
+        }
+       ],
+       "paras": [],
+       "props": {},
+       "quote": "The agent saves the records as a JSON file next to the workspace, so the change history stays with the case.",
+       "table": [],
+       "url": null
+      }
+     ]
+    ],
+    "slide": 4,
+    "title": "Every edit comes back as a record"
+   },
+   {
+    "props": {
+     "layout": "closing"
+    },
+    "sections": [
+     [
+      "Future directions",
+      {
+       "items": [
+        {
+         "lead": "Route cases by confidence.",
+         "text": "Let agreement between model runs decide which cases a person sees."
+        },
+        {
+         "lead": "Train models with the audit records.",
+         "text": "Each correction is a labeled example of where the model fails."
+        },
+        {
+         "lead": "Automate the improvement loop.",
+         "text": "Retrain, test, and update the server without manual steps. The records then show whether corrections drop."
+        }
+       ],
+       "paras": [],
+       "props": {},
+       "quote": "",
+       "table": [],
+       "url": null
+      }
+     ],
+     [
+      "Code and demo",
+      {
+       "items": [],
+       "paras": [
+        "https://github.com/jilei-hao/itksnap-mcp"
+       ],
+       "props": {},
+       "quote": "",
+       "table": [],
+       "url": "https://github.com/jilei-hao/itksnap-mcp"
+      }
+     ]
+    ],
+    "slide": 5,
+    "title": "Future directions"
+   }
+  ]
+ },
+ "frozen": "2026-10-22",
+ "note": "Snapshot of what the audience sees, taken when the deck and video were uploaded.",
+ "uploaded": {
+  "CAIMI26_ITK-SNAP_Hao.pptx": "ff7e0879b29fc8fd6267e3e0a050084e67a69246bb8000f8a496cf5ff2fd29cd",
+  "CAIMI26_ITK-SNAP_Hao_demo.mp4": "a49b2205cfb1a06cd1b8b596512a2099019c8484ceb54ec9481843600d317c2f"
+ }
+}

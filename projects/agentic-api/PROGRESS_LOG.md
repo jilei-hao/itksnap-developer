@@ -3,6 +3,85 @@
 Newest entries first. See `docs/agentic-prototype-plan.md` for the authoritative plan
 and `NEXT_SESSION_PROMPT.md` for the resume prompt.
 
+## 2026-10-05 → 2026-10-22 — CAIMI26 talk built, uploaded and frozen
+
+**Attempted:** review the code state for the October CAIMI talk, then build the talk itself:
+slides, spoken script, demo video and Q&A sheet. It ran over several review rounds with
+Jilei. The deck and video were uploaded on 2026-10-21 and frozen on 2026-10-22.
+
+**Landed**
+
+- **Acceptance and slot:** Session 1007, "Clinical Workflows, Auditing & Analytics", Mon
+  2026-10-26, 4:30 PM ET. 7 min + 5 min Q&A. Penn Windows PC only, at most 5 slides on the SIIM
+  template, and the demo as a prerecorded MP4. A follow-up on 2026-10-16 made the MP4 the main
+  content, played on its own and not from a slide. Constraints are in `presentation/README.md`;
+  the email itself stays out of the repo (it holds a private upload link).
+- **`presentation/`, new.** Every product is generated from markdown:
+  `talk.md` (slides, video placement, spoken script) → `build.py` → PPTX with speaker notes plus
+  `build/script.html`; `video.md` (clips, framings, segments, captions, callouts, stills) →
+  `build_video.py` → the MP4 and slide stills; `qa.md` is read as written. `build.py` checks
+  slide count, slot time, speaking pace, and that the beats in `talk.md` and `video.md` agree.
+  `build_video.py` checks that the segments add up to each beat.
+- **Final talk:** title (authors in submission order, presenter bold) → ITK-SNAP and its
+  deep-learning server (context) → "Corrections are manual and unrecorded" (problem + diagram)
+  → **video, 3:50** → "Every edit comes back as a record" → "Future directions" (route by
+  confidence; train models with the audit records; automate the improvement loop). Planned
+  6:50 of 7:00.
+- **Video:** cut from the July footage (clip 1 for beat 1, clip 4 for beats 2–6) at 1920×1080
+  H.264. It has 2× typing and waiting with an on-screen badge, a visible jump cut over the
+  model wait, per-beat captions, 12 orange callouts timed to the action, the model-server log
+  blurred, and the CT credit (CC BY 4.0) burned in.
+- **Uploaded 2026-10-21:** the files in `build/upload/` are byte-identical to the build. Copies
+  are in `presentation/final/uploaded_2026-10-21/` (local, ignored).
+- **Frozen 2026-10-22:** `build.py --freeze` wrote `frozen.json` (checksums plus a snapshot of
+  the visible content). `build.py` now refuses on-slide changes and `build_video.py` refuses to
+  re-render; Say and Beat text, slide times and pace may still change.
+- **Review round:** Jilei's commented deck is archived in `presentation/review/`. Both comments
+  ("dead end" title; 6 fields vs 4 columns) and the edits were carried back into `talk.md`.
+
+**Tests:** `itksnap-mcp` **12 passed**. `presentation/build.py` checks OK (5 slides + video,
+6:50/7:00). The freeze was tested in a scratch copy: a Say/time edit passes, an on-slide edit
+fails, a video re-render is refused, `--stills` runs. Every deck build passed the pptx skill's
+`validate.py --original`. The QR code decodes to the `itksnap-mcp` repo (checked with macOS
+CoreImage on the rendered slide). No ITK-SNAP C++ changed, and no `itksnap`/`itksnap-mcp`
+commits were made this session.
+
+**Broke / surprised**
+
+1. **The live demo could not run on the Mac on 2026-10-05,** and none of it was a code bug.
+   `build-release/` had been rebuilt from `staging/v460`, which has no `--agent-listen`, no
+   audit code and no `itksnap-wt` label commands. The MCP registration still pointed at it.
+   The remote DLS box timed out, and `/tmp` demo data was gone. This became moot once
+   the venue ruled out live demos.
+2. **The July `final-demo.mp4` was unusable as is:** 8:42 long, 4096×2506 at 12.5 fps, silent.
+   It also shows 68 structures in one take and 65 in another for the same scan; the script now
+   says "more than sixty".
+3. **macOS screen recordings have a variable frame rate.** Segments overran (+4.3 s in total;
+   +1.9 s on one 6.5 s cut) because a still screen's last frame lasts past the out point. Fixed
+   with `trim=duration=` after `fps` in `build_video.py`.
+4. **Jilei edited the built PPTX in PowerPoint (twice), and a rebuild would have overwritten it.**
+   Caught by the `~$` lock file and mtimes. Routine now: archive to `review/`, diff text and
+   geometry against a fresh build, port the changes into `.md`, then rebuild.
+5. **Poppins (the template font) is not installed on the Mac.** Text fit was checked by
+   rendering a copy with Verdana substituted, the conservative case.
+6. **SAM2 is being dropped from the DLS** (Jilei, 2026-10-21). The slides and narration no longer
+   name it, but the July footage still shows a SAM2 row in beat 1's model table.
+
+**Decisions**
+
+- **Markdown is the source; PPTX, script and MP4 are build products.** Same rule as the
+  submission docx, now applied to a deck and a video. Layout lives in `build.py`, words in
+  `talk.md`, cuts and callouts in `video.md`, with callout positions in source-clip pixels so
+  they survive framing changes.
+- **Prerecorded MP4, narrated live**, because the venue allows a live demo only if it is
+  web-hosted.
+- **Neutral, non-promotional language throughout** (Jilei). No years or download counts, no
+  questions to the audience, closing slide as future directions. Limitations live in `qa.md` and
+  in beat 5's spoken "I am a developer, not a clinician".
+- **VLM routing kept off the slides** and added to `qa.md` as an untested, measurable idea (a
+  quick literature search found no VLM judging segmentations on CT).
+- **Freeze as a mechanism, not a note:** `frozen.json` plus refusals in both builds.
+
 ## 2026-07-25 — CAIMI submitted; abstract rewritten to the real form; submodule sync repaired
 
 **Attempted:** polish the abstract for tone, then — on discovering the portal form was nothing
