@@ -25,7 +25,7 @@ Wrapper remote: `https://github.com/jilei-hao/itksnap-developer.git`
 | `cmrep/` | `local` | `cmrep.git` | cm-rep; ground-truth parity reference for ConvertMesh. |
 | `FireANTs/` | `main` | `FireANTs.git` | Registration project. |
 
-Eight submodules. `itksnap-mcp` is missing from `CLAUDE.md`'s table; this list is complete.
+Eight submodules; this list is complete.
 
 ### Nested submodules (inside `itksnap/`)
 

@@ -10,14 +10,17 @@ them.** Edit the `.md`, run the build, and never edit anything in `build/`.
 
 | File | What it holds | What comes out of it |
 |---|---|---|
-| `talk.md` | the slides (words, numbers, order, timing), the video's place in the talk, and the spoken script | `build/CAIMI26_ITK-SNAP_Hao.pptx` with speaker notes, and `build/script.html` |
+| `talk.md` | the slides (words, numbers, order, timing), the video's place in the talk, and the spoken script | `build/CAIMI26_ITK-SNAP_Hao.pptx` with speaker notes, `build/script.html`, `build/CAIMI26_ITK-SNAP_Hao_script.docx` (the script to edit in Word, with what is on screen in each beat taken from `video.md`), and `build/CAIMI26_ITK-SNAP_Hao_script_phone.pdf` (the script sized for an iPhone screen, one slide per page) |
 | `video.md` | the demo MP4's cut list: clips, crops, segments, captions, callouts; and the stills the slides use | `build/CAIMI26_ITK-SNAP_Hao_demo.mp4`, `build/still_*.jpg` |
-| `qa.md` | likely questions and the answers to give | read as it is |
+| `qa.md` | likely questions and the answers to give | `build/CAIMI26_ITK-SNAP_Hao_qa_phone.pdf` (for an iPhone: a tappable list of the questions, each answer whole on its page) |
 | `build.py` | the slide layout, and the checks | |
 | `build_video.py` | renders the MP4 from `video.md` | |
+| `review_comment.py` | adds review comments, each anchored to exact text, to a copy of a Word file | a commented `.docx`, usually in `review/` |
+| `review_read.py` | reads a reviewed Word file: pending tracked changes, comment threads, and (with `--against`) every paragraph that differs from what was sent | a report on the terminal |
+| `method.md` | how this talk was made (build rule, writing for the ear, timing, Word review rounds, rehearsal), for reuse on another talk | |
 | `template/` | SIIM's PowerPoint template. Local only, not in git | |
 | `build/` | generated files. Local only, not in git | |
-| `review/` | commented copies of the deck from review rounds. Local only, not in git | |
+| `review/` | commented copies of the deck and the script from review rounds. Local only, not in git | |
 | `frozen.json` | snapshot of the uploaded content and checksums; makes the builds refuse visible changes | written by `python3 build.py --freeze` |
 | `final/` | the exact files uploaded to the organisers. Local only, not in git | |
 
@@ -43,6 +46,14 @@ python3 build.py         # the slides and the script (needs the stills)
 ```
 
 `python3 build_video.py --stills` makes only the stills, if you only changed slides.
+
+**Rehearsing.** `build/script.html` is also a rehearsal clock. Open it in Safari or Chrome
+(`open build/script.html`); the Claude app's browser pane cannot play the local video. Space
+starts the run and moves to the next part, and Esc stops it. The bar shows the time in the current part
+and how far ahead or behind plan you are. In the video part the MP4 plays in the page and the
+current beat is highlighted; the run moves to slide 4 when the video ends. At the end the page
+lists your time for each part against the plan, and keeps the totals of earlier runs in that
+browser. You can also just press play on the video to practise the narration on its own.
 
 `build_video.py` fails if the segments of a beat do not add up to that beat's time in
 `talk.md`. `build.py` prints a timing table and runs four checks. It exits with an error if
@@ -82,7 +93,11 @@ before it.
 
 **Review rounds.** Comment and edit in the built deck if that is easier, then copy it into
 `review/` (date in the name) before the next build, which overwrites `build/`. The changes go
-back into the `.md` files by hand; then rebuild.
+back into the `.md` files by hand; then rebuild. For the spoken script, do the same with the
+`_script.docx`: it opens with Track Changes on, so the edits come back marked. To send the next
+round back as a redline, run `python3 build.py --changes-since <old talk.md or git revision>`: it
+also writes `build/<output>_script_changes.docx`, where every change to the spoken text since that
+version is a tracked change to accept or reject.
 
 **Hand polish comes last.** Once the content is frozen you can adjust the PPTX in PowerPoint.
 Save that copy outside `build/`. After that, a change in `talk.md` does not reach the polished
@@ -100,6 +115,13 @@ From the acceptance email (kept out of this public repo; it holds the upload lin
   loaded on the podium PC and played on its own, not from a slide; the five slides frame it:
   title, context, problem and what we built, then the video, then the record and the future
   directions.
+- **Changed on 2026-10-23: the video is inside the deck.** The organisers' final deck,
+  `final/uploaded_2026-10-23/1007_Hao.pptx` (local only), has 6 slides: the five here, with the
+  video on its own slide 4. It plays **on click**: click once to start it, and not again until it
+  ends, because the next click moves to slide 5. The organisers' copy has the speaker notes from
+  2026-10-21. To put the current script into it, run
+  `python3 build.py --notes-into final/uploaded_2026-10-23/1007_Hao.pptx`. That writes
+  `build/1007_Hao.pptx`, a copy whose speaker notes are the only change.
 - **Slides:** at most 5, on the official CAIMI26 template. The title slide shows the title,
   presenter name, degree(s) and institution.
 - **Upload:** the PowerPoint and the MP4, by end of day **Wednesday October 21, 2026**.
@@ -111,9 +133,9 @@ From the acceptance email (kept out of this public repo; it holds the upload lin
 - [ ] Confirm the email to Anna Zawacki said "Prerecorded Demo".
 - [ ] Play the uploaded deck and MP4 on the Windows machine; practise switching from slide 3
       to the video and back to slide 4.
-- [ ] Rehearse against `build/script.html` with a timer. Tune the spoken text in `talk.md`
+- [x] Rehearse against `build/script.html` with a timer. Tune the spoken text in `talk.md`
       (`### Say`, `### Beat`), then rebuild.
-- [ ] Read through `qa.md`; answer the three "Needs your answer" questions.
+- [x] Read through `qa.md`; answer the three "Needs your answer" questions.
 
 ## Related
 

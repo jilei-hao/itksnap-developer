@@ -41,17 +41,18 @@ How this file is read by build.py:
 ## Slide 1: Title slide
 
 - layout: title
-- time: 0:10
+- time: 0:17
 
 ### Say
 
-Thank you. I'm Jilei Hao, from the University of Pennsylvania. This is joint work with Alison
-Pouch and Paul Yushkevich.
+Good afternoon, everyone. I'm Jilei Hao, from the University of Pennsylvania. Today, I'm going to
+talk about new features we added to ITK-SNAP, an open-source application for segmenting medical
+images. These features make ITK-SNAP a tool that AI agents can call.
 
 ## Slide 2: ITK-SNAP and its deep-learning server
 
 - layout: context
-- time: 0:45
+- time: 0:37
 - image: build/still_itksnap.jpg
 
 <!-- The image is a still from the demo footage, extracted by build_video.py (see Stills in
@@ -73,17 +74,16 @@ Pouch and Paul Yushkevich.
 
 ### Say
 
-First, what we started from. ITK-SNAP is open-source software for segmenting 3D medical
-images. It shows each image in linked 2D views and a 3D view, with manual tools like the
-paintbrush, and semi-automatic tools. ITK-SNAP also has a
-deep-learning server: a separate program, usually on a GPU machine, that runs AI models. Today
-its model is interactive: a person guides it with clicks and scribbles. We added an automatic
-model to that server, and a way for an AI agent to drive ITK-SNAP.
+Here is an ITK-SNAP window. It shows each image in linked slice views and a 3D view. Users can
+create or edit segmentations with manual or semi-automatic tools. ITK-SNAP can also connect to a
+separate model server, usually on a GPU machine. Today, that server runs an interactive model.
+This work adds two things. First, a fully automatic model on that server. Second, a way for an AI
+agent to drive ITK-SNAP.
 
 ## Slide 3: Corrections are manual and unrecorded
 
 - layout: problem-solution
-- time: 0:45
+- time: 1:01
 
 ### Today
 
@@ -108,13 +108,17 @@ model to that server, and a way for an AI agent to drive ITK-SNAP.
 
 ### Say
 
-Models are good, but not perfect, so a person still checks and fixes the result. At that point
-the pipeline stops: someone opens the image, fixes it, and passes the file back by hand. When
-they save, the fix becomes a new mask, and the change history is lost.
+Models are not perfect, so a person still needs to check the result. Today, that's manually done.
+You run the model, find the image and its mask, and open both in ITK-SNAP. You check, fix, and
+save. And repeat for all the cases you have. The saved fix is just a new mask. The history of the
+change is lost.
 
-So we let an AI agent drive ITK-SNAP, through the Model Context Protocol, a standard way for an
-assistant to use tools. The agent requests an automatic segmentation, routes it to a person for
-correction, and gets every edit back as a record. Let me show you.
+So we let an AI agent do the manual part. It uses the Model Context Protocol, or MCP, a standard
+way for AI to use tools. The agent runs the model and opens the result in ITK-SNAP. The person
+only corrects it. The history of every edit is preserved and comes back to the agent.
+
+The session only allows live demos from a web browser. But ITK-SNAP is a desktop application. So
+the following demo is pre-recorded. Let me show you.
 
 ## Video: Demo
 
@@ -122,53 +126,54 @@ correction, and gets every edit back as a record. Let me show you.
 - file: build/CAIMI26_ITK-SNAP_Hao_demo.mp4
 - attribution: CT scan: TotalSegmentator dataset (Wasserthal et al., Radiology: AI, 2023), CC BY 4.0
 
-<!-- Played on its own, not from a slide: the organisers load the MP4 on the podium PC.
+<!-- Since 2026-10-23 the organisers' final deck has the video on its own slide (slide 4), played
+     on click; see README. Our own five-slide build still puts this narration in slide 3's notes.
      build_video.py renders it from video.md and burns the attribution into the frame.
      The beats below must add up to the video time, and match the beat table in video.md. -->
 
 ### Beat 1: List models (0:20)
 
-On the left is the agent, in a terminal. Here it is Claude Code, but any client that speaks
-the protocol would work. I type plain English. I ask which models the server has. We will use
-TotalSegmentator, which is fully automatic.
+This is the agent, in a terminal. Here I prompt it, asking for the available models on the server.
+It lists three models. We'll use TotalSegmentator. It's fully automatic. The agent here is Claude
+Code. But any client that supports MCP would work.
 
 ### Beat 2: Workspace, and ITK-SNAP opens (0:30)
 
-Next I ask it to create a workspace from a CT scan and open it. ITK-SNAP starts on the right.
-This is the normal application. The only difference is that the agent can talk to it.
+Next, I ask it to make an ITK-SNAP workspace from a CT scan, and to open it. A workspace is
+ITK-SNAP's project file. It lists the image, the segmentation and their settings. [0:18: ITK-SNAP
+appears] There's ITK-SNAP, opened by the agent.
 
 ### Beat 3: The proposal (0:35)
 
-Now I ask for an automatic segmentation. The scan goes to our model server. The real call
-takes about a minute; I cut the waiting from this video. The model found more than sixty
-structures. So far this is only a proposal. Nothing has been written into the image.
+Now I ask for an automatic segmentation. [0:12: the request is sent] The agent sends the image to
+the model server. The segmentation process takes about a minute. I've cut the wait time from the
+video. [0:17: the result] The model found sixty-eight structures. This is only a proposal. Nothing
+is written into the image yet.
 
 ### Beat 4: Apply into the open window (1:00)
 
-I ask the agent to apply the heart and the vessels. Watch the right side. Eleven structures
-appear in the open window, one by one. Each gets its own label and its real name, so the
-person sees "heart" and "aorta", not "Label 1". The table shows what the agent wrote. The
-heart alone is about two hundred and forty thousand voxels.
+Here I ask the agent to apply the heart and the vessels. [0:10: structures start to appear] Watch the
+right side. Eleven structures appear in the open window, one by one. Applied by the agent using the result sent back from the server. All automatic. The agent writes
+straight into the window that's already open. And each structure it applies is recorded in the log. [0:53:
+the table] Here the summary table shows the number of voxels for each applied structure.
 
 ### Beat 5: The correction (0:40)
 
-Now it is my turn. I zoom in, pick the paintbrush, and touch up the edge of the heart. Then I
-add a little to the aorta, and erase a few voxels. I should be clear: I am a developer, not a
-clinician. This shows the mechanism, not clinical judgment. And I did nothing special. There
-is no "record" button. I just used ITK-SNAP as usual.
+Now it's my turn. I zoom in and pick the paintbrush to correct the result. This is only to show the mechanism, as I'm not a clinician. [about 0:14: heart] Here I touch up the
+edge of the heart. [about 0:23: aorta] Now I add a little to the aorta. I'm just using ITK-SNAP as
+usual. [about 0:34: erase] And here I erase a few voxels.
 
 ### Beat 6: The audit (0:45)
 
-Last, I ask the agent what happened. It reads the log from ITK-SNAP. Fifteen records. Eleven
-are its own. Four are mine. For each of mine it knows the tool, the label, the number of
-voxels, and the time. Forty voxels on the heart. Sixty-four on the aorta. Twenty-three
-erased. The agent can tell its own work from my corrections. That is the part that is usually
-lost.
+Last, I ask the agent what happened. It reads the log from ITK-SNAP. [0:12: the records] Fifteen
+records. Eleven are from the agent. Four are from me. For each manual correction, it knows the
+tool, the label, the number of voxels, and the time. Here, forty and forty-one voxels on the
+heart. Sixty-four on the aorta. Twenty-three erased.
 
 ## Slide 4: Every edit comes back as a record
 
 - layout: record
-- time: 0:40
+- time: 0:28
 
 ### From the demo log
 
@@ -191,15 +196,15 @@ The demo log has 15 records: 11 agent (one shown), 4 human.
 
 ### Say
 
-This is what the agent got back. The table shows four fields of each record: who made the
-edit, the tool, the label, and how many voxels changed. Each record also keeps the time, where
-the edit was, and the label counts before and after. The agent saves these records as JSON next
-to the workspace, so the change history stays with the case, and any script can read it.
+This is what the agent got back. Each row is one edit. It shows who made it, the tool, the label,
+and how many voxels changed. The agent saves the records as a JSON file next to the workspace. So
+the history stays with the case. And because the agent is general-purpose, the same steps can run
+over many cases, or become part of other workflows.
 
 ## Slide 5: Future directions
 
 - layout: closing
-- time: 0:40
+- time: 0:42
 
 <!-- This slide stays on screen during the Q&A. One numbered list is drawn as cards across
      the slide; two lists would be drawn as two columns. The last block is optional: a URL
@@ -217,9 +222,9 @@ https://github.com/jilei-hao/itksnap-mcp
 
 ### Say
 
-Where do we go from here? First, routing: we want agreement between model runs to decide which
-cases a person sees. Second, we want to train models with these audit records: every expert
-correction is a labeled example of where the model fails. Third, we want to automate that loop:
-retrain and test on new corrections, update the model on the server, and use the same records
-to see whether corrections go down. The code is open; the QR code goes to the repository. Thank
-you.
+Three directions for future work. First, routing cases by confidence. Agreement between model runs
+is one measure. We are still looking for the best one. Second, training models with these records.
+Each correction is a labeled example of where the model fails. Third, automating the improvement
+loop. The model is retrained, tested, and updated without manual steps. Then users don't have to
+choose or tune models. They just keep correcting, and the records show whether the model improves.
+Thank you.

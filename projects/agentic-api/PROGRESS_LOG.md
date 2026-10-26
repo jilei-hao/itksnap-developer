@@ -3,6 +3,96 @@
 Newest entries first. See `docs/agentic-prototype-plan.md` for the authoritative plan
 and `NEXT_SESSION_PROMPT.md` for the resume prompt.
 
+## 2026-10-22 → 2026-10-26 — Script tuned and rehearsed; talk delivered
+
+**Attempted:** tune and rehearse the spoken script for the CAIMI26 talk, which was already
+uploaded and frozen. The work grew into four Word review rounds, two timed runs, the organisers'
+final deck, and phone-sized PDFs for the podium. **The talk was delivered on Mon 2026-10-26
+(Session 1007) and went well** (Jilei).
+
+**Landed** (all in this checkpoint commit; nothing was committed mid-session. The previous
+checkpoint `43d3312` had not been pushed and goes up with this one.)
+
+- **Rehearsal clock in `build/script.html`.** Space starts the run and moves to the next part;
+  Esc stops. The bar shows time in part and ahead/behind plan. The MP4 plays in the page with
+  the current beat highlighted. At the end it prints each part against plan and keeps totals in
+  the browser. `build.py`'s docstring had promised "a running clock" that didn't exist.
+- **Word round trip.**
+  - `build/<name>_script.docx`: the spoken text in black; slide text and per-beat on-screen cues
+    in grey, computed from `video.md` by `video_cues()`. Opens with Track Changes on.
+  - `build.py --changes-since <file|git rev>` writes a word-level redline (short matches folded
+    into the surrounding change). Accept-all and reject-all checked against both versions each
+    round.
+  - `review_comment.py` (comments anchored to exact text) and `review_read.py` (pending changes,
+    comment threads, `--against` a fresh build to see accept/reject decisions).
+  - `tables()` and `tsecs()` moved from `build_video.py` into `build.py`, so both read `video.md`.
+- **Four review rounds,** then direct edits:
+  1. Claude's sync findings as comments.
+  2. Jilei's content requests: today's manual workflow, the new work set apart, scaling,
+     routing softened, the user's view of the improvement loop.
+  3. A full rewrite for the ear.
+  4. Cuts after a timed run.
+
+  After those: Jilei edited `talk.md` directly, rewrote the opening, added a note on why the demo
+  is recorded, and edited speaker notes in the organisers' PPTX. All carried back into `talk.md`.
+- **Timing planned at Jilei's measured pace.** Run 2: 7:14, slides at about 118 words/min against
+  a planned 132. Run 4 (before the demo note): 6:43, about 129 words/min. Slide times are now
+  set from run 4. Final plan 6:55 of 7:00, no cuts (Jilei's choice).
+- **The organisers' final deck** (`final/uploaded_2026-10-23/1007_Hao.pptx`, local): 6 slides,
+  with the video moved onto slide 4 and set to play on click. `build.py --notes-into <deck>`
+  writes the current script into a copy, `build/1007_Hao.pptx`, as speaker notes, with the
+  video cue rewritten for in-slide playback. Verified: only the notes change (relationship files
+  only re-ordered), and the deck passes the pptx validator against the original.
+- **Phone PDFs** (390 × 844 pt, 17 pt type). `_script_phone.pdf`: one slide per page, beats never
+  split. `_qa_phone.pdf`: page 1 lists every question as a link to its answer, each page has
+  "Back to questions", and `*Unsourced:*` lines show in orange.
+- **`qa.md`:** the three open questions drafted:
+  - MONAI Label / 3D Slicer, from MONAI Label's README, read 2026-10-26.
+  - The release, from the release-460 non-goal and R01 task Y0.3.
+  - Who runs the model server, from the DLS model's host and SSH-tunnel settings.
+
+  Each has `*Unsourced:*` lines. "The plan" for a release needs Paul's confirmation.
+- **`presentation/method.md`:** the method written up for reuse on another talk. A second
+  CAIMI26 talk was prepared in another session from it.
+
+**Tests:** `itksnap-mcp` **12 passed**. It needs `PYTHONPATH=src`; a plain `pytest` fails to
+import `itksnap_mcp`, which is not installed in the conda base. `presentation/build.py` checks
+OK (6:55 of 7:00). The rebuilt 5-slide deck differs from the upload only in speaker notes. No
+ITK-SNAP C++ and no submodule commits.
+
+**Broke / surprised**
+
+1. **The narration was out of sync with the video in several places,** found by extracting
+   frames at each cue. For example, beat 1 said "on the left" while the terminal filled the
+   screen, and beat 5 described the erase about 20 s before it happened. Cue stage directions
+   (`[0:18: ITK-SNAP appears]`) now mark the moments.
+2. **An assumed pace of 132 words/min was wrong.** The first full run came in 22 s over plan.
+3. **Round 2 came back with nothing accepted or rejected.** "Accept all" equalled the current
+   text, so it was treated as accepted and the note said so.
+4. **The script read well but sounded unclear.** Jilei: "When spoken, the sentence is less clear
+   than written." Round 3 rewrote everything for the ear, which would have been cheaper in the
+   first draft.
+5. **The organisers changed the deck after upload.** The video moved onto its own slide (play on
+   click), the speaker notes were from upload day, and slide 3's takeaway had its final period
+   split into a separate, visible paragraph. That period was left for Jilei; not fixed.
+6. **Saying "record" next to "recording"** blurs by ear. It was fixed by reordering the demo
+   note.
+7. **Local video doesn't play in the Claude app's browser pane** (it shows a static snapshot).
+   Python's `http.server` has no Range support, so video seeking fails there too. Rehearse in
+   Safari or Chrome.
+8. **python-pptx re-saves rewrite package files** (order only) and recompress (the deck came
+   out about 1 MB smaller). Content checked identical part by part.
+9. **The `itksnap-wt` MCP server still fails to connect** (its registration points at a deleted
+   file).
+
+**Decisions**
+
+- Everything stays generated from the `.md` files. Word and PowerPoint edits are archived in
+  `review/` first, then carried back into the `.md`.
+- Slide times come from the speaker's measured pace, not an assumed one.
+- Q&A answers describe what this work focuses on and never claim that other tools lack a
+  feature.
+
 ## 2026-10-05 → 2026-10-22 — CAIMI26 talk built, uploaded and frozen
 
 **Attempted:** review the code state for the October CAIMI talk, then build the talk itself:

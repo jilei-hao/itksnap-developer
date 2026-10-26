@@ -3,9 +3,11 @@
 
     python3 build.py
 
-Writes build/<output>.pptx (slides + speaker notes) and build/script.html (the
-spoken script with a running clock). Re-run after ANY edit to talk.md; never
-edit the files in build/ by hand, they are overwritten.
+Writes build/<output>.pptx (slides + speaker notes), build/script.html (the
+spoken script with a running clock), build/<output>_script.docx (the script
+to edit and comment on in Word), build/<output>_script_phone.pdf (the
+script to read on an iPhone) and build/<output>_qa_phone.pdf (qa.md, the same). Re-run after ANY edit to talk.md; never edit
+the files in build/ by hand, they are overwritten.
 
 Also checks the slot rules from the acceptance email -- slide count, total time,
 speaking pace -- and that video.md lists the same beats as talk.md. Exits
@@ -35,6 +37,7 @@ from pptx.util import Inches, Pt
 HERE = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(HERE, "talk.md")
 VIDEO_MD = os.path.join(HERE, "video.md")
+QA_MD = os.path.join(HERE, "qa.md")
 FROZEN = os.path.join(HERE, "frozen.json")   # written by `build.py --freeze`; see README
 BUILD = os.path.join(HERE, "build")
 # The SIIM template is not in git; drop it in template/ or point CAIMI_TEMPLATE at it.
@@ -167,6 +170,61 @@ def parse_talk(path):
     if not any(p["kind"] == "slide" for p in parts):
         die("talk.md: no '## Slide N: Title' sections found")
     return meta, parts
+
+
+def tables(md):
+    """{section heading: (list props, [row dicts keyed by lower-case header])} for every ## section.
+    Used for video.md, here and in build_video.py."""
+    out = {}
+    for head, body in split_h(md, 2):
+        if head is None:
+            continue
+        props = dict(re.findall(r"^- ([a-z ]+):\s*(.+?)\s*$", body, flags=re.M))
+        rows, header = [], None
+        for line in body.splitlines():
+            s = line.strip()
+            if not s.startswith("|"):
+                if header and rows:
+                    break
+                continue
+            cells = [c.strip() for c in s.strip("|").split("|")]
+            if all(re.fullmatch(r":?-{2,}:?", c) for c in cells):
+                continue
+            if header is None:
+                header = [c.lower() for c in cells]
+            else:
+                rows.append(dict(zip(header, cells)))
+        out[head.strip().lower()] = (props, rows)
+    return out
+
+
+def tsecs(s, where):
+    m = re.fullmatch(r"(\d+):(\d\d(?:\.\d+)?)", s.strip())
+    if not m:
+        die(f"video.md {where}: a time must look like 1:04.5, got {s!r}")
+    return int(m.group(1)) * 60 + float(m.group(2))
+
+
+def video_cues():
+    """{beat: [(seconds into the beat, what is on screen)]}, from video.md's segments and callouts:
+    when each segment starts, and when each callout appears."""
+    if not os.path.exists(VIDEO_MD):
+        return {}
+    t = tables(read_md(VIDEO_MD))
+    cues, at, segs = {}, {}, []
+    for i, r in enumerate(t.get("segments", ({}, []))[1], 1):
+        n, a, b = int(r["beat"]), tsecs(r["in"], f"segment {i}"), tsecs(r["out"], f"segment {i}")
+        speed, start = float(r["speed"]), at.get(n, 0.0)
+        segs.append((n, r["clip"], a, b, speed, start))
+        cues.setdefault(n, []).append((start, r.get("note", "") + (f" ({speed:g}x speed)" if speed != 1 else "")))
+        at[n] = start + (b - a) / speed + float(r["hold"])
+    for i, r in enumerate(t.get("callouts", ({}, []))[1], 1):
+        n, f, to = int(r["beat"]), tsecs(r["from"], f"callout {i}"), tsecs(r["to"], f"callout {i}")
+        for sn, clip, a, b, speed, start in segs:
+            if sn == n and clip == r["clip"] and f < b and to > a:
+                cues[n].append((start + (max(f, a) - a) / speed, f"callout: {r.get('label', '')}"))
+                break
+    return {n: sorted(c, key=lambda x: x[0]) for n, c in cues.items()}
 
 
 def parse_video_beats(path):
@@ -628,11 +686,16 @@ LAYOUTS = {
 
 
 # ── products ────────────────────────────────────────────────────────────────
-def notes_text(p):
+def notes_text(p, own_slide=False):
+    """Speaker notes for one part. own_slide: the video sits on a slide of its own (the organisers'
+    final deck) instead of being played from outside PowerPoint."""
     span = f"[{clock(p['start'])}-{clock(p['start'] + p['secs'])}]"
     if p["kind"] == "slide":
         return span + "\n" + "\n\n".join(p["say"])
-    out = [f"{span}  NOW PLAY THE DEMO VIDEO ({clock(p['secs'])}), from outside PowerPoint. Narrate:"]
+    cue = (f"THE DEMO VIDEO ({clock(p['secs'])}) IS ON THIS SLIDE. Click once to start it. Do not click "
+           "again until it ends: the next click moves to the next slide. Narrate:" if own_slide else
+           f"NOW PLAY THE DEMO VIDEO ({clock(p['secs'])}), from outside PowerPoint. Narrate:")
+    out = [f"{span}  {cue}"]
     for b in p["beats"]:
         out.append(f"BEAT {b['num']} - {b['title']} ({clock(b['secs'])})\n" + "\n\n".join(b["say"]))
     return "\n\n".join(out)
@@ -664,6 +727,247 @@ def build_pptx(meta, parts, out):
     prs.save(out)
 
 
+# The rehearsal clock in script.html. Space starts the run and moves to the next part; the video
+# plays in the page and its beats light up as it runs. Results stay in this browser only.
+REHEARSE_JS = r"""
+const D = JSON.parse(document.getElementById("parts").textContent), P = D.parts;
+const $ = id => document.getElementById(id), vid = document.querySelector("video");
+const now = () => performance.now() / 1000;
+const fmt = s => { s = Math.round(Math.abs(s)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
+const signed = d => (d < 0 ? "-" : "+") + fmt(d);
+let idx = -1, t0 = 0, p0 = 0, laps = [], timer = null;
+const playing = () => vid && vid.readyState > 0 && !vid.error;
+
+function under(el) {                     // scroll el to just below the bar (and the player, in the video)
+  let top = $("bar").offsetHeight + 8;
+  if (el.closest(".video") && !el.classList.contains("video")) top += document.querySelector(".vwrap").offsetHeight;
+  window.scrollTo({top: el.getBoundingClientRect().top + window.scrollY - top, behavior: "smooth"});
+}
+function beats() {                       // light up the beat the video is in; return its label
+  const v = P.find(p => p.kind === "video"); if (!v) return "";
+  const t = playing() ? vid.currentTime : (P[idx] === v ? now() - p0 : -1);
+  let label = "";
+  for (const b of v.beats) {
+    const el = $("beat-" + b.num), on = t >= b.v0 && t < b.v0 + b.secs;
+    if (on && !el.classList.contains("cur")) { el.classList.add("cur"); under(el); }
+    if (!on) el.classList.remove("cur");
+    if (on) label = `Beat ${b.num}: ${fmt(b.v0 + b.secs - t)} left`;
+  }
+  return label;
+}
+function tick() {
+  if (idx < 0) { beats(); return; }
+  const p = P[idx], t = now(), inPart = t - p0;
+  const drift = (p0 - t0 - p.start) + Math.max(0, inPart - p.secs);
+  $("part").textContent = `${p.tag} ${fmt(inPart)} of ${fmt(p.secs)}`;
+  $("part").className = inPart > p.secs ? "over" : "";
+  $("drift").textContent = Math.abs(drift) < 1 ? "on plan" : `${fmt(drift)} ${drift > 0 ? "behind" : "ahead"}`;
+  $("drift").className = drift >= 5 ? "over" : "";
+  $("now").textContent = p.kind === "video" ? beats() : p.title;
+  if (p.kind === "video" && !playing() && inPart >= p.secs) go();     // no MP4: a stand-in clock
+}
+function go() {                          // start the run, or close this part and open the next
+  const t = now();
+  if (idx < 0) { t0 = t; laps = []; timer = setInterval(tick, 200); } else laps[idx] = t - p0;
+  if (vid && P[idx] && P[idx].kind === "video") vid.pause();
+  document.querySelectorAll("section.cur").forEach(s => s.classList.remove("cur"));
+  idx++; p0 = t;
+  if (idx === P.length) return finish();
+  $("part-" + idx).classList.add("cur"); under($("part-" + idx));
+  if (P[idx].kind === "video" && vid) { vid.currentTime = 0; vid.play(); }
+  $("go").textContent = idx + 1 < P.length ? "Next part" : "Finish";
+  tick();
+}
+function finish() {
+  clearInterval(timer); timer = null; idx = -1;
+  const total = laps.reduce((a, b) => a + b, 0);
+  const rows = P.map((p, i) => `${p.tag.padEnd(8)}${fmt(laps[i]).padStart(6)}  planned ${fmt(p.secs).padStart(5)}  ${signed(laps[i] - p.secs)}`);
+  P.forEach((p, i) => { const c = $("act-" + i); c.textContent = fmt(laps[i]); c.className = "live" + (laps[i] > p.secs + 2 ? " over" : ""); });
+  let runs = [];
+  try { runs = JSON.parse(localStorage.getItem("rehearsal-runs") || "[]"); } catch (e) {}
+  runs.push({when: new Date().toLocaleString(), total});
+  try { localStorage.setItem("rehearsal-runs", JSON.stringify(runs.slice(-10))); } catch (e) {}
+  $("result").textContent = [`Run ${runs.length}, ${runs[runs.length - 1].when}`, ...rows,
+    `${"Total".padEnd(8)}${fmt(total).padStart(6)}  planned ${fmt(D.plan).padStart(5)}  ${signed(total - D.plan)}   slot ${fmt(D.slot)}`,
+    "", "Earlier runs: " + (runs.slice(0, -1).map(r => fmt(r.total)).join(", ") || "none")].join("\n");
+  $("result").hidden = false; under($("result"));
+  $("now").textContent = `Done: ${fmt(total)} of ${fmt(D.slot)}`; $("part").textContent = $("drift").textContent = "";
+  $("go").textContent = "Start again";
+}
+function stop() {
+  if (idx < 0 || !confirm("Stop this run?")) return;
+  clearInterval(timer); timer = null; idx = -1; if (vid) vid.pause();
+  document.querySelectorAll(".cur").forEach(s => s.classList.remove("cur"));
+  $("go").textContent = "Start"; $("now").textContent = "Stopped"; $("part").textContent = $("drift").textContent = "";
+}
+$("go").onclick = e => { e.currentTarget.blur(); go(); };
+window.addEventListener("keydown", e => {
+  if (e.key === " " || e.key === "ArrowRight") { e.preventDefault(); go(); }
+  else if (e.key === "Escape") stop();
+}, true);
+if (vid) {
+  vid.addEventListener("ended", () => { if (P[idx] && P[idx].kind === "video") go(); });
+  vid.addEventListener("timeupdate", () => { if (idx < 0) beats(); });
+  document.querySelector(".vwrap").style.top = $("bar").offsetHeight + "px";
+}
+"""
+
+
+def build_phone_pdf(meta, parts, total, slot, out):
+    """The spoken script as a PDF to read on an iPhone: the page is 390 x 844 pt, the screen's own
+    size in points, so fitted to the width it shows at 100%. Large type, one slide per page."""
+    from reportlab.lib.styles import ParagraphStyle
+    from reportlab.platypus import KeepTogether, PageBreak, Paragraph, SimpleDocTemplate, Table, TableStyle
+    e = html.escape
+    teal, grey, orange = "#1c6a75", "#5f6669", "#b8520e"
+    body = ParagraphStyle("body", fontName="Helvetica", fontSize=17, leading=24, spaceAfter=12)
+    head = ParagraphStyle("head", fontName="Helvetica-Bold", fontSize=20, leading=25, textColor=teal, spaceAfter=2)
+    sub = ParagraphStyle("sub", parent=head, fontSize=17, leading=22, spaceBefore=8)
+    small = ParagraphStyle("small", fontName="Helvetica", fontSize=12, leading=16, textColor=grey, spaceAfter=10)
+
+    def say(ps):                                 # [stage directions] in orange italics, not spoken
+        return [Paragraph(re.sub(r"(\[.*?\])", rf'<font color="{orange}"><i>\1</i></font>', e(p)), body) for p in ps]
+
+    title = meta.get("title", "").replace(" | ", " ")
+    story = [Paragraph(e(title), ParagraphStyle("title", parent=head, fontSize=24, leading=29, spaceAfter=8)),
+             Paragraph(e(f"{meta.get('presenter', '')} · {meta.get('session', '')}"), small),
+             Paragraph(f"Spoken script. Plan {clock(total)} of a {clock(slot)} slot.", small)]
+    rows = [["Part", "Starts", "Length"]] + [
+        [f"Slide {p['num']}" if p["kind"] == "slide" else "Video", clock(p["start"]), clock(p["secs"])] for p in parts]
+    table = Table(rows, colWidths=[150, 100, 100])
+    table.setStyle(TableStyle([("FONT", (0, 0), (-1, -1), "Helvetica", 14), ("FONT", (0, 0), (-1, 0), "Helvetica-Bold", 14),
+                               ("TEXTCOLOR", (0, 0), (-1, 0), teal), ("LINEBELOW", (0, 0), (-1, -1), 0.5, "#d5dcdd"),
+                               ("TOPPADDING", (0, 0), (-1, -1), 5), ("BOTTOMPADDING", (0, 0), (-1, -1), 5)]))
+    story.append(table)
+    for p in parts:
+        tag = f"Slide {p['num']}" if p["kind"] == "slide" else "Video"
+        story += [PageBreak(), Paragraph(e(f"{tag} · {p['title']}"), head),
+                  Paragraph(f"{clock(p['start'])}–{clock(p['start'] + p['secs'])} · {p['secs']} s", small)]
+        if p["kind"] == "slide":
+            story += say(p["say"])
+            continue
+        story.append(Paragraph("On its own slide. Click once to start it, and not again until it ends.", small))
+        for b in p["beats"]:
+            v0 = b["start"] - p["start"]
+            story.append(KeepTogether([Paragraph(e(f"Beat {b['num']} · {b['title']}"), sub),   # a beat never splits
+                                       Paragraph(f"video {clock(v0)}–{clock(v0 + b['secs'])}", small)] + say(b["say"])))
+
+    def footer(canvas, doc):
+        canvas.setFont("Helvetica", 10)
+        canvas.setFillColor(grey)
+        canvas.drawCentredString(doc.pagesize[0] / 2, 16, str(doc.page))
+
+    doc = SimpleDocTemplate(out, pagesize=(390, 844), leftMargin=20, rightMargin=20, topMargin=28, bottomMargin=36,
+                            title=f"Script: {title}", author=meta.get("presenter", ""))
+    doc.build(story, onFirstPage=footer, onLaterPages=footer)
+
+
+def build_qa_pdf(src, out, author=""):
+    """qa.md as a PDF to read on an iPhone during Q&A (same page as the script PDF). It opens with
+    every question as a link to its answer, and each page links back to that list. Each entry
+    is a **question** line, its answer, optional *If pressed:* and *Unsourced:* lines (the latter
+    in orange: a claim no source backs) and a *Source:* line. A list of **questions** instead marks
+    questions with no vetted answer yet."""
+    from reportlab.lib.styles import ParagraphStyle
+    from reportlab.platypus import KeepTogether, PageBreak, Paragraph, SimpleDocTemplate
+    teal, grey, orange = "#1c6a75", "#5f6669", "#b8520e"
+    body = ParagraphStyle("body", fontName="Helvetica", fontSize=17, leading=24, spaceAfter=8)
+    quest = ParagraphStyle("quest", parent=body, fontName="Helvetica-Bold", textColor=teal, leading=22, spaceAfter=6)
+    head = ParagraphStyle("head", fontName="Helvetica-Bold", fontSize=20, leading=25, textColor=teal, spaceBefore=6, spaceAfter=10)
+    link = ParagraphStyle("link", parent=body, fontSize=14, leading=18, spaceAfter=5, leftIndent=10)
+    small = ParagraphStyle("small", fontName="Helvetica", fontSize=12, leading=16, textColor=grey, spaceAfter=18)
+    warn = ParagraphStyle("warn", parent=small, fontSize=13, leading=17, textColor=orange, spaceAfter=6)
+
+    def inline(s):                               # the markdown qa.md uses -> reportlab markup
+        s = html.escape(s, quote=False)
+        s = re.sub(r"\[([^\]]+)\]\((https?://[^)\s]+)\)", rf'<a href="\2" color="{teal}">\1</a>', s)
+        s = re.sub(r"`([^`]+)`", r'<font face="Courier">\1</font>', s)
+        s = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", s)
+        return re.sub(r"(?<![*\w])\*(?!\s)(.+?)(?<!\s)\*(?![*\w])", r"<i>\1</i>", s)
+
+    md = read_md(src)
+    title = (re.search(r"^# +(.+)$", md, flags=re.M) or [None, "Q&A"])[1].strip()
+    sections, n = [], 0             # [(name, [(id, question, answer, pressed, unsourced, source, open)])]
+    for name, text in split_h(md, 2)[1:]:
+        entries = []
+        for block in re.split(r"\n\s*\n", text.strip()):
+            lines = [l.strip() for l in block.splitlines() if l.strip()]
+            if lines and lines[0].startswith("- "):          # questions with no vetted answer yet
+                for l in lines:
+                    m = re.match(r"- \*\*(.+?)\*\*\s*(.*)", l)
+                    if m:
+                        n += 1
+                        entries.append((f"q{n}", m.group(1), m.group(2), "", "", "", True))
+            elif lines and lines[0].startswith("**") and lines[0].endswith("**"):
+                seg = {"answer": [], "pressed": [], "unsourced": [], "source": []}
+                cur = "answer"
+                for l in lines[1:]:
+                    if l.startswith("*Source:"):
+                        cur = "source"
+                    elif l.startswith("*If pressed:*"):
+                        cur, l = "pressed", l[len("*If pressed:*"):].strip()
+                    elif l.startswith("*Unsourced:*"):
+                        cur, l = "unsourced", l[len("*Unsourced:*"):].strip()
+                    seg[cur].append(l)
+                n += 1
+                src_text = " ".join(seg["source"]).strip()
+                entries.append((f"q{n}", lines[0].strip("*"), " ".join(seg["answer"]), " ".join(seg["pressed"]),
+                                " ".join(seg["unsourced"]), src_text[1:-1] if src_text.startswith("*") and src_text.endswith("*") else src_text, False))
+        sections.append((name.strip(), entries))
+
+    story = [Paragraph(f'<a name="index"/>{html.escape(title)}', ParagraphStyle("t", parent=head, fontSize=24, leading=29, spaceBefore=0)),
+             Paragraph(f"{n} questions. Tap one to jump to its answer.", small)]
+    for name, entries in sections:                # a group's heading stays with its questions
+        story.append(KeepTogether(
+            [Paragraph(html.escape(name), ParagraphStyle("ih", parent=head, fontSize=15, leading=19, spaceAfter=5))]
+            + [Paragraph(f'<a href="#{qid}" color="{orange if unanswered else teal}">{inline(q)}</a>', link)
+               for qid, q, *_, unanswered in entries]))
+    for name, entries in sections:
+        story += [PageBreak(), Paragraph(html.escape(name), head)]
+        for qid, q, answer, pressed, unsourced, source, unanswered in entries:
+            block = [Paragraph(f'<a name="{qid}"/>{inline(q)}', quest)]
+            if unanswered:
+                block.append(Paragraph(f'<font color="{orange}"><i>No vetted answer yet.</i></font> {inline(answer)}', body))
+            else:
+                block.append(Paragraph(inline(answer), body))
+                if pressed:
+                    block.append(Paragraph(f"<i>If pressed:</i> {inline(pressed)}", body))
+                if unsourced:
+                    block.append(Paragraph(f"<b>Unsourced:</b> {inline(unsourced)}", warn))
+            if source:
+                block.append(Paragraph(inline(source), small))
+            else:
+                block[-1].style = ParagraphStyle("last", parent=block[-1].style, spaceAfter=18)
+            story.append(KeepTogether(block))
+
+    def footer(canvas, doc):
+        canvas.setFont("Helvetica", 10)
+        canvas.setFillColor(grey)
+        canvas.drawCentredString(doc.pagesize[0] / 2, 16, str(doc.page))
+        if doc.page > 1:                         # a tap target back to the list of questions
+            canvas.setFont("Helvetica", 13)
+            canvas.setFillColor(teal)
+            canvas.drawString(20, 14, "Back to questions")
+            canvas.linkAbsolute("", "index", (14, 6, 150, 30))
+
+    doc = SimpleDocTemplate(out, pagesize=(390, 844), leftMargin=20, rightMargin=20, topMargin=28, bottomMargin=40,
+                            title=title, author=author)
+    doc.build(story, onFirstPage=footer, onLaterPages=footer)
+
+
+def notes_into(parts, deck, out):
+    """Write the speaker notes from talk.md into a copy of someone else's deck (the organisers'
+    final, with the video on a slide of its own), changing nothing else. Its slides map to the
+    parts of talk.md in order, one slide per part, the video included."""
+    prs = Presentation(deck)
+    if len(prs.slides) != len(parts):
+        die(f"--notes-into: {deck} has {len(prs.slides)} slides, but talk.md has {len(parts)} parts "
+            "(its slides and the video, one slide each)")
+    for slide, p in zip(prs.slides, parts):
+        slide.notes_slide.notes_text_frame.text = notes_text(p, own_slide=True)
+    prs.save(out)
+
+
 def build_script(meta, slides, total, slot, out):
     e = html.escape
     title = meta.get("title", "").replace(" | ", " ")
@@ -671,23 +975,31 @@ def build_script(meta, slides, total, slot, out):
     def paras(ps):                               # [stage directions] in italics
         return "".join("<p>" + re.sub(r"(\[.*?\])", r"<i>\1</i>", e(p)) + "</p>" for p in ps)
 
-    rows, body = [], []
-    for sl in slides:
+    rows, body, data = [], [], []
+    for i, sl in enumerate(slides):
         end = sl["start"] + sl["secs"]
         tag = f"Slide {sl['num']}" if sl["kind"] == "slide" else "Video"
+        data.append({"tag": tag, "title": sl["title"], "kind": sl["kind"], "start": sl["start"], "secs": sl["secs"]})
         rows.append(f"<tr><td>{tag}</td><td>{e(sl['title'])}</td><td>{clock(sl['start'])}</td>"
-                    f"<td>{clock(sl['secs'])}</td><td>{sl['words']}</td><td>{sl['wpm']:.0f}</td></tr>")
-        body.append(f"<section><h2>{tag}: {e(sl['title'])} "
-                    f"<span>{clock(sl['start'])}&ndash;{clock(end)}</span></h2>")
+                    f"<td>{clock(sl['secs'])}</td><td>{sl['words']}</td><td>{sl['wpm']:.0f}</td>"
+                    f"<td class=\"live\" id=\"act-{i}\"></td></tr>")
+        cls = ' class="video"' if sl["kind"] == "video" else ""
+        body.append(f"<section id=\"part-{i}\"{cls}><h2>{tag}: {e(sl['title'])} <span>{clock(sl['start'])}&ndash;{clock(end)}</span></h2>")
         if sl["kind"] == "video":
-            body.append("<p><i>[Play the MP4 from outside PowerPoint.]</i></p>")
+            src = os.path.relpath(os.path.join(HERE, sl["props"]["file"]), os.path.dirname(out))
+            body.append("<p><i>[The video is on its own slide in the organisers' deck. Click once to start it, and not again until it ends.]</i></p>"
+                        f"<div class=\"vwrap live\"><video src=\"{e(src)}\" muted playsinline controls preload=\"auto\"></video></div>")
+            data[-1]["beats"] = []
             for b in sl["beats"]:
                 v0 = b["start"] - sl["start"]
-                body.append(f"<h3>Beat {b['num']}: {e(b['title'])} <span>video {clock(v0)}&ndash;"
-                            f"{clock(v0 + b['secs'])} &middot; talk {clock(b['start'])}</span></h3>" + paras(b["say"]))
+                data[-1]["beats"].append({"num": b["num"], "v0": v0, "secs": b["secs"]})
+                body.append(f"<div class=\"beat\" id=\"beat-{b['num']}\"><h3>Beat {b['num']}: {e(b['title'])} "
+                            f"<span>video {clock(v0)}&ndash;{clock(v0 + b['secs'])} &middot; talk {clock(b['start'])}</span></h3>"
+                            + paras(b["say"]) + "</div>")
         else:
             body.append(paras(sl["say"]))
         body.append("</section>")
+    parts_json = json.dumps({"parts": data, "plan": total, "slot": slot}).replace("</", "<\\/")
     page = f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><title>Script: {e(title)}</title>
 <style>
@@ -703,18 +1015,191 @@ def build_script(meta, slides, total, slot, out):
  p {{ margin: .5em 0 .9em; }}
  i {{ color: #b8520e; }}
  footer {{ color: #4d5558; font-size: .85em; margin-top: 3em; }}
- @media print {{ body {{ font-size: 13pt; margin: 0; }} section {{ break-inside: avoid; }} }}
+ #bar {{ position: sticky; top: 0; z-index: 2; background: #fff; display: flex; gap: 1em; align-items: center;
+        padding: .5em 0; border-bottom: 1px solid #d5dcdd; font-size: .9em; }}
+ #bar button {{ font: inherit; padding: .2em .9em; }}
+ #clocks {{ margin-left: auto; white-space: nowrap; font-variant-numeric: tabular-nums; }}
+ #clocks span {{ margin-left: 1em; }}
+ .over {{ color: #b8520e; font-weight: 600; }}
+ section.cur {{ border-left: 4px solid #1c6a75; padding-left: .8em; margin-left: calc(-.8em - 4px); }}
+ .beat {{ padding: 0 .5em; margin: 0 -.5em; }}
+ .beat.cur {{ background: #e8f3f5; }}
+ .vwrap {{ position: sticky; z-index: 1; background: #fff; padding: .3em 0; }}
+ .vwrap video {{ width: 100%; display: block; background: #000; }}
+ #result {{ background: #f3f5f5; padding: .8em 1em; font-size: .85em; }}
+ @media print {{ body {{ font-size: 13pt; margin: 0; }} section {{ break-inside: avoid; }} .live, #bar, #result {{ display: none; }} }}
 </style></head><body>
+<div id="bar"><button id="go">Start</button><span id="now">Space starts the clock and moves to the next part. Esc stops.</span>
+<span id="clocks"><span id="part"></span><span id="drift"></span></span></div>
 <h1>{e(title)}</h1>
 <p class="meta">{e(meta.get("presenter", ""))} &middot; {e(meta.get("session", ""))}<br>
 Planned {clock(total)} of a {clock(slot)} slot &middot; {sum(s["words"] for s in slides)} spoken words</p>
-<table><tr><th>Part</th><th>Title</th><th>Starts</th><th>Length</th><th>Words</th><th>Words/min</th></tr>
+<table><tr><th>Part</th><th>Title</th><th>Starts</th><th>Length</th><th>Words</th><th>Words/min</th><th class="live">Your run</th></tr>
 {"".join(rows)}</table>
+<pre id="result" hidden></pre>
 {"".join(body)}
 <footer>Generated from talk.md by build.py. Do not edit this file; edit talk.md and rebuild.</footer>
+<script type="application/json" id="parts">{parts_json}</script>
+<script>{REHEARSE_JS}</script>
 </body></html>
 """
     open(out, "w", encoding="utf-8").write(page)
+
+
+def on_slide(p, meta):
+    """The audience-facing text of a slide, as (label, [lines]) blocks, for the review document."""
+    if p["layout"] == "title":
+        return [("", [meta.get("title", "").replace(" | ", " "), meta.get("subtitle", ""),
+                      meta.get("authors", ""), meta.get("institution", ""), meta.get("session", "")])]
+    out = []
+    for name, b in p["sections"]:
+        lines = [(f"{i['lead']} {i['text']}" if i["lead"] else i["text"]).strip() for i in b["items"]]
+        lines += [" | ".join(r) for r in b["table"]]
+        lines += [f"{k.title()}: {v}" for k, v in b["props"].items()]
+        lines += [x for x in b["paras"] if x != b["url"]] + ([b["url"]] if b["url"] else [])
+        lines += [f"> {b['quote']}"] if b["quote"] else []
+        out.append((name, lines))
+    return out
+
+
+def build_docx(meta, parts, total, slot, out, old=None, since=""):
+    """The spoken script as a Word file to edit and comment on, with Track Changes on. The grey text
+    is what the audience sees, for reference. Changes are carried back into talk.md by hand.
+    With `old` (the parts of an earlier talk.md), the spoken text shows every change since that
+    version as a tracked change, word by word, so it can be accepted or rejected in Word."""
+    from datetime import datetime, timezone
+    from difflib import SequenceMatcher
+    from itertools import groupby
+    from docx import Document
+    from docx.oxml import OxmlElement
+    from docx.shared import Pt as DPt, RGBColor as DRGB
+    teal, grey, orange = DRGB(0x1C, 0x6A, 0x75), DRGB(0x5F, 0x66, 0x69), DRGB(0xB8, 0x52, 0x0E)
+    before = {}
+    for p in old or []:
+        if p["kind"] == "slide":
+            before[("slide", p["num"])] = p["say"]
+        for b in p["beats"]:
+            before[("beat", b["num"])] = b["say"]
+    rev, stamp = [0], datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    doc = Document()
+    doc.styles["Normal"].font.name, doc.styles["Normal"].font.size = "Calibri", DPt(12)
+    for s in ("Heading 1", "Heading 2"):
+        doc.styles[s].font.color.rgb = teal
+
+    def line(t, size=10, color=grey, bold=False, after=2):
+        par = doc.add_paragraph()
+        r = par.add_run(t)
+        r.font.size, r.font.color.rgb, r.bold = DPt(size), color, bold
+        par.paragraph_format.space_after = DPt(after)
+        return par
+
+    def tokens(text):                            # [(word with its trailing space, in a stage direction)]
+        out, inside = [], False
+        for t in re.findall(r"\S+\s*", text):
+            out.append((t, inside or "[" in t))
+            inside = (inside or "[" in t) and "]" not in t
+        return out
+
+    def put(par, toks, kind=None):               # kind: None, "ins" or "del" (a tracked change)
+        for stage, grp in groupby(toks, key=lambda x: x[1]):
+            r = par.add_run("".join(t for t, _ in grp))
+            if stage:                            # [stage directions] in orange italics, not spoken
+                r.italic, r.font.color.rgb = True, orange
+            if kind:
+                if kind == "del":
+                    r._r.find(qn("w:t")).tag = qn("w:delText")
+                rev[0] += 1
+                w = OxmlElement(f"w:{kind}")
+                for k, v in (("id", str(rev[0])), ("author", f"Changes since {since}"), ("date", stamp)):
+                    w.set(qn(f"w:{k}"), v)
+                r._r.addprevious(w)
+                w.append(r._r)
+
+    def spoken(ps, was=None):
+        n = max(len(ps), len(was)) if was is not None else len(ps)
+        for i in range(n):
+            par = doc.add_paragraph()
+            par.paragraph_format.space_after, par.paragraph_format.line_spacing = DPt(8), 1.25
+            new = tokens(ps[i] if i < len(ps) else "")
+            if was is None:
+                put(par, new)
+                continue
+            a = tokens(was[i] if i < len(was) else "")
+            ops = SequenceMatcher(None, [t.strip() for t, _ in a], [t.strip() for t, _ in new], autojunk=False).get_opcodes()
+            spans = []                           # fold short matches ("the", "a model") into the change around them
+            for k, (op, i1, i2, j1, j2) in enumerate(ops):
+                change = op != "equal" or (i2 - i1 <= 3 and 0 < k < len(ops) - 1)
+                if change and spans and spans[-1][0] == "change":
+                    spans[-1] = ("change", spans[-1][1], i2, spans[-1][3], j2)
+                else:
+                    spans.append(("change" if change else "equal", i1, i2, j1, j2))
+            for op, i1, i2, j1, j2 in spans:
+                if op == "equal":
+                    put(par, new[j1:j2])
+                else:
+                    put(par, a[i1:i2], "del")
+                    put(par, new[j1:j2], "ins")
+
+    title = meta.get("title", "").replace(" | ", " ")
+    doc.add_heading(title, 0)
+    line(f"{meta.get('presenter', '')} · {meta.get('session', '')}", 11)
+    line(f"Spoken script, generated from talk.md on {__import__('datetime').date.today().isoformat()}. "
+         f"Planned {clock(total)} of a {clock(slot)} slot, {sum(p['words'] for p in parts)} spoken words.", 11)
+    line("Edit the black text freely; Track Changes is on, and comments are welcome. Grey text is what the "
+         "audience sees and is frozen since the upload: changing it means re-uploading. In the video, the "
+         "On screen times are seconds into the beat.", 11, after=10)
+    table = doc.add_table(rows=1, cols=6)
+    table.style = "Table Grid"
+    for c, h in zip(table.rows[0].cells, ("Part", "Title", "Starts", "Length", "Words", "Words/min")):
+        c.text = h
+    for p in parts:
+        tag = f"Slide {p['num']}" if p["kind"] == "slide" else "Video"
+        for c, v in zip(table.add_row().cells, (tag, p["title"], clock(p["start"]), clock(p["secs"]),
+                                                  str(p["words"]), f"{p['wpm']:.0f}")):
+            c.text = v
+    table.autofit, widths = False, (0.8, 3.0, 0.65, 0.7, 0.65, 0.9)
+    for col, w in zip(table.columns, widths):       # the grid (LibreOffice) and every cell (Word)
+        col.width = Inches(w)
+    for i, row in enumerate(table.rows):
+        for c, w in zip(row.cells, widths):
+            c.width = Inches(w)
+            for r in c.paragraphs[0].runs:
+                r.font.size, r.bold = DPt(10), i == 0
+
+    for p in parts:
+        tag = f"Slide {p['num']}" if p["kind"] == "slide" else "Video"
+        doc.add_heading(f"{tag}: {p['title']}", 1)
+        line(f"{clock(p['start'])}–{clock(p['start'] + p['secs'])} · {p['secs']} s · "
+             f"{p['words']} words · {p['wpm']:.0f} words/min", after=6)
+        if p["kind"] == "slide":
+            line("On the slide", bold=True)
+            for name, lines in on_slide(p, meta):
+                if name:
+                    line(name, color=teal)
+                for t in filter(None, lines):
+                    line(t).paragraph_format.left_indent = DPt(14 if name else 0)
+            doc.add_paragraph().paragraph_format.space_after = DPt(0)
+            spoken(p["say"], before.get(("slide", p["num"]), []) if old else None)
+            continue
+        cues = video_cues()
+        for b in p["beats"]:
+            v0 = b["start"] - p["start"]
+            doc.add_heading(f"Beat {b['num']}: {b['title']}", 2)
+            line(f"video {clock(v0)}–{clock(v0 + b['secs'])} · talk {clock(b['start'])} · {b['secs']} s · "
+                 f"{b['words']} words · {b['words'] / (b['secs'] / 60):.0f} words/min", after=6)
+            line("On screen", bold=True)
+            for t, what in cues.get(b["num"], []):
+                line(f"{clock(int(round(t)))}   {what}")
+            doc.add_paragraph().paragraph_format.space_after = DPt(0)
+            spoken(b["say"], before.get(("beat", b["num"]), []) if old else None)
+    settings = doc.settings.element                 # open with Track Changes on
+    zoom = settings.find(qn("w:zoom"))              # python-docx's template omits a required attribute
+    if zoom is not None and zoom.get(qn("w:percent")) is None:
+        zoom.set(qn("w:percent"), "100")
+    track = OxmlElement("w:trackRevisions")
+    anchor = settings.find(qn("w:defaultTabStop"))
+    anchor.addprevious(track) if anchor is not None else settings.append(track)
+    doc.save(out)
 
 
 def visible_content(meta, parts):
@@ -772,10 +1257,40 @@ def main():
     os.makedirs(BUILD, exist_ok=True)
     deck = os.path.join(BUILD, meta.get("output", "talk") + ".pptx")
     script = os.path.join(BUILD, "script.html")
+    word = os.path.join(BUILD, meta.get("output", "talk") + "_script.docx")
     build_pptx(meta, slides, deck)
     build_script(meta, slides, total, slot, script)
+    build_docx(meta, slides, total, slot, word)
+    phone = os.path.join(BUILD, meta.get("output", "talk") + "_script_phone.pdf")
+    build_phone_pdf(meta, slides, total, slot, phone)
+    qa = os.path.join(BUILD, meta.get("output", "talk") + "_qa_phone.pdf")
+    if os.path.exists(QA_MD):
+        build_qa_pdf(QA_MD, qa, meta.get("presenter", ""))
+    if "--notes-into" in sys.argv[1:]:           # the organisers' final deck, video on its own slide
+        given = (sys.argv[sys.argv.index("--notes-into") + 1:] or die("--notes-into needs a .pptx"))[0]
+        final = os.path.join(BUILD, os.path.basename(given))
+        if os.path.abspath(given) == os.path.abspath(final):
+            die("--notes-into: pass the original deck, not the copy in build/")
+        notes_into(slides, given, final)
+        print(f"speaker notes from talk.md -> {os.path.relpath(final, HERE)} (a copy of {given})")
+    if "--changes-since" in sys.argv[1:]:        # a file, or a git revision of talk.md
+        since = (sys.argv[sys.argv.index("--changes-since") + 1:] or die("--changes-since needs a file or a git revision"))[0]
+        if os.path.isfile(since):
+            old_md = open(since, encoding="utf-8").read()
+        else:
+            import subprocess
+            got = subprocess.run(["git", "-C", HERE, "show", f"{since}:./talk.md"], capture_output=True, text=True)
+            old_md = got.stdout if got.returncode == 0 else die(f"--changes-since: {got.stderr.strip()}")
+        import tempfile
+        with tempfile.NamedTemporaryFile("w", suffix=".md", delete=False, encoding="utf-8") as f:
+            f.write(old_md)
+        changes = os.path.join(BUILD, meta.get("output", "talk") + "_script_changes.docx")
+        build_docx(meta, slides, total, slot, changes, parse_talk(f.name)[1], os.path.basename(since))
+        os.unlink(f.name)
+        print(f"talk.md changes since {since} -> {os.path.relpath(changes, HERE)}")
 
-    print(f"talk.md -> {os.path.relpath(deck, HERE)}, {os.path.relpath(script, HERE)}\n")
+    print(f"talk.md -> {os.path.relpath(deck, HERE)}, {os.path.relpath(script, HERE)}, {os.path.relpath(word, HERE)}, "
+          f"{os.path.relpath(phone, HERE)}, {os.path.relpath(qa, HERE)}\n")
     print(f"  {'part':<8}{'layout':<18}{'starts':>7}{'length':>8}{'words':>7}{'words/min':>11}")
     for s in slides:
         tag = str(s["num"]) if s["kind"] == "slide" else "video"

@@ -1,84 +1,77 @@
-# RESUME — ITK-SNAP Agentic API · CAIMI26 talk, rehearsal
+# RESUME — ITK-SNAP Agentic API · after the CAIMI26 talk
 
 ## Current state (read this paragraph first)
 
-The CAIMI26 talk is **built, uploaded and frozen**. Slot: AI Builder Showcase, Session 1007,
-**Mon 2026-10-26, 4:30 PM ET**, Smilow Center, Penn. **7 minutes + 5 minutes Q&A**, run from a
-Penn Windows PC. Jilei uploaded the 5-slide deck and the 3:50 demo MP4 on 2026-10-21. The video
-plays on its own between slides 3 and 4, not from a slide. Everything lives in
-`projects/agentic-api/presentation/`. The `.md` files are the source of truth: `talk.md`
-(slides + spoken script) → `build.py` → deck and `build/script.html`; `video.md` →
-`build_video.py` → MP4. Since 2026-10-22 `frozen.json` makes the builds refuse any change the
-audience would see. **Only the spoken text (`### Say`, `### Beat`), slide times and `pace` may
-change.** The plan is 6:50 of 7:00.
+The prototype makes ITK-SNAP a tool an AI agent can call. The agent asks a model server for a
+segmentation, applies it into the live ITK-SNAP window, a person corrects it, and every edit
+comes back as an audit record. The prototype was presented at **SIIM-CAIMI26 on Mon 2026-10-26
+(AI Builder Showcase, Session 1007), and the talk went well.** The talk work is finished. It
+lives in `presentation/`, which is now an archive and a reusable method (`presentation/method.md`).
+No agentic-API code has changed since July. The code is on `itksnap` `sprint/caimi` (6
+agentic commits), `itksnap-mcp` `main` and `itksnap-dls` `feature/agentic-api`. None of it is
+in ITK-SNAP 4.6; the 4.6 sprint lists it as an explicit non-goal.
 
-## The next goal (Jilei's choice, named 2026-10-22)
+## Before touching anything
 
-**Tweak and rehearse the spoken script.** Work in `talk.md` (`### Say` blocks and the video's
-`### Beat` blocks), rebuild with `python3 build.py`, and rehearse from `build/script.html`. Ask
-Jilei what to start with: which slide or beat feels off, or a timed run-through first.
+**Jilei picks this session's goal.** Show the open items below (a reminder list, not a priority
+order) and ask which one to work on.
 
-## Other open items (reminders, not a priority order)
+## Open items
 
-**Talk logistics**
-- Confirm the email to Anna Zawacki said "Prerecorded Demo" (the upload is done).
-- Play the uploaded deck and MP4 on the Windows machine. Practise slide 3 → video → slide 4.
-- `qa.md` has three "Needs your answer" questions: how this differs from MONAI Label / 3D Slicer;
-  when it reaches a released ITK-SNAP (it is not in 4.6); who runs the model server in a hospital.
-- Optional: a printable script. Nothing produces a .docx today; `build/script.html` prints
-  cleanly. If Word is wanted, generate it from `talk.md` in `build.py`; do not hand-write it.
+**Agentic API code** (from `project_retrospective.md`; none started)
+- Wire the confidence gate: `itksnap-mcp/src/itksnap_mcp/confidence.py` (`agreement_gate`) is
+  unit-tested but called by nothing. This was future direction 1 in the talk.
+- Make accepting or discarding a correction an explicit, recorded action. Today it is implied by
+  saving the file.
+- A dedicated demo build. `build-release/` is `staging/v460`, which lacks `--agent-listen`, the
+  audit code and the `itksnap-wt` label commands. Build `sprint/caimi`, or its 6 agentic commits
+  on `upstream/master`, in its own directory. Needed before any further live demo.
+- Repoint or remove the broken `itksnap-wt` MCP registration in `~/.claude.json`. It points at a
+  deleted file and fails to connect at every session start.
 
-**Agentic API, after the talk** (from `project_retrospective.md`; none started)
-- Wire the confidence gate (`itksnap-mcp/src/itksnap_mcp/confidence.py`, `agreement_gate`); it is
-  still called by nothing. This is future direction 1 on the closing slide.
-- Explicit accept/discard of a correction (Q&A answer: "not yet").
-- A dedicated demo build. `build-release/` is now `staging/v460` and lacks `--agent-listen`, the
-  audit code and the `itksnap-wt` label commands, so the live demo cannot run on this Mac
-  until `sprint/caimi` (or its six agentic commits, which apply cleanly to `upstream/master`) is
-  built in its own directory.
-- Repoint or remove the broken `itksnap-wt` MCP registration in `~/.claude.json`; it points at
-  a deleted file.
+**Where the prototype goes**
+- The R01 plan has an open decision: task Y0.3, "Decide the agentic-API prototype's place",
+  owners Paul and Jilei. The proposal is to fold the live channel into the bridge protocol and
+  the audit record into the provenance work, not to keep a parallel surface. See
+  `projects/r01-planning/task_list.md` and `milestones.md`. It depends on that meeting.
+- `presentation/qa.md`: three answers drafted on 2026-10-26 (MONAI Label / 3D Slicer; release
+  timing; who runs the model server). They are marked `*Unsourced:*` where nothing backs them.
+  Jilei hasn't reviewed them; review before reusing.
 
-## Files to read first (in order)
+**After the talk (optional)**
+- Record which questions were actually asked in the Q&A, while memory is fresh. Nothing captures
+  them yet. They would improve `qa.md` for the next talk.
+- The organisers' deck (`presentation/final/uploaded_2026-10-23/1007_Hao.pptx`, local only)
+  has a stray period on slide 3, in its own paragraph. This is moot now that the talk is over.
 
-1. `presentation/README.md`: the folder's rule, the freeze, the build commands, the organisers'
-   requirements, the to-do list.
-2. `presentation/talk.md`: the whole talk. `build/script.html` is the same text with a running
-   clock.
-3. `presentation/qa.md`: the answers to have ready.
-4. `PROGRESS_LOG.md`, newest entry (2026-10-05 → 10-22): how the talk got here and what broke.
+## Files to read first
+
+1. `PROGRESS_LOG.md`, the two newest entries (2026-10-05 → 10-22 built the talk; 10-22 → 10-26
+   tuned and delivered it).
+2. `project_retrospective.md`: the prototype's limits and next steps.
+3. `docs/agentic-prototype-plan.md` and `design_docs/DESIGN.md`: the plan and the design.
+4. Only for talk work: `presentation/method.md`, then `presentation/README.md`.
 
 ## Commands
 
 ```bash
-cd projects/agentic-api/presentation
-python3 build.py              # deck + script.html; prints the timing table; fails on frozen-content edits
-python3 build_video.py --stills   # only if build/ was cleaned (the slide 2 image); the full video build is refused while frozen
+cd itksnap-mcp && PYTHONPATH=src python3 -m pytest -q     # 12 tests; plain pytest cannot import the package
+cd projects/agentic-api/presentation && python3 build.py  # deck, script.html, Word script, phone PDFs; prints timing
 ```
-
-`python3` is the default conda base on this Mac; it has `python-pptx`, `Pillow` and
-`reportlab`. ffmpeg comes from Homebrew.
 
 ## Known traps
 
-- **The slides and video are frozen.** If `build.py` stops with "frozen", the edit touched
-  on-slide text: undo it. To truly change a slide, delete `frozen.json`, rebuild, re-upload,
-  then run `python3 build.py --freeze` again. The uploaded originals are in
-  `presentation/final/uploaded_2026-10-21/`.
-- **The uploaded deck keeps the speaker notes from upload day.** Script tweaks reach
-  `build/script.html` and the local deck's notes, not the copy on the podium PC. Rehearse from
-  `script.html`.
-- **Never edit `build/` by hand.** If Jilei comments in or edits the PPTX, a rebuild overwrites
-  it. First copy it to `presentation/review/` with the date in the name, diff its text against a
-  fresh build, and carry the changes into `talk.md`. Watch for a `~$…pptx` lock file in `build/`:
-  it means PowerPoint has the deck open.
-- **Pace:** `build.py` fails if any part needs more than `pace` (150) words per minute. Slide 3
-  is the densest at about 128.
-- **Language is neutral on purpose** (Jilei): no years or download counts, no selling points, no
-  questions to the audience. Keep script tweaks in that register.
-- **The repo is public.** The acceptance email (it holds a private upload link), the SIIM
-  template, `review/` and `final/` stay out of git, enforced by `presentation/.gitignore`.
-- **The footage still shows SAM2** in beat 1's model table. SAM2 is being dropped from the DLS;
-  the narration avoids naming or counting the models.
-- **Poppins (the template font) is not installed on this Mac.** LibreOffice previews use a
-  substitute. Check fit with a Verdana-substituted copy, the conservative case.
+- **`itksnap-mcp` tests need `PYTHONPATH=src`** (or `pip install -e .`). Without it, both test
+  files fail to collect with `No module named 'itksnap_mcp'`. That's an environment issue, not
+  a failure.
+- **`build-release/` can't run the agentic demo** (see above). Don't point the MCP server at it.
+- **`presentation/frozen.json` is still in place.** The build refuses on-slide changes. Delete it
+  only if the slides are reused for another talk.
+- **`build/` is regenerated on every build;** never edit it. To change speaker notes in the
+  organisers' deck, edit `talk.md` and run `python3 build.py --notes-into
+  final/uploaded_2026-10-23/1007_Hao.pptx`.
+- **The repo is public.** The acceptance email, the SIIM template, and `presentation/review/`,
+  `final/` and `build/` stay out of git, enforced by `presentation/.gitignore`.
+- **SAM2 is being dropped from the DLS,** but the demo footage still shows it in the model table.
+- **Language for talks and abstracts is neutral on purpose** (Jilei): no selling points, no
+  questions to the audience.

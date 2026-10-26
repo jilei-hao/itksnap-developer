@@ -21,6 +21,7 @@ Top-level submodules (all under `github.com/jilei-hao/`), each tracking the bran
 | `FireANTs/` | `main` | Registration project |
 | `itksnap-dls/` | `main` | Deep-learning segmentation service |
 | `segflow4d/` | `main` | 4D segmentation flow |
+| `itksnap-mcp/` | `main` | MCP server that lets an AI agent drive ITK-SNAP (agentic-API prototype, `projects/agentic-api/`). Tests: `cd itksnap-mcp && PYTHONPATH=src python3 -m pytest -q` (the package is not installed, so plain `pytest` fails to import it) |
 
 Note: `itksnap/` has its own nested submodules (`Submodules/{c3d,greedy,digestible}`), so clones must be recursive.
 
@@ -386,6 +387,16 @@ Tests require `SimpleITK` and `numpy` (`pip install SimpleITK numpy pytest`). Te
 `run-greedy-python-tests.sh` does **not** rebuild the extension: it imports whatever `.so` is already in `src/picsl_greedy/`. After changing `src/GreedyPythonBindings.cxx`, rerun `build-greedy-python.sh`, or the tests silently exercise the old binary.
 
 **Known test status (2026-09-29, macOS):** 21/22 pass. `test_propagation_basic` fails due to an in-memory image-passing bug in `src/picsl_greedy/_greedy_api.py` (PropagationWrapper does not yet support in-memory sitk.Image arguments). `tests/test_affine_input.py` (7 tests) guards the numpy-affine-input fix in `AffineTransformImport`; with the pre-fix bindings, 5 of its 7 fail.
+
+## Talks and presentations
+
+Talks are built from markdown, like the CAIMI26 talk in `projects/agentic-api/presentation/`.
+Before starting a new talk, read `projects/agentic-api/presentation/method.md`. It covers the
+build rule (`talk.md` → `build.py` → deck, rehearsal page, Word script, phone PDFs), writing for
+the ear, timing at the speaker's measured pace, the Word review loop (`review_comment.py`,
+`review_read.py`, `build.py --changes-since`) and rehearsal. On the Mac: `python-pptx`,
+`python-docx` ≥ 1.2 (Word comments), `reportlab`, LibreOffice `soffice` and Poppler `pdftoppm`
+for render checks, and Microsoft Word and PowerPoint.
 
 ## Code Style
 

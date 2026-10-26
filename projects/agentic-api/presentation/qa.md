@@ -1,8 +1,8 @@
 # CAIMI26 Q&A sheet
 
 Source of truth for the five-minute Q&A. Each entry is a likely question, a short answer to
-say, and where the fact comes from. Entries marked **needs your answer** have no vetted
-answer yet.
+say, and where the fact comes from. An *Unsourced:* line marks any part of an answer that no
+source backs; check it before saying it.
 
 ## Routing and validation
 
@@ -94,8 +94,33 @@ A connection to a clinical archive and a DICOM pathway do not exist yet, and wou
 need it.
 *Source: the note at the end of `caimi_submitted.md`.*
 
-## Needs your answer
+## Other tools and plans
 
-- **How is this different from MONAI Label or 3D Slicer?**
-- **When will this be in a released ITK-SNAP?** It is not in 4.6 and not on the 4.6 roadmap.
-- **Who would run the model server in a hospital?**
+<!-- Drafted 2026-10-26 from the repo and notes; not yet reviewed by Jilei. -->
+
+**How is this different from MONAI Label or 3D Slicer?**
+MONAI Label is a server that brings AI models into viewers such as 3D Slicer and OHIF, and it
+learns from the labels people make. Our focus is a different step. An AI agent drives ITK-SNAP as
+one tool in its pipeline, hands the case to a person, and gets every edit back as a record of who
+changed what. We haven't done a side-by-side comparison.
+*If pressed:* 3D Slicer embeds Python, so an agent could likely drive it too. The part this work
+is about is the record of each edit, by the agent or by the person.
+*Unsourced:* whether MONAI Label or 3D Slicer already offer agent control or a per-edit record
+was not checked. MONAI Label's README mentions neither, which does not mean they lack it. "An
+agent could likely drive it" is a judgment.
+*Source: MONAI Label README, [github.com/Project-MONAI/MONAILabel](https://github.com/Project-MONAI/MONAILabel), read 2026-10-26 ("server-client system"; viewers include 3D Slicer and OHIF; "continuously learning from user interactions"). Slicer embeds Python: `docs/agentic-prototype-plan.md` §9. Our side: submission fields 6 and 7. A positioning review is planned, not done: `r01-planning/task_list.md` 1A.8.*
+
+**When will this be in a released ITK-SNAP?**
+Not in 4.6, and there is no date yet. The plan is to fold these pieces into later releases,
+rather than ship the prototype as it is.
+*Unsourced:* "the plan" is a proposal in our planning notes, not a decision. Check with Paul
+before saying it.
+*Source: `release-460/SPRINT_PLAN.md` (the agentic API is an explicit non-goal for 4.6); `r01-planning/task_list.md` Y0.3 (decide the prototype's place: fold the live channel and the audit record into later work; owners Paul and Jilei).*
+
+**Who would run the model server in a hospital?**
+That isn't decided, and we haven't deployed it in a hospital. Today the model server is a
+separate program on a GPU machine. ITK-SNAP connects to it by host name, or through an SSH
+tunnel. In a hospital, I'd expect research IT to run it inside the hospital network, so the
+images stay there.
+*Unsourced:* the last sentence is a judgment, not a tested setup.
+*Source: `itksnap/GUI/Model/DeepLearningSegmentationModel.h` (host name, SSH tunnel, SSH user and key settings); slide 2. No clinical deployment: "Has this been validated clinically?" above.*

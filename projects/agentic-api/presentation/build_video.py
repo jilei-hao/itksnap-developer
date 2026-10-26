@@ -21,7 +21,7 @@ import tempfile
 
 from PIL import Image, ImageDraw, ImageFont
 
-from build import BUILD, HERE, VIDEO_MD, SRC, clock, die, parse_talk, read_md, split_h
+from build import BUILD, HERE, VIDEO_MD, SRC, clock, die, parse_talk, read_md, tables, tsecs
 
 W, H, FPS = 1920, 1080, 30
 PAD = "0x0B2B30"                       # dark teal bands, matching the slides
@@ -30,38 +30,6 @@ FONT = "/System/Library/Fonts/Supplemental/Arial Bold.ttf"
 TOLERANCE = 0.05                       # seconds a beat may differ from talk.md
 ORANGE = (248, 126, 51, 255)           # the slides' accent colour
 HALO = (0, 0, 0, 150)                  # keeps orange marks visible on white ITK-SNAP panels
-
-
-def tables(md):
-    """{section heading: (list props, [row dicts keyed by lower-case header])} for every ## section."""
-    out = {}
-    for head, body in split_h(md, 2):
-        if head is None:
-            continue
-        props = dict(re.findall(r"^- ([a-z ]+):\s*(.+?)\s*$", body, flags=re.M))
-        rows, header = [], None
-        for line in body.splitlines():
-            s = line.strip()
-            if not s.startswith("|"):
-                if header and rows:
-                    break
-                continue
-            cells = [c.strip() for c in s.strip("|").split("|")]
-            if all(re.fullmatch(r":?-{2,}:?", c) for c in cells):
-                continue
-            if header is None:
-                header = [c.lower() for c in cells]
-            else:
-                rows.append(dict(zip(header, cells)))
-        out[head.strip().lower()] = (props, rows)
-    return out
-
-
-def tsecs(s, where):
-    m = re.fullmatch(r"(\d+):(\d\d(?:\.\d+)?)", s.strip())
-    if not m:
-        die(f"video.md {where}: a time must look like 1:04.5, got {s!r}")
-    return int(m.group(1)) * 60 + float(m.group(2))
 
 
 def tag_size(text, size, pad):
