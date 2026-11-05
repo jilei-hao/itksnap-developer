@@ -38,10 +38,11 @@ End the session with `/handoff`.
 
 | | |
 |---|---|
-| Release | 4.6.0 (trunk is at `4.6.0-alpha.3`) |
+| Release | 4.6.0 (trunk is at `4.6.0-beta.1` since 2026-10-27) |
 | Previous | 4.4.0, released 2025-09-08 at `20f63186` |
-| Branch model | topic branches off `upstream/master` @ `52ee94fa`; `itksnap:staging/v460` = their merge, **testing only** |
-| Review queue | 9 branches (the ninth, `bug/remote-cache-test-datadir`, added 2026-09-28) — [branches.md](branches.md) |
+| Branch model | topic branches off `upstream/master` @ `d7581658` (rebased 2026-10-28); `itksnap:staging/v460` = their merge, **testing only** |
+| Review queue | 6 branches after the 2026-10-28 sync (6 retired or parked: upstream did the same work) — [branches.md](branches.md), [MERGE_ORDER.md](MERGE_ORDER.md) |
+| Milestone | v4.6.0: 0 open, 82 closed (#302 merged 2026-10-28), due 2026-11-20. Our unmerged work: [upstream.md](upstream.md), "Our work not yet upstream" |
 | Merged since 4.4.0 | 101 commits as of `679ba76a` (July); upstream has since moved 26 more, not yet classified |
 | Unbranched and in scope | async DLS (`cb6f692e`, `ea86df0d` on `test/dls_sam2`) — blocked on W1 Q4 |
 | Out of scope | the agentic API — `sprint/caimi` + `itksnap-mcp`, see `projects/agentic-api/` |

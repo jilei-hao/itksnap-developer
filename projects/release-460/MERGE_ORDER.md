@@ -20,17 +20,12 @@ The script reads this block: keep one branch per line, as `branch  verified-at  
 <!-- QUEUE:BEGIN -->
 ```text
 # branch                    verified-at  why this position
-bug/linux-gcc-build         fb65f2b9     smallest; no behavior change; the VTK-floor commit can be dropped on its own
-bug/remote-cache-test-datadir  6ff7a582  test only, one file (W8 3); fixes RemoteImageLoadTest_Cache on Windows/Linux and keeps ctest out of the real profile
-bug/rf-layer-crashes        9e80001f     crash fixes + the test that catches them; indivisible; must precede harness-false-green
-test/harness-false-green    83c44f62     after rf-layer-crashes (constraint below)
-test/seg-anchor-4d          0b671e86     tests only (seg_anchor with 4D data); passes on upstream as is
-bug/full-extent-off-by-one  6a72f6a1     small fix in Paul's seg_anchor code, with its test
-bug/seg3d-into-4d-check     635bd1ac     small fix in Paul's seg_anchor code, with its test
-bug/windows-decimal-comma   7e7576fd     one-line Windows fix (#256), with a test; Windows run pending
-feature/ui-language-setting fee681f9     small feature (#260); one question for Paul (number formats); conflicts with #255 by design
-feature/cardiac-io          ffb95b5e     largest; its round-trip test (CardiacFrameAxis) is in since 2026-09-29
-test/harness-gui-thread     8a28d50c     last: discuss with Paul first, it competes with upstream dbf8e79f
+bug/linux-gcc-build         -            one line: the VTK floor to 9.5.2 (Q2); the GCC fixes went obsolete with upstream's Qt 6.9.3 floor
+bug/rf-crashes-and-full-extent  a9b09a91  one bug-fix PR (Jilei, 2026-10-28, 2026-11-02): free rotation (Fixes #229), the full-extent fix with its test, and the two RF/Layer Inspector crash guards; replaces bug/rf-layer-crashes, bug/full-extent-off-by-one and bug/free-rotation-3d-sync
+bug/4dcta-slice-order       b1da5935     PR #307; reported on #128 against 4.6.0-beta1 (2026-11-03): the first 4D CTA time point loads upside down; one function and its test, on the current upstream/master
+release/4.6.0-beta.2        -            PR #308; version bump + release notes for #306 and the 4D CTA fix (Jilei, 2026-11-04); its own PR like upstream's #303; not seen by the git hook (release/ prefix), so refresh Status by hand
+test/seg-anchor-4d          -            tests only (seg_anchor with 4D data)
+feature/cardiac-io          -            largest; its echo read guards were dropped for upstream's d61b7418
 ```
 <!-- QUEUE:END -->
 
@@ -44,47 +39,83 @@ backticked branch names.
 
 | Before | After | Why | Evidence | Verified |
 |---|---|---|---|---|
-| `bug/rf-layer-crashes` | `test/harness-false-green` | harness-false-green makes a missing test script fail. Upstream lists `RandomForestBailOut` in `GUI_TESTS` but never registered its script — the registration is in rf-layer-crashes. | harness-false-green alone: `RandomForestBailOut` fails as "no such test" (0.88 s) | 2026-09-24, macOS |
+| `bug/4dcta-slice-order` | `release/4.6.0-beta.2` | the beta.2 release notes describe the 4D CTA fix (#308 says "merge #307 first") | the notes' DICOM bullet "Fixed one time point of a 4D CTA series loading upside down"; no shared files, so it is order of meaning, not a merge conflict | 2026-11-04 |
 
-**Indivisible.**
+Until 2026-11-04 there were no rows since 2026-10-21. The one row then (`bug/rf-layer-crashes` before
+`test/harness-false-green`) went with the retired branch, and `bug/rf-layer-crashes` is no longer
+indivisible: upstream registered `RandomForestBailOut` itself (`8f210627`).
 
-- **`bug/rf-layer-crashes` cannot be split.** `upstream/master` plus only `6afd0d10`, the test
-  registration, gives `RandomForestBailOut` **SEGFAULT at 19.8 s**. The whole branch passes in
-  20.0 s. Measured 2026-09-24.
+## Retired 2026-10-21 (and 2026-10-28)
 
-**Separable.** Not constraints, but options the meeting can use:
+Upstream `8868dc2e` already does what these branches did, so they were **not rebased** and are out of
+the queue. Their branches are left as they are, locally and on `origin`; delete them only with
+Jilei's OK. The local tips are also tagged `archive/1002/<branch>`.
 
-- `bug/linux-gcc-build`: `fb65f2b9` (VTK floor → 9.5.2) can be dropped without touching
-  `9ca38fcb` (the portability fixes).
+| Branch | Done upstream by | What upstream lacks |
+|---|---|---|
+| `test/harness-false-green` | `8f210627` (a missing script fails with NO_SUCH_TEST; `4DContinuousRendering` renamed) | nothing |
+| `bug/windows-decimal-comma` | `1df55964` (#290: `LC_NUMERIC` "C" in `main()`) | our `NumericLocaleTest` |
+| `bug/seg3d-into-4d-check` | `70271096` (B12: a single time point is checked against the selected segmentation) | nothing; its `TestSegmentationLoadChecks` covers the case |
+| `bug/remote-cache-test-datadir` | `60bc0f60` + #272 (the test asks for the data directory; CMake isolates `_Cache` and `_URLKeys`) | the other five remote tests still use the real cache; the "outside .itksnap_test" guard |
+| `feature/ui-language-setting` | **2026-10-28:** Paul's #300 (`4006ed6a`, `f0a4d80e`): the same Language preference, under the same key `UserInterface.DefaultBehavior.UILanguage`, read before the translators; #260 closed | nothing |
+| `bug/rf-layer-crashes`, `bug/full-extent-off-by-one` | **2026-10-28, combined** into `bug/rf-crashes-and-full-extent` for one PR (Jilei's call). Same code, commit messages rewritten for upstream | nothing; follow the combined branch |
+| `bug/free-rotation-3d-sync` | **2026-11-02, added** to `bug/rf-crashes-and-full-extent` for the same PR (Jilei's call). Same patches per `git range-diff` | nothing; follow the combined branch |
+| `test/harness-gui-thread` | partly: `5071a54f` (lookups and item models on the GUI thread), `d74b3a77` (null objects fail the test) | the proxy that keeps raw widgets out of scripts. **Parked, not rebased**: ask Paul whether he wants it before spending a rebase on 600 lines of `SNAPTestQt.cxx` |
+
+Trimmed on rebase: `bug/rf-layer-crashes` lost `5857616c` (qrc registration; upstream `8f210627`) and
+`ba85b6a3` (synchronous layer invalidation; upstream `93b49626`). `bug/linux-gcc-build` lost
+`b139c9bf` (GCC/Qt 6.4 portability; upstream requires Qt ≥ 6.9.3, and its CI builds Linux with GCC 13).
 
 ---
+
+## Pending force-push (2026-10-28)
+
+`bug/rf-crashes-and-full-extent` is **pushed** (2026-11-02, `a9b09a91` on upstream `5ad5a025`, a plain
+fast-forward push); it is not in the command below, and neither is `bug/free-rotation-3d-sync`, now part
+of it. PR not opened yet: see
+[reviews/pr-bugfix-rf-full-extent.md](reviews/pr-bugfix-rf-full-extent.md). Staging below still merges the
+old branches; rebuild it with the combined branch before pushing it.
+
+The other queue branches were rebased onto `upstream/master` `d7581658` (4.6.0-beta.1) on 2026-10-28,
+and staging was rebuilt as `c3f640f5`. **Neither the branches nor that staging tree has been built
+or tested on this base.** The last test run is the 2026-10-21 one on `8868dc2e` (branches.md). `origin`
+still has the `52ee94fa`-based tips, so the leases are unchanged. Sessions cannot force-push; Jilei
+runs this from the wrapper root. The retired branches are not in it.
+
+```bash
+git -C itksnap push origin \
+  --force-with-lease=bug/linux-gcc-build:fb65f2b936d80c4229429aab5f32df8ceb7d5b2d \
+  --force-with-lease=test/seg-anchor-4d:0b671e86a5478ac57f33ca40f3ac060cd14a0927 \
+  --force-with-lease=feature/cardiac-io:ffb95b5e3d1c36afec1901f10460061d50ca9125 \
+  --force-with-lease=staging/v460:6be1239a8dd9ebc25ee2aec6a232ccfcc4fcd906 \
+  bug/linux-gcc-build test/seg-anchor-4d feature/cardiac-io staging/v460
+```
+
+Then delete this section. Old tips: `archive/1021/<branch>` (the `8868dc2e`-based ones, including
+`feature/ui-language-setting` and staging `b842801f`), `archive/1002/<branch>` (the `651e82c0`-based
+ones) and `archive/staging-v460-1021`.
 
 ## Status
 
 <!-- AUTO:BEGIN -->
-_Generated 2026-09-30 15:35 EDT by `scripts/merge_order_status.py` — do not edit by hand._
+_Generated 2026-11-05 10:30 EST by `scripts/merge_order_status.py` — do not edit by hand._
 
-`upstream/master` = `52ee94fa` (2026-09-03).
+`upstream/master` = `a16d5c3e` (2026-11-02).
 
 | # | Branch | Tip | Ahead | Base | On `origin` | Verified | Why this position |
 |---:|---|---|---:|---|---|---|---|
-| 1 | `bug/linux-gcc-build` | `fb65f2b9` | 2 | current | ✅ in sync | ✅ `fb65f2b9` | smallest; no behavior change; the VTK-floor commit can be dropped on its own |
-| 2 | `bug/remote-cache-test-datadir` | `6ff7a582` | 1 | current | ✅ in sync | ✅ `6ff7a582` | test only, one file (W8 3); fixes RemoteImageLoadTest_Cache on Windows/Linux and keeps ctest out of the real profile |
-| 3 | `bug/rf-layer-crashes` | `9e80001f` | 4 | current | ✅ in sync | ✅ `9e80001f` | crash fixes + the test that catches them; indivisible; must precede harness-false-green |
-| 4 | `test/harness-false-green` | `83c44f62` | 1 | current | ✅ in sync | ✅ `83c44f62` | after rf-layer-crashes (constraint below) |
-| 5 | `test/seg-anchor-4d` | `0b671e86` | 1 | current | ✅ in sync | ✅ `0b671e86` | tests only (seg_anchor with 4D data); passes on upstream as is |
-| 6 | `bug/full-extent-off-by-one` | `6a72f6a1` | 1 | current | ✅ in sync | ✅ `6a72f6a1` | small fix in Paul's seg_anchor code, with its test |
-| 7 | `bug/seg3d-into-4d-check` | `635bd1ac` | 1 | current | ✅ in sync | ✅ `635bd1ac` | small fix in Paul's seg_anchor code, with its test |
-| 8 | `bug/windows-decimal-comma` | `7e7576fd` | 1 | current | ✅ in sync | ✅ `7e7576fd` | one-line Windows fix (#256), with a test; Windows run pending |
-| 9 | `feature/ui-language-setting` | `fee681f9` | 1 | current | ✅ in sync | ✅ `fee681f9` | small feature (#260); one question for Paul (number formats); conflicts with #255 by design |
-| 10 | `feature/cardiac-io` | `ffb95b5e` | 13 | current | ✅ in sync | ✅ `ffb95b5e` | largest; its round-trip test (CardiacFrameAxis) is in since 2026-09-29 |
-| 11 | `test/harness-gui-thread` | `8a28d50c` | 1 | current | ✅ in sync | ✅ `8a28d50c` | last: discuss with Paul first, it competes with upstream dbf8e79f |
+| 1 | `bug/linux-gcc-build` | `9a6d45c6` | 1 | ⚠️ old (`a4f01e8d`) — rebase | ⚠️ diverged | ⚠️ never | one line: the VTK floor to 9.5.2 (Q2); the GCC fixes went obsolete with upstream's Qt 6.9.3 floor |
+| 2 | `bug/rf-crashes-and-full-extent` | `a9b09a91` | 0 | ⚠️ old (`a9b09a91`) — rebase | ✅ in sync | ✅ `a9b09a91` | one bug-fix PR (Jilei, 2026-10-28, 2026-11-02): free rotation (Fixes #229), the full-extent fix with its test, and the two RF/Layer Inspector crash guards; replaces bug/rf-layer-crashes, bug/full-extent-off-by-one and bug/free-rotation-3d-sync |
+| 3 | `bug/4dcta-slice-order` | `b1da5935` | 1 | current | ✅ in sync | ✅ `b1da5935` | PR #307; reported on #128 against 4.6.0-beta1 (2026-11-03): the first 4D CTA time point loads upside down; one function and its test, on the current upstream/master |
+| 4 | `release/4.6.0-beta.2` | `7385e8fe` | 3 | current | ✅ in sync | ⚠️ never | PR #308; version bump + release notes for #306 and the 4D CTA fix (Jilei, 2026-11-04); its own PR like upstream's #303; not seen by the git hook (release/ prefix), so refresh Status by hand |
+| 5 | `test/seg-anchor-4d` | `bac56a42` | 1 | ⚠️ old (`a4f01e8d`) — rebase | ⚠️ diverged | ⚠️ never | tests only (seg_anchor with 4D data) |
+| 6 | `feature/cardiac-io` | `c9a4e4a1` | 13 | ⚠️ old (`a4f01e8d`) — rebase | ⚠️ diverged | ⚠️ never | largest; its echo read guards were dropped for upstream's d61b7418 |
 
-**Pairwise merges:** all 55 pairs merge cleanly.
+**Pairwise merges:** all 15 pairs merge cleanly.
 **Ordering constraints:** queue order satisfies 1 of 1.
-**`staging/v460`** (`b2f46eaa`): contains `upstream/master` and every queue tip, and nothing else. ✅
+**`staging/v460`** (`4ec6ac0b`): ⚠️ rebuild — not on the current `upstream/master`; missing `bug/rf-crashes-and-full-extent`, `bug/4dcta-slice-order`, `release/4.6.0-beta.2`; 6 commit(s) not on any queue branch (SPRINT_PLAN §7).
 
-**Needs attention:** nothing.
+**Needs attention:** `bug/linux-gcc-build` is not on the current `upstream/master`; `bug/linux-gcc-build` differs from `origin/bug/linux-gcc-build`; `bug/linux-gcc-build` has never been verified; `bug/rf-crashes-and-full-extent` is not on the current `upstream/master`; `release/4.6.0-beta.2` has never been verified; `test/seg-anchor-4d` is not on the current `upstream/master`; `test/seg-anchor-4d` differs from `origin/test/seg-anchor-4d`; `test/seg-anchor-4d` has never been verified; `feature/cardiac-io` is not on the current `upstream/master`; `feature/cardiac-io` differs from `origin/feature/cardiac-io`; `feature/cardiac-io` has never been verified; `staging/v460` needs a rebuild.
 <!-- AUTO:END -->
 
 ---
@@ -96,7 +127,9 @@ _Generated 2026-09-30 15:35 EDT by `scripts/merge_order_status.py` — do not ed
 1. **Read Status.** The hook will already have refreshed it. If it didn't — for example the hook
    isn't installed on this machine — run `scripts/merge_order_status.py`.
 2. **For each branch flagged "moved since … — re-verify":**
-   - build it standalone in a worktree with its own build directory;
+   - build it standalone in a worktree with its own build directory. Run `git submodule update` in
+     the worktree first: a rebase does not move its `c3d` and `greedy`, so `git status` shows them as
+     `M` and the build silently uses the old ones;
    - run the full `ctest`, and compare the failure *set* with `upstream/master`'s;
    - re-check every Constraints row that names it;
    - then set its `verified-at` in Queue to the new tip.

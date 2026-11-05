@@ -1,10 +1,11 @@
 # Topic branches — the upstream review queue
 
-**Snapshot:** 2026-09-30 · **Base for every branch:** `upstream/master` @ `52ee94fa` · **Pushed:** all eleven
-branches, plus `staging/v460` @ `b2f46eaa` (2026-09-30), to `jilei-hao/itksnap`. **Merge order and live branch
-state:** [MERGE_ORDER.md](MERGE_ORDER.md). · **Upstream issues and PRs:** [upstream.md](upstream.md). · **Meeting page (private):**
-https://claude.ai/artifact/QyivAN8NiDzadZ7hPKn6ut — a rendered copy of this file as of 2026-09-24; this file stays the
-source of truth.
+**Snapshot:** 2026-10-28 · **Base for every branch:** `upstream/master` @ `d7581658` (4.6.0-beta.1; rebased 2026-10-28,
+**not rebuilt or retested on this base**) · **Queue:** six branches; six retired or parked. · **Pushed:** not yet —
+the rebased branches and staging `c3f640f5` need Jilei's force-push ([MERGE_ORDER.md](MERGE_ORDER.md)); until then
+`jilei-hao/itksnap` holds the `52ee94fa`-based tips and staging `6be1239a`. **Upstream issues and PRs:**
+[upstream.md](upstream.md). · **Meeting page (private):** https://claude.ai/artifact/QyivAN8NiDzadZ7hPKn6ut — a
+rendered copy of this file as of 2026-09-24; this file stays the source of truth.
 
 This is the planning-meeting handout: one row per branch that could become a PR to
 `pyushkevich/itksnap`. The branch model itself (why `staging/v460` is test-only) is in
@@ -18,21 +19,105 @@ Each branch section has two parts:
 
 ---
 
+## 2026-10-28 — after upstream `d7581658` (4.6.0-beta.1)
+
+- `feature/ui-language-setting` is **retired**: Paul's #300 adds the same Language preference, under the
+  same settings key, read before the translators are installed. #260 is closed.
+- The other six were rebased; only `test/seg-anchor-4d` needed work (one `CMakeLists.txt` hunk). New tips:
+  `bug/linux-gcc-build` `891cfdd6`, `bug/rf-layer-crashes` `16e08051`, `test/seg-anchor-4d` `60e71fff`,
+  `bug/full-extent-off-by-one` `3073312e`, `bug/free-rotation-3d-sync` `d09de39f`, `feature/cardiac-io`
+  `64bdfc2c`. All 15 pairs merge cleanly. Not built or tested on this base yet.
+
+**Later on 2026-10-28 (Jilei's call):** `bug/rf-layer-crashes` and `bug/full-extent-off-by-one` are
+combined into **`bug/rf-crashes-and-full-extent`** (`b8c3ba55`, 3 commits on master `a4f01e8d`), for one
+bug-fix PR. The code is the same; the commit messages were rewritten for upstream. PR text and
+checks: [reviews/pr-bugfix-rf-full-extent.md](reviews/pr-bugfix-rf-full-extent.md). The other four
+were rebased onto `a4f01e8d`; staging is `4ec6ac0b` (not built). Test build for the manual checks of
+this branch and free rotation: `pr-test/free-rotation` @ `9cdc7bc6` in `build-pr-review`, with 11
+targeted tests passing ([reviews/free-rotation-test-plan.md](reviews/free-rotation-test-plan.md)).
+
+**Pushed, 2026-10-28:** upstream moved to `5ad5a025` (#302 merged by Paul, tag `v4.6.0-beta1`), so
+`bug/rf-crashes-and-full-extent` was rebased onto it (patches unchanged per `git range-diff`; new tip
+`a5759611`), built in `build-full-extent-off-by-one` (0 errors; `FullExtentRegion` and
+`TestDicomSeriesDetection` pass) and pushed to `origin`. Full suite on that tip, 2026-10-30: 81/81 on
+macOS. PR not opened yet.
+
+**Added, 2026-11-02 (Jilei's call):** the three `bug/free-rotation-3d-sync` commits are now on top of
+that branch, as `ad8d68f0`, `335c6737` and `a9b09a91`, with patches identical per `git range-diff`. Pushed
+as a fast-forward: 6 ahead of `5ad5a025`, 0 behind. Full suite 82/82 on macOS, with the worktree's
+submodules synced to the recorded commits; the 81/81 above was run with older `c3d` and `greedy`.
+§12 below still describes the free-rotation work. PR not opened yet.
+
+## 2026-10-21 — after upstream `8868dc2e`
+
+Paul's cleanup series did much of what our branches did. Each branch was compared with upstream
+before any rebase; the details are in [MERGE_ORDER.md](MERGE_ORDER.md) "Retired 2026-10-21".
+
+| # | Branch | Now | Tip | Commits | Rebase |
+|---|---|---|---|---:|---|
+| 1 | `feature/cardiac-io` | **kept** | `f4b37edf` | 13 | conflicts in the echo reader and `CMakeLists.txt`. Took upstream's `d61b7418` echo read checks (they throw; ours fell back to 1) and dropped our duplicate pixel-length guard. Paul's `.seq.nrrd` fixes (`6e486fa2`) merged in cleanly under ours; `space directions` still uses columns |
+| 2 | `bug/linux-gcc-build` | **trimmed** to the VTK-floor commit | `8683d949` | 1 | clean. `b139c9bf` dropped: upstream needs Qt ≥ 6.9.3, and its CI builds Linux with GCC 13 |
+| 3 | `bug/rf-layer-crashes` | **trimmed** to two guards | `2df7c293` | 2 | qrc registration (upstream `8f210627`) and synchronous invalidation (upstream `93b49626`) dropped. The CheckState guards are still needed: upstream's `LayerDeleteCallback()` sets `NO_ROLE`, which the role guards let through |
+| 4 | `test/harness-false-green` | **retired** | — | — | upstream `8f210627` is the same fix |
+| 5 | `test/harness-gui-thread` | **parked** | `0de96572` (old base) | 1 | not rebased. Upstream `5071a54f` + `d74b3a77` cover lookups and null objects; ask Paul whether he wants the proxy |
+| 6 | `test/seg-anchor-4d` | **kept** | `63d93494` | 1 | `CMakeLists.txt` lists only. `SegAnchor4DWorkspace` updated: since upstream `51498fb2` (B10) a workspace reopens with the segmentation that was active when saved, not the first one |
+| 7 | `bug/full-extent-off-by-one` | **kept** | `e0f082f3` | 1 | `CMakeLists.txt` only; upstream's `GetLayerRegionInReferenceSpace` is unchanged |
+| 8 | `bug/seg3d-into-4d-check` | **retired** | — | — | upstream `70271096` (B12) |
+| 9 | `bug/remote-cache-test-datadir` | **retired** | — | — | upstream `60bc0f60` + #272; #258 can close |
+| 10 | `feature/ui-language-setting` | **kept** | `280e1b7f` | 1 | real conflict: Paul now installs the translators before `GlobalUIModel` exists (`f779b5d8`). The preference is now read straight from `UserPreferences.xml` (`ReadUILanguagePreference()`), with a new `UILanguage` check for it. Native names added for fr, ja, pt_BR; `LanguagePreference` expects 7 translations |
+| 11 | `bug/windows-decimal-comma` | **retired** | — | — | upstream `1df55964` (#290); #256 closed |
+| 12 | `bug/free-rotation-3d-sync` | **kept** | `29dab2d0` | 3 | clean |
+
+**Staging, local `staging/v460` @ `b842801f` (upstream + these seven), macOS, 2026-10-21:**
+build 577/577 with 0 errors; `ctest` **84/85** on the first pass (`fee38b11`). The one failure was
+`SegAnchor4DWorkspace`, from upstream's B10 change above. With the updated test (`b842801f`) it passes
+(0.85 s); the other 84 were not rerun. Tests that ran nothing before now really run:
+`RandomForestBailOut` 20.7 s, `4DContinuousRendering` 38.3 s. Ours: `UILanguage` 2.0 s,
+`LanguagePreference` 7.5 s, `CardiacFrameAxis` 1.0 s, `FullExtentRegion` 0.9 s, `FreeRotation3D`
+1.4 s, `SegAnchor4DSwitching` 73 s, `Load3D` 54 s, `Mesh` 44 s. `4DReplayWithMeshUpdate` passed
+(58 s). No remote flake this time.
+
+**Not done:** no branch has been built on its own on the new base, so every `verified-at` in
+MERGE_ORDER.md is `-`; no `upstream/master` baseline run (not needed: only one failure, and its cause is
+known).
+
+The table and sections below are the 2026-10-02 state, kept as the record. The PR descriptions of
+the kept branches still apply, except where the row above says otherwise.
+
 ## Summary
 
-| # | Branch | Tip | Commits | From | Standalone on macOS, 2026-09-24 |
+| # | Branch | Tip | Commits | From | Standalone on macOS, rebased onto `651e82c0` (2026-10-02) |
 |---|---|---|---:|---|---|
-| 1 | `feature/cardiac-io` | `ffb95b5e` | 13 | W1 · D1 | ✅ builds, **34/35** on 2026-09-29, with the new `CardiacFrameAxis` test. Only the remote flake failed (W8 3b) |
-| 2 | `bug/linux-gcc-build` | `fb65f2b9` | 2 | W1 · D2, Q2 | ✅ builds, **34/34** |
-| 3 | `bug/rf-layer-crashes` | `9e80001f` | 4 | W8 · 14, 15, 15d, 24 | ✅ builds, 33/34: only the remote flake. `RandomForestBailOut` **really runs** (20.0 s) and passes |
-| 4 | `test/harness-false-green` | `83c44f62` | 1 | W8 · 1, 13 | ⚠️ builds, 32/34: a remote flake, plus `RandomForestBailOut` **"no such test"** — **needs #3 merged first** |
-| 5 | `test/harness-gui-thread` | `8a28d50c` | 1 | W8 · 17, 25 | ✅ builds, 32/35: two remote flakes, plus `4DReplayWithMeshUpdate` — a known flake: it then passed **5/5** here vs **3/5** on `upstream/master` |
-| 6 | `test/seg-anchor-4d` | `0b671e86` | 1 | seg_anchor 4D goal | ✅ builds, 37/38: only the remote flake. The four new tests pass (SegAnchor4DSwitching 72 s, Load3D 54 s, Mesh 44 s, Workspace 0.8 s) |
-| 7 | `bug/full-extent-off-by-one` | `6a72f6a1` | 1 | W8 · 36 | ✅ builds, 34/35: only the remote flake. `FullExtentRegion` passes; `SegmentationSwitching` and `MeshWorkspace` unaffected |
-| 8 | `bug/seg3d-into-4d-check` | `635bd1ac` | 1 | W8 · 37 | ✅ builds, 34/35: only the remote flake. `Seg3DInto4D` passes |
-| 9 | `bug/remote-cache-test-datadir` | `6ff7a582` | 1 | W8 · 3 · [#258](https://github.com/pyushkevich/itksnap/issues/258) | ✅ builds, 33/34 on macOS: only `RemoteImageLoadTest_SingleImage` (remote flake, passed on rerun). `_Cache` passes; real profile unchanged. Windows staging + branch (local `22b009e0`): 41/41. **Linux ⏳** |
-| 10 | `feature/ui-language-setting` | `fee681f9` | 1 | W8 · 46 · [#260](https://github.com/pyushkevich/itksnap/issues/260) | ✅ builds, **34/36** on 2026-09-30: only the two remote flakes (p50/p25 quantiles, W8 3b); they passed on reruns. `UILanguage` (0.2 s) and `LanguagePreference` (6.9 s) pass and were broken on purpose |
-| 11 | `bug/windows-decimal-comma` | `7e7576fd` | 1 | W8 · 47 · [#256](https://github.com/pyushkevich/itksnap/issues/256) | ✅ builds, **34/35** on macOS 2026-09-30: only `4DReplayWithMeshUpdate`, a known timing flake (W8 2) that passed 2 of 2 reruns. `NumericLocale` reproduces the bug under `de_DE.UTF-8`, passes with the fix, and fails with the fix broken. **Windows ⏳** |
+| 1 | `feature/cardiac-io` | `6b3fa738` | 13 | W1 · D1 | ✅ **36/36**. `CardiacFrameAxis` 1.3 s |
+| 2 | `bug/linux-gcc-build` | `0401026e` | 2 | W1 · D2, Q2 | ✅ **35/35**. Still needed: upstream's CI fix (#262) took a different route |
+| 3 | `bug/rf-layer-crashes` | `a8b982d3` | 4 | W8 · 14, 15, 15d, 24 | ✅ **35/35**. `RandomForestBailOut` **really runs** (20.2 s) and passes |
+| 4 | `test/harness-false-green` | `0b58bd14` | 1 | W8 · 1, 13 | ⚠️ **34/35**, as expected: only `RandomForestBailOut`, "Unable to read test script" — **needs #3 merged first**. `4DContinuousRendering` really runs (37.5 s) |
+| 5 | `test/harness-gui-thread` | `0de96572` | 1 | W8 · 17, 25 | ✅ **36/36**. `HarnessThreadSafety` 1.8 s. The rebase adapted Paul's new `screenshot(file, widget)` to proxies; checked by a temporary script call that saved the main window through a proxy |
+| 6 | `test/seg-anchor-4d` | `017cb279` | 1 | seg_anchor 4D goal | ✅ **39/39**. SegAnchor4DSwitching 73 s, Load3D 54 s, Mesh 45 s, Workspace < 1 s; Paul's new `ZoomToFitCycle` passes alongside |
+| 7 | `bug/full-extent-off-by-one` | `a573919b` | 1 | W8 · 36 | ✅ **36/36**. Rewritten onto Paul's #261 code. `FullExtentRegion` 1.2 s; `ZoomToFitCycle`, `SegmentationSwitching` and `MeshWorkspace` pass |
+| 8 | `bug/seg3d-into-4d-check` | `72cefb25` | 1 | W8 · 37 | ✅ **36/36** |
+| 9 | `bug/remote-cache-test-datadir` | `0d5d96a6` | 1 | W8 · 3 · [#258](https://github.com/pyushkevich/itksnap/issues/258) | ✅ **35/35**. **Linux ⏳** |
+| 10 | `feature/ui-language-setting` | `1d46892a` | 1 | W8 · 46 · [#260](https://github.com/pyushkevich/itksnap/issues/260) | ✅ **37/37**. `UILanguage` 1.7 s, `LanguagePreference` 7.4 s |
+| 11 | `bug/windows-decimal-comma` | `35e85f56` | 1 | W8 · 47 · [#256](https://github.com/pyushkevich/itksnap/issues/256) | ✅ **36/36**. **Windows ⏳** |
+| 12 | `bug/free-rotation-3d-sync` | `b7cd1428` | 3 | W6 · [#229](https://github.com/pyushkevich/itksnap/issues/229) | ✅ **36/36**. `FreeRotation3D` (1.3 s, 16 checks) fails when each mapping is broken on purpose (measured before the rebase); `VolumeRendering`, `SegmentationMesh` and `MeshImport` pass. **Not checked by eye in the app** |
+
+**Baseline — `upstream/master` @ `651e82c0` (2026-10-02): 35/35**, including all three remote tests, so
+the quantile flake (W8 3b) did not show. Two of those passes still run nothing:
+`4DContinuousRenderingD` (1.7 s) and `RandomForestBailOut` (1.9 s). #4 and #3 make them real. Every branch above ran on the same machine, the same day, one
+after another in `build-pr-review`, with failures rerun once. No rerun was needed except #4's
+expected failure. The results from before the rebase (on `52ee94fa`) are in git history.
+
+**All twelve merged, rebased (local `staging/v460` @ `c2926c4f`, rebuilt with SPRINT_PLAN §7 on
+2026-10-02): 47/47 on the first pass, no reruns.** That is the first fully green staging run. Every new
+test really runs: `4DContinuousRendering` 37.9 s, `RandomForestBailOut` 20.4 s, `ZoomToFitCycle`
+23.8 s, `SegAnchor4DSwitching` 73.6 s, `FreeRotation3D` 1.3 s. Not pushed yet: it needs Jilei's
+force-push ([MERGE_ORDER.md](MERGE_ORDER.md) "Pending force-push").
+
+**Before the rebase — all twelve merged (`staging/v460` @ `6be1239a`, 2026-09-30 late): 42/46 on the first pass.**
+Four GUI tests timed out, three of them stuck opening the workspace dialog, with no system sleep
+logged. All four passed on rerun at normal times (`4DContinuousRendering` 38.7 s). `FreeRotation3D`
+passed. `6be1239a` is the eleven-branch tip plus one merge, and its tree equals a full rebuild
+(SPRINT_PLAN §2).
 
 **All eleven merged (local `staging/v460` @ `b2f46eaa`, rebuilt 2026-09-30): 43/45**, failing only
 `RemoteImageLoadTest_SingleImage` and `_WorkspaceWithMesh` (the p25 quantile flake, W8 3b). Each
@@ -330,6 +415,13 @@ following the resolution in the Sep 4 merge `6f5ae27c`.
     `upstream/master` passed it only 3 of 5, failing at about 25 s. It is the known W8 item 2 flake,
     not a regression from this branch.
 
+- **Rebased 2026-10-02 onto `651e82c0` (`0de96572`).** Paul's #261 added
+  `engine.screenshot(filename[, widget])`. The textual conflict was one include line. The real one:
+  his widget argument was a raw `QObject*`, so on this branch a widget from `findChild` would reach
+  it as a proxy and fail as "not a widget". It now takes a `TestObjectProxy*`, unwrapped on the GUI
+  thread like every other harness method; the commit message says so. Checked by temporarily adding
+  `takeScreenshot(file, mainwin)` to a test script: it saved the main window (204 KB, 3D view
+  included). No committed test calls `screenshot` with a widget.
 - **Needs a conversation before a PR.** It is about 700 lines of harness change competing with a
   design Paul just landed. The argument for it: his helpers fix today's scripts; the proxy makes the
   next off-thread access fail loudly instead of silently. Paul may reasonably say his helpers are
@@ -408,38 +500,35 @@ voxel by voxel; the recipe is in the commit message.
 
 ## 7 · `bug/full-extent-off-by-one` — cursor range one voxel outside every image (W8 36)
 
+> **Rebased 2026-10-02 onto upstream `651e82c0`.** Paul's #261 rewrote this code and fixed half of the
+> bug, including the most visible case: with a single image, the cursor no longer reaches position 0.
+> This branch now fixes only the two cases his version still gets wrong.
+
 ### PR description
 
-**Title:** Keep the cursor within the loaded images
+**Title:** Keep the cursor within the loaded images when a segmentation is on another grid
 
 ITK-SNAP works out the area the cursor may move in, and the area that "zoom to fit" shows, from all
-the loaded images. That calculation was off by one voxel at the low end. With a single image 38
-slices deep, the cursor boxes allowed 0 to 38 instead of 1 to 38, so the cursor could sit one voxel
-outside every image. It went further wrong in two cases:
+the loaded images. When the active segmentation's grid does not line up with another image's, for
+example a different voxel size with shifted edges, or axes that run in another direction, that area
+can come out one voxel too large. The cursor and the slice scrolling can then reach one slice beyond
+every image, which shows nothing.
 
-- When an image's axes point the opposite way from the active segmentation's, which is common
-  between scanners and file formats, it was up to two voxels too large at one end and one voxel
-  short at the other.
-- When two grids line up exactly, the answer depended on rounding in the computer's arithmetic.
-
-**What changes:** the area is now exactly the voxels whose centers lie inside at least one loaded
-image.
+The cause: each corner of an image is moved to the nearest voxel of the segmentation's grid, and that
+voxel can lie just outside the image. **What changes:** the area is now exactly the voxels whose
+centres lie inside at least one loaded image.
 
 **What users will notice**
 
 | Where | Before | After |
 |---|---|---|
-| Cursor position boxes, for an image 38 slices deep | 0 to 38; position 0 is outside the image | 1 to 38 |
-| Scrolling or arrow keys through slices | can go one slice past the first slice, onto a slice outside the image that shows nothing | stops at the first slice |
-| Clicking outside the image at that edge | the crosshair can land one voxel outside the image | stops on the image's first voxel |
-| A segmentation whose axes run the opposite way to the others | two empty slices reachable at one end; the image's last slice at the other end can't be reached | exactly the image's slices |
-| Two images whose grids line up exactly | whether the last slice is reachable depends on rounding | always reachable |
-| Zoom to fit | fits one extra empty voxel at one edge, half a voxel off-centre (too small to notice in practice) | centred on the images |
+| A segmentation whose voxels are a different size from the image's and do not line up with them | one extra, empty slice can be reached at one or both ends of an axis | stops at the last slice that shows an image |
+| A segmentation whose axes run in a different direction from the image's | one extra, empty slice can be reached at one or both ends of an axis | stops at the image's first and last slices |
+| Zoom to fit, in those cases | includes that empty voxel | fits the images |
+| A single image, or a segmentation on a finer grid that lines up with the image | already right | unchanged |
 
-When the last slice couldn't be reached, two other things went wrong:
-- a cursor position sent from another linked ITK-SNAP window onto that slice was ignored;
-- switching segmentations with the cursor on that slice could make the cursor jump to the middle of
-  the image.
+The new test measures the area itself. What the cursor, scrolling and zoom do with it follows from
+the code.
 
 **Testing:** a new test, `FullExtentRegion`, compares the result with a direct voxel-by-voxel count
 for four layouts:
@@ -448,24 +537,29 @@ for four layouts:
 - a segmentation on a shifted grid;
 - a segmentation with flipped axes.
 
-All four were wrong before this change. The full test suite passes on macOS, apart from the online
-download tests, which fail intermittently on any branch.
+Before this change, the last two were wrong. The full test suite passes on macOS, including the new
+zoom-to-fit test.
 
 ### Review notes (planning meeting)
 
-- **Bug:** `GetFullExtentImageRegion()` rounded each mapped corner on its own with
-  `floor(ci − 0.5)`. That is one voxel low for a low corner, and it swaps with the high corner when
-  an axis is flipped.
-  - With just a main image the cursor spin boxes run 0..N, and the cursor can sit at index −1.
-  - With a flipped layer the region gains two voxels at the low end and loses one at the high end.
-  - With aligned grid edges, rounding error decides.
-- **Fix:** bound the mapped corners first, then take the reference voxels whose centres lie inside,
-  with a 1e-6 tolerance for exact edges.
-- **Test:** `FullExtentRegionTest` checks four layouts against a brute-force oracle: main only, a
-  2× aligned crop, a 1.5× shifted grid, and another direction matrix. **All four fail** on
-  `52ee94fa`; all pass with the fix. < 1 s.
-- **For Paul:** this is his seg_anchor code, so it needs his OK. The semantics are "voxels whose
-  centre is in some layer". If he meant "any overlap", the fix is the same shape with `±0.5`.
+- **Bug, after #261:** `GenericImageData::GetLayerRegionInReferenceSpace()` (Paul's new function)
+  maps a layer's corners, shrunk by 0.0001 voxel, into the reference grid and rounds each one to its
+  nearest reference voxel (`expand_region`). The nearest voxel to a corner can have its centre
+  outside the layer.
+- **Measured on `651e82c0` without the fix:** `FullExtentRegionTest` cases 1 (main only) and 2
+  (aligned 2× crop) pass. Case 3 (1.5× shifted) gives index [-2,-1,-3] upper [5,7,6] for expected
+  [-1,-1,-3]/[4,6,6], and case 4 (other direction) gives [-3,-4,-4]/[10,11,14] for expected
+  [-2,-3,-3]/[9,11,14]. With the fix, all four pass.
+- **Fix (`a573919b`):** only inside `GetLayerRegionInReferenceSpace`. The corners are bounded first
+  (box edges at exactly ±0.5); the region is the reference voxels whose centres lie inside, with a
+  1e-6 tolerance for exact edges. A layer thinner than one reference voxel gets the voxel nearest
+  its middle, so the region is never empty. That matters because zoom to fit on the main image
+  (`GenericSliceModel::UpdateMainImageRegion`, new in #261) also calls this function. Paul's caching
+  and his overlap check in `GetFullExtentImageRegion` are unchanged.
+- **For Paul:** his seg_anchor code. The semantics are "voxels whose centre is in some layer". If he
+  meant "any overlap", the fix is the same shape with `±0.5`.
+- **History:** first fixed on `52ee94fa` (`6a72f6a1`, all four cases wrong there), then rebased onto
+  Paul's rewrite.
 
 ## 8 · `bug/seg3d-into-4d-check` — clear error for a 3D seg that doesn't fit (W8 37)
 
@@ -721,6 +815,234 @@ it can fail by breaking the fix on purpose.
 - **Merges:** clean with all ten topic branches and with #233, #241, #243 and #251–#255.
 - **Pairs well with #257** (W8 44): the same file, and also Windows-only. Both could be verified in
   one Windows session.
+
+---
+
+## 12 · `bug/free-rotation-3d-sync` — the 3D view ignores free rotation (W6, #229)
+
+### PR description
+
+**Title:** Make the 3D view follow Tools › Image Free Rotation
+
+When you rotate an image with **Tools › Image Free Rotation**, the slice views turn the image and its
+segmentation. The 3D view did not follow. The 3D mesh stayed where the image was before the
+rotation, so it no longer matched the slice views. And clicking the mesh with the 3D crosshair put
+the cursor where that spot would have been without the rotation, not on the structure you clicked.
+That is the problem reported in #229.
+
+**What changes:** the 3D view now shows everything where the slice views show it:
+- the 3D mesh of the segmentation turns with the image;
+- clicking the mesh with the 3D crosshair puts the cursor on the structure you clicked;
+- 3D spray paint and the 3D scalpel paint where the mesh is shown;
+- meshes loaded from a file turn with the image too, in the 3D view and in their outlines in the
+  slice views;
+- volume rendering turns the same way as the slice views. Before, it turned the opposite way. This
+  also corrects the volume rendering of an image moved with **Tools › Registration**, which used to
+  move the opposite way from the slice views.
+
+Meshes you export are unchanged: they are saved in the image's own space, as before, not in the
+rotated view. That includes the VRML scene export. Without free rotation or registration, nothing
+changes.
+
+**What users will notice**
+
+| After rotating the image | Before | After |
+|---|---|---|
+| The 3D mesh of the segmentation | stays where it was before the rotation | turns with the image, matching the slice views |
+| Clicking the mesh with the 3D crosshair | the cursor lands somewhere else in the slice views | the cursor lands on the clicked structure |
+| 3D scalpel | cuts as if the image were not rotated | cuts where the plane is drawn |
+| 3D spray paint | paints where the unrotated mesh would be | paints on the displayed mesh |
+| A mesh loaded from a file, in 3D and its outline in the slice views | stays put | turns with the image |
+| Volume rendering | turns the opposite way from the slice views | turns the same way |
+
+The new test measured every row except spray paint, which uses the same calculation as the
+crosshair click. **None of the rows has been checked by eye in the app yet.**
+
+Fixes #229.
+
+**Testing:** a new test, `FreeRotation3D`, rotates an image whose segmentation holds one small cube
+by 30 degrees about a slanted axis, the way the free rotation tool does. It then checks, against
+where the slice views show the cube:
+- that clicks from several directions put the cursor on the cube;
+- that the 3D mesh, and the same mesh saved and loaded back from a file, are drawn on the cube;
+- that the outline of the loaded mesh in a slice view is cut through the cube;
+- that volume rendering places the cube there;
+- that a scalpel cut through the cube relabels the right half.
+
+We broke each of these on purpose, and the test failed every time. Ignoring the rotation, as before
+this change, misses the cube by about 7 mm; the old volume rendering misses it by 13.7 mm.
+The rest of the test suite passes on macOS. The exception is one of the online download tests,
+which fail now and then whatever the change and passed when run again.
+
+### Review notes (planning meeting)
+
+- **Commits:** three, rebased 2026-10-02 onto `upstream/master` @ `651e82c0` (were `d0341a55`,
+  `70d587ab`, `bbd81318` on `52ee94fa`). The volume commit can be dropped alone. Rebase: one conflict
+  with #264 on the camera-update condition (both conditions kept).
+
+  | Commit | Change | Test part |
+  |---|---|---|
+  | `439d1832` | 3D view: mesh actors, pick, spray, scalpel, camera focus; VRML export kept in image space | Pick, Mesh (generated + loaded), Scalpel |
+  | `253e28e5` | Loaded meshes' outlines in the slice views: plane mapped into mesh coordinates before cutting (normal by the transpose), cut drawn through the same matrix, cache reset on transform change | Outline |
+  | `b7cd1428` | Volume rendering direction (also registration overlays) | Volume |
+- **The cause.** The slice views sample the image at `T(p)` for reference point `p`
+  (`NonOrthogonalSlicer`), so the image appears at `T⁻¹`. The 3D view used the reference sform
+  only. The volume renderer used `GetRASMatrix(T)`, i.e. `T` rather than `T⁻¹`.
+- **One mapping, one place:** `ImageWrapperBase::GetImageToReferenceNiftiTransform()`, the inverse
+  RAS matrix of the layer's transform. `ImageMeshLayers::GetMeshToReferenceNiftiTransform()` picks
+  the layer: a segmentation's mesh follows that segmentation, any other mesh the main image. Under
+  free rotation both are the same transform. `Generic3DModel` adds `GetImageVoxelToWorldMatrix`,
+  `GetVolumeToWorldMatrix`, and camera-free entry points for the test
+  (`PickSegmentationVoxelAlongRay`, `RelabelSegmentationWithCutPlane`).
+- **The test can fail.** Each code path was broken on purpose and rebuilt:
+
+  | Broken on purpose | Result |
+  |---|---|
+  | shared matrix = identity (the old behaviour) | 4 pick checks, mesh, loaded mesh, outline fail; 7.1 mm off |
+  | volume uses `T` (the old matrix) | volume check fails, 13.7 mm off |
+  | scalpel ignores `T` | 30 of 60 cube voxels wrong |
+  | loaded mesh gets no transform | loaded mesh 7.1 mm off, outline 8.0 mm off |
+  | cut plane not mapped into mesh coordinates | cut 3.3 mm off the plane |
+- **Independent review** (code-reviewer agent): the matrix maths was correct in every path. Its two
+  medium findings were fixed before pushing: VRML export had started writing the rotated view, and the
+  display paths had no test. The camera re-centres after a rotation, and spray checks the ray-cast
+  image's region. The review also found that `m_WorldMatrix` went stale under seg_anchor (W8 48);
+  Paul fixed that upstream in #264 the next day, so after the rebase the pick uses the cached matrix
+  again.
+- **Not measured: by eye in the app.** The visual check was not done this session. It needs Jilei at
+  the machine or computer-use access. Not covered by any test: the renderer's event wiring (actors
+  updated on rotation), spray glyph placement, and the camera focus.
+- **Decisions applied** (Jilei, 2026-09-30): loaded meshes turn too; exported meshes stay in the
+  image's own space; pick tested at the model level; the volume fix and the 2D outlines go in this
+  branch as their own commits.
+- **Known gaps, not fixed here:**
+  - `Window3DPicker` still ray-casts without `T`. It is unreachable, because VTK key events are not
+    forwarded.
+  - A segmentation added *after* rotating: a new blank one copies the main image's transform
+    (`ImageWrapper::InitializeToWrapper`); a loaded one was not checked. Either way its mesh follows
+    that segmentation's own transform, so 3D matches what the slice views show for it.
+  - W8 48 (stale `m_WorldMatrix` after switching to a segmentation on another grid) was fixed
+    upstream by #264 (`558f3c17`).
+- **Merges:** clean with all eleven topic branches, with `staging/v460`, and with #196 (head
+  `b934b6aa`), #233, #241, #243 and #251–#255. The test is registered after `Test_OrientationWidget`,
+  an anchor no other branch or PR uses. The first anchor, after `TestLargeImageCheck`, conflicted with
+  #253, #255 and branch 8.
+
+---
+
+## 13 · `bug/4dcta-slice-order` — the first 4D CTA time point loads upside down (#128)
+
+> **New, 2026-11-04. PR [#307](https://github.com/pyushkevich/itksnap/pull/307), opened 2026-11-04.**
+> Reported on #128 by its author after testing 4.6.0-beta1 with real GE 4D
+> CTA data. One commit (`b1da5935`) on `upstream/master` `a16d5c3e`. Manual comparison:
+> [reviews/4dcta-slice-order-test-plan.md](reviews/4dcta-slice-order-test-plan.md).
+
+### PR description
+
+**Title:** Fix the first 4D CTA time point loading upside down (#128)
+
+Some GE scanners write the first file of a series a little differently from the others. For example,
+the first file says the gantry tilt is `0.000000` and the others say `0`. Since #302, ITK-SNAP keeps
+such a series together and recognises it as 4D CTA. But the time point that holds that first file
+was loaded with its slices in reverse order, so it appeared upside down compared with the other time
+points. Because the 4D image takes its position from the first time point, the whole image was also
+placed one volume length too low.
+
+The cause: to put the slices of each time point in order, ITK-SNAP asked GDCM whether the stack of
+files looked consistent, and flipped the stack only if it did. GDCM compares the gantry tilt as text,
+so `0.000000` and `0` look like two different tilts, and it said no. **What changes:** each time point
+is now put in order by the position of its slices, without asking GDCM. Series that loaded correctly
+before load exactly as before.
+
+**What users will notice**
+
+| Data | Before | After |
+|---|---|---|
+| 4D CTA where one file writes a value differently, e.g. GE with gantry tilt `0.000000` in the first file | that time point upside down; the whole image shifted along the patient's long axis | every time point in the same order, in the right place |
+| Any other 4D CTA | correct | unchanged |
+| 3D DICOM series | not affected (a different reader) | unchanged |
+
+**Testing:** the synthetic CT exam used by `TestDicomSeriesDetection` now has the reporter's case: the
+first file of its 4D series writes the gantry tilt as `0.000000`, and the others as `0.0`. Before the
+change, the test fails with "[Dynamic CTA] 14 slices have the wrong intensity"; after it, the test
+passes. The reporter's own change to the test-exam script was loaded with both versions, and gives
+the same result. The full test suite passes on macOS: 82 of 82.
+
+### Review notes (planning meeting)
+
+- **Mechanism:** `MFOrderByIPPStrategy::Apply` passed each frame's file names to `gdcm::IPPSorter` and
+  then used *its own* list, not `GetFilenames()`. So IPPSorter only decided whether the list was
+  reversed. The list came in ascending Z (the `std::map<double, …>` grouping), so an accepted frame
+  ended highest-Z first and a refused frame lowest-Z first. The return value was ignored.
+- **Why IPPSorter refused:** `gdcmIPPSorter.cxx` returns false when the Scanner finds more than one
+  distinct `GantryDetectorTilt` string. It tolerates differently formatted IOP strings (it parses
+  them), but not the tilt. The header diff in #128 shows exactly this in real GE data (`[0.000000]` vs
+  `[0]`), along with SliceThickness, IOP and other differences in the first file.
+- **Why the image moves:** `GuidedNativeImageIO` takes origin and direction from frame 1 and forces
+  `direction(2,2) = -1`. With frame 1 lowest-Z first, the origin is the lowest slice and the axis points
+  down. Measured on the reporter's data: origin Z 2 instead of 10 mm; slices at 2…−6 instead of 10…2.
+- **Fix:** `std::stable_sort` by `m_IPP[2]`, descending. That is the order every accepted frame
+  already had, so nothing changes for data that loaded correctly. IPPSorter is no longer used, which
+  also saves one extra header read of every file per frame.
+- **Why not #128's fallback** (sort by SliceLocation, descending): SliceLocation's sign and meaning vary
+  by vendor, and the reader already groups frames by IPP Z. Paul dropped that fallback in #302,
+  reasoning that only regular CT reached the 4D reader before #301. The report shows it also covered
+  real 4D data.
+- **Reproduction:** each factor separately, before the fix. The tilt text alone reproduces it; the
+  reversed file order in the reporter's script alone does not.
+- **Checked:** macOS build 589/589, 0 errors. **Full suite 82/82** on `b1da5935` (2026-11-04, 21 min,
+  submodules at the recorded commits), the same as the upstream-identical tree `a9b09a91` (82/82,
+  2026-11-02). Pairwise merges clean with every queue branch, including `feature/cardiac-io` (it adds a
+  grid check in `Sort()`, a different hunk). **Not run:** a real 4D CTA exam (AVRP, Siemens)
+  before/after, which should be unchanged.
+- **Test data:** regenerated with pydicom 3.0.1, the version that wrote the committed files, so only
+  the 15 series-4 files change (each gains the tilt tag).
+
+---
+
+## 14 · `release/4.6.0-beta.2` — version 4.6.0-beta.2, Nov 4, 2026
+
+> **New, 2026-11-04 (Jilei's call). PR [#308](https://github.com/pyushkevich/itksnap/pull/308), opened
+> 2026-11-04.** Three commits on `upstream/master` `a16d5c3e`: the bump
+> (`af8485c4`), three missing notes (`af1cf05f`) and a wording fix (`7385e8fe`, 2026-11-05). Its own PR, as upstream did for beta.1 (#303).
+> **Merge §13 (#307) first:** the notes describe that fix.
+
+### PR description
+
+**Title:** Version 4.6.0-beta.2; update the 4.6 release notes
+
+Sets the version to 4.6.0-beta.2, released Nov 4, 2026. The release notes now also cover what changed
+since beta.1:
+- the 3D view now turns with the image under Image Free Rotation (#306);
+- the cursor can no longer be moved one slice past the images when a segmentation has another grid
+  (#306);
+- a 4D CTA series where one file writes a value differently no longer loads with one time point upside
+  down (the 4D CTA slice-order pull request; please merge that one first).
+
+The two safety checks in #306 change nothing a user can see, so they are not listed.
+
+It also adds three fixes from earlier in the 4.6 cycle that the notes had missed:
+- a crash when replaying a 4D image with continuous mesh update on (#223);
+- meshes in the slice views not following the 4D time point (#225);
+- non-ASCII Windows user names (#241).
+
+### Review notes (planning meeting)
+
+- **How the missing notes were found (2026-11-04):** every PR from `jilei-hao` and every commit authored
+  by Jilei in `v4.4.0..upstream/master` was checked against the 4.6 section. Already covered: #221
+  (out-of-memory message), #224 (leaks), #227 (`.vti`/`.vtp`, `.seq.nrrd`), #244 (developer docs).
+  #241 is Marco Düring's PR with four of Jilei's commits; per the #241 review, non-ASCII user names
+  work on every Windows version, and only non-ASCII command-line paths need 1903+.
+- **Wording (2026-11-05, Jilei):** two new top-level lines described the bug without saying it was fixed
+  (the cursor past the images, and the 4D CTA time point upside down). `7385e8fe` starts both with
+  "Fixed", like the lines around them. Paul's own sub-lists (under "Large images" and "Windows") also
+  list what was wrong without "Fixed"; that is his style under a group heading, so they were left as
+  they are.
+- Same files as Paul's beta.1 bump (`890c2572`): `CMakeLists.txt` (qualifier, release date, formatted
+  date) and `ReleaseNotes.md`. No other file in the tree carries the version.
+- **Checked:** configures cleanly; the generated files read `ITK-SNAP 4.6.0-beta.2`, "Nov 4, 2026",
+  `20261104`, and `CFBundleShortVersionString` 4.6.0-beta.2. **Not built:** only generated version
+  strings change.
 
 ---
 

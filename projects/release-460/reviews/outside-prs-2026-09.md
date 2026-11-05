@@ -107,6 +107,9 @@ after #252 the Info tab shows the main image's real (unchanged) orientation.
     active segmentation's.
 - **Side effect:** after Reorient Image, the main row now shows its real, unchanged orientation. That is
   the Reorient bug above, not this PR's.
+- **Conflict with master since `651e82c0` (2026-10-02):** one `GUI_TESTS` line next to Paul's
+  `ZoomToFitCycle`. Trivial; the draft comment now mentions it. Pushing a merge to the fork needs
+  Jilei's OK, like #196's.
 
 **Draft comment:**
 > Thank you. We built this and ran `LayerOrientation`: it passes, and with the old `ImageInfoModel.cxx`
@@ -114,6 +117,9 @@ after #252 the Info tab shows the main image's real (unchanged) orientation.
 > (`"Oblique (closest to RIA)"`) instead of its prefix, and note in the description that since the
 > seg_anchor change the old code showed the active segmentation's orientation rather than the main
 > image's.
+> Since master moved on 2026-10-02, the PR has a one-line conflict in `CMakeLists.txt`: your
+> `LayerOrientation` entry in `GUI_TESTS` and the new `ZoomToFitCycle` entry land on the same line.
+> Keeping both lines resolves it; we can push that merge to your branch if you prefer.
 
 ## #253 — label files with CRLF or no header (aycibatuhan, fixes #154)
 

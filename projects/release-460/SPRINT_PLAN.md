@@ -37,7 +37,7 @@ when the demo needs release code. Do not merge it, and do not merge `itksnap-mcp
 
 ---
 
-## 2. State of the tree — verified 2026-09-29
+## 2. State of the tree — verified 2026-10-21 (branch model); the rest of §2 is from 2026-10-02
 
 > Re-verify with §7 and update in place. This is the one section that changes without being a
 > re-plan; the numbers are observations, not commitments.
@@ -45,18 +45,23 @@ when the demo needs release code. Do not merge it, and do not merge `itksnap-mcp
 ### Branch model (from 2026-09-24)
 
 ```
-upstream/master (52ee94fa) ──┬── bug/linux-gcc-build            ─┐
-                             ├── bug/remote-cache-test-datadir   │
+upstream/master (8868dc2e) ──┬── bug/linux-gcc-build            ─┐
                              ├── bug/rf-layer-crashes            │
-                             ├── test/harness-false-green        │
-                             ├── test/seg-anchor-4d              ├─ merge --no-ff each ─► staging/v460  (testing only)
-                             ├── bug/full-extent-off-by-one      │
-                             ├── bug/seg3d-into-4d-check         │
-                             ├── feature/cardiac-io              │
-                             └── test/harness-gui-thread        ─┘
+                             ├── test/seg-anchor-4d              │
+                             ├── bug/full-extent-off-by-one      ├─ merge --no-ff each ─► staging/v460  (testing only)
+                             ├── bug/free-rotation-3d-sync       │
+                             ├── feature/ui-language-setting     │
+                             └── feature/cardiac-io             ─┘
 ```
 
 Listed in MERGE_ORDER.md queue order.
+
+**2026-10-21:** upstream moved 169 commits (Paul's 4.6 cleanup). Five branches are out of the queue
+because upstream did the same work: `test/harness-false-green`, `bug/windows-decimal-comma`,
+`bug/seg3d-into-4d-check` and `bug/remote-cache-test-datadir` are retired, and
+`test/harness-gui-thread` is parked until Paul says whether he wants it. See
+[MERGE_ORDER.md](MERGE_ORDER.md) "Retired 2026-10-21". The §7 recipe's `T=(…)` list is now the
+seven branches above.
 
 - **Every piece of work lives on its own topic branch off `upstream/master`**, named with the
   repo's existing prefixes: `feature/`, `bug/`, `test/`. One branch = one PR = one decision in the
@@ -75,16 +80,16 @@ Listed in MERGE_ORDER.md queue order.
 | | |
 |---|---|
 | Branch | `staging/v460` (itksnap) |
-| Base | `upstream/master` @ `52ee94fa` (26 commits past the July base `679ba76a`) |
-| Local | **`b2f46eaa`** = `upstream/master` + all **eleven** topic merges, rebuilt 2026-09-30. macOS `ctest` **43/45**, only the two remote quantile flakes, which each passed on a rerun. The ten-branch rebuild `f2203847` was never pushed. Earlier tips are local tags: `archive/staging-v460-0930` (`dc2ad59a`, nine), `-0929` (`d02236c3`, eight), `-0924` (`62588ffc`, five) |
-| Remote | **Pushed 2026-09-30** by Jilei: `origin/staging/v460` = `b2f46eaa`, in sync. The session's permission guard blocks force-pushes, so Jilei runs them |
+| Base | `upstream/master` @ `651e82c0` (2026-10-02: Paul merged #261–#264, 13 commits past `52ee94fa`; see [upstream.md](upstream.md) "Upstream since `52ee94fa`"). **Upstream has since moved to `41a1e0a6`** (#265, seen 2026-10-05): packaging and `itksnap-wt` only; every branch and staging still merge cleanly with it; not rebased onto it yet |
+| Local | **`c2926c4f`** = `upstream/master` `651e82c0` + all **twelve** rebased topic merges, rebuilt with §7 on 2026-10-02. Old tip `6be1239a` is the local tag `archive/staging-v460-1002`. macOS `ctest` **47/47 on the first pass** (2026-10-02), no reruns: the first fully green staging run of the sprint. The remote tests passed too (W8 3b fixed upstream) |
+| Remote | `origin/staging/v460` = `6be1239a` (the `52ee94fa`-based twelve). **Needs Jilei's force-push** of `c2926c4f`; the command is in [MERGE_ORDER.md](MERGE_ORDER.md) "Pending force-push" |
 
 ### itksnap — topic branches (the review queue)
 
 Full detail, evidence and discussion points per branch: **[branches.md](branches.md)**. Merge order,
 constraints and live state: **[MERGE_ORDER.md](MERGE_ORDER.md)**.
 
-All eleven are based on `52ee94fa`, pushed, and verified standalone on macOS. None has a PR yet. In MERGE_ORDER.md queue order:
+All twelve were rebased onto `651e82c0` on 2026-10-02 and verified standalone on macOS (results in [branches.md](branches.md)). **The rebased tips are not pushed yet: Jilei force-pushes them.** None has a PR yet. In MERGE_ORDER.md queue order:
 
 | Branch | Ahead | Content | Pushed |
 |---|---:|---|---|
@@ -96,6 +101,7 @@ All eleven are based on `52ee94fa`, pushed, and verified standalone on macOS. No
 | `bug/full-extent-off-by-one` | 1 | full-extent region one voxel low (W8 36) — Paul's seg_anchor code | yes |
 | `bug/seg3d-into-4d-check` | 1 | 3D seg into a mismatched 4D seg: clear error (W8 37) — Paul's seg_anchor code | yes |
 | `bug/windows-decimal-comma` | 1 | NRRD on decimal-comma Windows: "C" instead of "POSIX" (W8 47, #256). Added 2026-09-30; Windows run pending | yes |
+| `bug/free-rotation-3d-sync` | 3 | 3D view, loaded-mesh outlines and volume rendering follow free rotation (W6, #229). Added 2026-09-30; **not checked by eye in the app** | yes |
 | `feature/ui-language-setting` | 1 | Language preference in Preferences (W8 46, #260). Added 2026-09-30 | yes |
 | `feature/cardiac-io` | 13 | 4D cardiac CTA + echo phase/metadata I/O (W1 D1). Rebased onto `52ee94fa`; old tip `archive/feature-cardiac-io-pre-rebase`. **No round-trip test yet** | yes (forced) |
 | `test/harness-gui-thread` | 1 | `TestObjectProxy` on top of upstream `dbf8e79f` (W8 17, 25) — **discuss with Paul first** | yes |
@@ -109,7 +115,7 @@ All eleven are based on `52ee94fa`, pushed, and verified standalone on macOS. No
 | `developer-doc` | 0 | W2 — merged upstream as PR #244 | delete |
 | `bug/{4d-mesh-slice,large-image-oom,memory-leak,mesh-update-crash}` | 0 | merged | delete — W8 item 7 |
 | `feature/{io-improvement,seq-nrrd-export,vti-io}` | 0 | merged | delete — W8 item 7 |
-| `origin/master` | 0 | in sync with `upstream/master` @ `52ee94fa` | nothing to do |
+| `origin/master` | 0 | `651e82c0` (fast-forwarded by Jilei 2026-10-05); 3 behind `upstream/master` `41a1e0a6` since #265 | fast-forward again: `git -C itksnap push origin upstream/master:master` |
 
 What upstream landed since July, and what it means for us:
 
@@ -165,7 +171,7 @@ works on is Jilei's call (rule 2 at the top).
 | ☐ **W3** | [itksnap-dls refactor](workstreams/dls-refactor.md) — promote modules + TotalSegmentator + segflow4d + tests to `main` | `itksnap-dls:feature/agentic-api` | segflow4d | **Largely written** — needs promotion |
 | ☐ **W4** | [Auto-segmentation UI](workstreams/auto-seg-ui.md) | none yet | W3 | Not started |
 | ☐ **W5** | [Propagation UI](workstreams/propagation-ui.md) | none yet | W3 | Not started |
-| ☐ **W6** | [Free-rotation 2D/3D sync](workstreams/free-rotation-sync.md) — [#229](https://github.com/pyushkevich/itksnap/issues/229) | none yet | — | Not started — this is a **bug** |
+| ☑ **W6** | [Free-rotation 2D/3D sync](workstreams/free-rotation-sync.md) — [#229](https://github.com/pyushkevich/itksnap/issues/229) | merged upstream | — | **Done** — in #306 (`a16d5c3e`, 2026-11-02) |
 | ☐ **W7** | [cmesh integration](workstreams/cmesh-integration.md) — tag, submodule, refactor `Logic/Mesh/` | `convert-mesh:main` | cmesh tag | Library exists; itksnap side not started |
 | ☐ **W8** | [Bugfixes & small improvements](workstreams/bugfixes.md) | `bug/rf-layer-crashes`, `test/harness-false-green`, `test/harness-gui-thread`; one new branch per future fix | — | Rolling — 7 branches ready for review (the 3 above + `test/seg-anchor-4d`, `bug/full-extent-off-by-one`, `bug/seg3d-into-4d-check`, `bug/remote-cache-test-datadir`); open items in the workstream file |
 
@@ -178,7 +184,7 @@ works on is Jilei's call (rule 2 at the top).
       building clean with no regressions attributable to the floor change.
 - [ ] **Workspace `FormatVersion` decision** — cardiac I/O bumps it 1→3; decide whether
       `SNAP_VERSION_LAST_COMPATIBLE_RELEASE_DATE` moves or the reader degrades
-- [ ] `ReleaseNotes.md` gains a 4.6 section, built from [change_tracking.md](change_tracking.md)
+- [x] `ReleaseNotes.md` gains a 4.6 section, built from [change_tracking.md](change_tracking.md) — written by Paul (`9caa96eb`, alpha.4); our additions for beta.2 are in #308
 - [ ] Merged branches deleted (W8 item 7)
 - [ ] Per-topic PRs to `pyushkevich/itksnap:master` — **decided 2026-09-24** (replaces the wholesale
       PR). One PR per branch in [branches.md](branches.md), in whatever order the planning meeting

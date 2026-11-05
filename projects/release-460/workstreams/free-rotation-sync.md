@@ -1,9 +1,12 @@
 # W6 — Free-rotation 2D/3D sync
 
-**Status:** investigated; design decided 2026-09-30; not implemented
-**Branch:** none yet
+**Status:** implemented 2026-09-30 (3 commits, branch 12 in [branches.md](../branches.md)); reviewed;
+model-level test passes, and fails when the rotation is left out; checked by eye by Jilei, 2026-10-30,
+"looks good"; full suite 82/82 on macOS, 2026-11-02. PR text ready, PR not opened
+**Branch:** `bug/rf-crashes-and-full-extent` (`ad8d68f0`..`a9b09a91`, on `5ad5a025`). Moved there from
+`bug/free-rotation-3d-sync` on 2026-11-02, for one bug-fix PR
 **Depends on:** nothing
-**Issue:** [pyushkevich/itksnap#229](https://github.com/pyushkevich/itksnap/issues/229) — open, filed 2026-04-24, no comments
+**Issue:** [pyushkevich/itksnap#229](https://github.com/pyushkevich/itksnap/issues/229) — open, filed 2026-04-24, milestone v4.6.2
 
 ## Goal
 
@@ -25,7 +28,9 @@ the mesh with the 3D crosshair tool moves the 2D cursor to the anatomically corr
     own VTK→NIfTI transform only.
   - `Generic3DRenderer::UpdateMeshAssembly` (`:285`) adds the actors with no user matrix.
   - The volume renderer does apply it: `GetRASMatrix(sw->GetITKTransform()) *
-    ConstructVTKtoNiftiTransform(...)` (`Generic3DRenderer.cxx:853`). That is the pattern to copy.
+    ConstructVTKtoNiftiTransform(...)` (`Generic3DRenderer.cxx:853`). ~~That is the pattern to
+    copy.~~ **Wrong (2026-09-30, implementation session): it applies `T`, but the slice views show
+    the image at `T⁻¹`, so the volume turns the opposite way.** See Implementation below.
 - **The 3D pick ignores it too.** `Generic3DModel::IntersectSegmentation` (`:451`):
   - maps the click ray with the reference space's inverse sform;
   - ray-casts through the selected segmentation's raw voxels;
@@ -75,6 +80,44 @@ the rotation transform, so the two diverge exactly by that transform.
 
 Implementation is for a fresh session, on a new topic branch (for example
 `bug/free-rotation-3d-sync`) whose PR says "Fixes #229".
+
+## Implementation (2026-09-30)
+
+Branch `bug/free-rotation-3d-sync`, three commits off `52ee94fa`; details and test numbers in
+[branches.md](../branches.md) §12.
+
+- **Direction.** `NonOrthogonalSlicer` samples the image at `T(p)` for reference point `p`, so a
+  structure at `x` is displayed at `T⁻¹(x)`. Everything in 3D must use `T⁻¹`. New:
+  `ImageWrapperBase::GetImageToReferenceNiftiTransform()` = `inverse(GetRASMatrix(T))`.
+- **Commit 1 (3D):** mesh actors' user matrix (`ImageMeshLayers::GetMeshToReferenceNiftiTransform`:
+  a segmentation mesh follows its segmentation, any other mesh the main image); the pick maps the
+  ray into the segmentation's own voxels and the hit back to the reference cursor
+  (`Generic3DModel::PickSegmentationVoxelAlongRay`, testable without a camera); spray paint and
+  scalpel use the same voxel-to-world matrix; camera focus on the active mesh. Test
+  `FreeRotation3D` (C++, links `itksnapui_model`; drives `RegistrationModel::ApplyRotation`).
+- **Commit 2 (2D outlines of loaded meshes):** the slice plane is mapped into mesh coordinates before
+  cutting; the cut is drawn through the same matrix.
+- **Commit 3 (volume):** volume uses the same matrix (`Generic3DModel::GetVolumeToWorldMatrix`).
+  Measured: with the old matrix the cube is 13.7 mm off, twice the rotation's 7.1 mm. Also corrects
+  overlays moved with Tools > Registration.
+- **Open questions answered:** Q1 both (mesh and pick); Q2 export is in the image's own space and
+  stays so (Jilei's decision 2), except VRML, which exports the render window and so now exports the
+  rotated view; Q3 loaded meshes were affected in 3D and in 2D outlines, both fixed; Q4
+  `upstream/rot_via_main_tform` is fully merged into `master` — no separate prior art.
+- **Independent review (code-reviewer agent, 2026-09-30):** matrix maths found correct in every
+  path. Acted on: VRML export now drops the mesh matrices while writing (decision 2); tests added for
+  the loaded mesh, its 2D outline through `MeshWrapperBase`, the volume matrix and the scalpel (each
+  made to fail by breaking its mapping); camera re-centres on rotation; spray checks the ray-cast
+  image's region. Not acted on:
+  - `Generic3DModel::m_WorldMatrix` goes stale when seg_anchor moves the reference space to another
+    segmentation's grid (`ReferenceSpaceGeometryChangeEvent` is not a `MainImageDimensionsChangeEvent`).
+    Pre-existing; also misplaces the 3D crosshair. Recorded as W8 48, and **fixed upstream by #264
+    (`558f3c17`) on 2026-10-02**. After the rebase onto `651e82c0` (branch tip `b7cd1428`), the pick
+    uses the cached matrix again.
+  - `Window3DPicker` ray-casts without `T`; unreachable (VTK key events are not forwarded).
+  - Debug builds would assert on a singular transform in `vnl_inverse`; free rotation is rigid.
+- **By-eye check:** done by Jilei on 2026-10-30, reported overall; see
+  [free-rotation-test-plan.md](../reviews/free-rotation-test-plan.md).
 
 ## Plan
 

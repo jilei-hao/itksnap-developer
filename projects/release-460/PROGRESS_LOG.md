@@ -1605,3 +1605,243 @@ branches.md §1, §10 and §11.
 - the Space key never runs the adaptive brush;
 - the machine is short on memory, so use `ninja -j4`;
 - warn before any deliberate crash.
+
+## 2026-10-21 (Mac) — Upstream sync to `8868dc2e`; milestone triage; seven branches rebased, five retired
+
+**Goal (Jilei's):** pull upstream, refresh the v4.6.0 milestone list, resolve conflicts, find
+duplicates that can be closed, and report.
+
+**Not logged before:** the 2026-10-02 rebase onto `651e82c0` and the 2026-10-05 check of `41a1e0a6`
+were recorded in MERGE_ORDER.md, branches.md and upstream.md, but never got a log entry or a
+checkpoint commit. Their force-push was never run, so `origin` still had the `52ee94fa`-based tips.
+
+**Upstream:** `41a1e0a6` → `8868dc2e`, 169 commits. Paul's 4.6 cleanup (#267–#290), CI rework
+(#275–#293), 4.6.0-alpha.5 with release notes (#289), and merges of #241, #196, #253, #280, #284,
+#114. Today he also closed #233, #251 and #254 as fixed by his own commits.
+
+**Each branch compared with upstream before rebasing** (MERGE_ORDER.md "Retired 2026-10-21"):
+- retired, because upstream has the same fix: `test/harness-false-green` (`8f210627`),
+  `bug/windows-decimal-comma` (`1df55964`), `bug/seg3d-into-4d-check` (`70271096`),
+  `bug/remote-cache-test-datadir` (`60bc0f60`);
+- parked: `test/harness-gui-thread`. Upstream `5071a54f` and `d74b3a77` cover part of it, and a
+  rebase over them is large; ask Paul first;
+- trimmed: `bug/rf-layer-crashes` keeps the two guards upstream lacks; `bug/linux-gcc-build` keeps
+  only the VTK floor;
+- rebased: the seven queue branches. Real conflict work in two:
+  - `feature/ui-language-setting`: Paul moved the translator load before `GlobalUIModel` exists
+    (`f779b5d8`), so the preference is now read from `UserPreferences.xml` directly
+    (`ReadUILanguagePreference()`), with a new check in `UILanguage`. fr, ja and pt_BR got native names;
+    `LanguagePreference` now expects seven translations;
+  - `feature/cardiac-io`: took upstream's echo read checks (`d61b7418`) instead of ours.
+
+All 21 pairs merge cleanly. Staging rebuilt locally (old tip tagged `archive/staging-v460-1021`;
+old branch tips tagged `archive/1002/<branch>`).
+- `fee38b11`: build 577/577, 0 errors; `ctest` **84/85**. The one failure, `SegAnchor4DWorkspace`
+  (ours), expected the first segmentation to be active after reopening a workspace; upstream
+  `51498fb2` (B10) now restores the one that was active when saving. The test was updated to that
+  behaviour on `test/seg-anchor-4d` (`63d93494`).
+- `b842801f` (staging with the fix): `SegAnchor4DWorkspace` passes; the rest was not rerun.
+- `RandomForestBailOut` 20.7 s and `4DContinuousRendering` 38.3 s really run; no remote flake.
+- No branch was built on its own on the new base, so no `verified-at` is set.
+
+**Outside PRs:** #243, #252 and #255 conflict with master (test lists only). Master is merged into
+each locally as `pr-merge/<n>`; not built, not pushed.
+
+**Milestone:** 74 items, 14 open. Triage, duplicates and draft comments:
+[reviews/milestone-triage-2026-10-21.md](reviews/milestone-triage-2026-10-21.md). Closable: #258, #259
+(ours, fixed upstream); #20 duplicates #69; #236 duplicates #234; #202/#58 and #92/#5 probable.
+
+**`gh` is broken on this Mac:** the keyring token is invalid and the Go TLS stack rejects the
+certificate chain. GitHub was read through `curl` without a token. Nothing was posted.
+
+## 2026-10-28 (Mac) — Upstream at 4.6.0-beta.1; #301 test build; branches rebased again
+
+**Goal (Jilei's):** "Paul merged most of our PRs, but I need to manual test the remaining one. Sync
+the status of the code and build a version."
+
+**Upstream:** `8868dc2e` → `d7581658` (2026-10-27), version **4.6.0-beta.1**. Merged: #297 (#291
+installer metadata), #182, #243, #298, #252, #300 (Paul's Language preference), #255, #303 (CI now
+fails on a failing test), #304, #305 (#258). Paul closed #258, #259, #260 and #236. #128 closed,
+replaced by #302.
+
+**The remaining one is #301** ("Choose 4D CTA per DICOM series, not per directory", fixes #218),
+assigned to Jilei, with Paul's request to try it on real 4D CTA data. #302 is stacked on it.
+- Test tree: local `pr-test/301` = master + #301 head `b5426004` (`b2b32489`), in
+  `worktrees/pr-review`; built in `build-pr-review`: 581/581, 0 errors; the second pass had nothing to
+  rebuild. `TestDicomSeriesDetection` (3.3 s), `DicomSeriesSelection` (32 s) and
+  `EchoCartesianDicomLoading` (23 s) pass. The full suite was not run.
+- The four AVRP exams (`/Users/jileihao/data/avrp/4DCTA_anon/`) are all Siemens, one series each;
+  `c3d -dicom-series-list` sees one series per exam (3200/6954/3570/5720 images), so #301 should flag
+  each as 4D. They cannot test the several-series case of #218.
+- Test plan with expected dimensions: [reviews/pr-301-test-plan.md](reviews/pr-301-test-plan.md).
+
+**Our branches:** `feature/ui-language-setting` retired (#300 is the same design, same settings key).
+The other six rebased onto `d7581658`; only `test/seg-anchor-4d` needed a `CMakeLists.txt` hunk. All 15
+pairs merge cleanly; staging rebuilt as `c3f640f5`. **Not built or tested on this base.** Old tips:
+`archive/1021/<branch>`.
+
+**Two slips, both repaired:**
+- Rebasing two branches inside `worktrees/pr-review` briefly switched the files under the running
+  #301 build. The 89 differing files were touched and the build was run a second time; it found nothing to
+  rebuild, so no object came from the wrong tree.
+- The `keep_both.py` conflict helper had gone with the old scratchpad; the pipe hid the error, so
+  `test/seg-anchor-4d` was committed with conflict markers. Fixed by hand and amended; all six
+  branches checked for markers (none).
+
+**Later the same day:** Jilei merged #301 after the manual test ("the image reading looks good";
+master `a4f01e8d`). #302 is still open and still based on `dicom-4dcta-detection`, so it must be
+retargeted to `master` before it is merged. Checked on master + #302 (`pr-test/302`, `build-pr-review`):
+the three DICOM tests pass. A worry, that `ExtendedGDCMSerieHelper` would split the merged 3D series
+again, was ruled out by reading GDCM: its refine-tag list starts empty and ITK-SNAP never fills it,
+so it groups by SeriesInstanceUID only. Seen in passing: `ExtendedGDCMSerieHelper.cxx:60` throws
+`files.size()` instead of the `IRISException`, because the arguments sit outside the constructor
+call (comma operator). It predates #302.
+
+**Status update, end of day:** Jilei's manual test of #302 (the `dicom_ct_exam` split case) looks
+good. #302 is now on the milestone, its only open item, and still needs retargeting to `master`.
+#218 closed with #301; #69 closed with #243. The inventory of our work that is not yet upstream is in
+upstream.md, "Our work not yet upstream — 2026-10-28".
+
+
+**Later, 2026-10-28: free-rotation test build and one bug-fix PR.** At Jilei's request,
+`bug/rf-layer-crashes` and `bug/full-extent-off-by-one` were combined into
+`bug/rf-crashes-and-full-extent`: the same three patches, with commit messages rewritten for upstream.
+Test build for the manual checks of that branch and free rotation: `pr-test/free-rotation` in
+`build-pr-review`, with 11 targeted tests passing; checklists are in `reviews/free-rotation-test-plan.md`
+and `reviews/pr-bugfix-rf-full-extent.md`. Meanwhile, Paul retargeted and merged #302 (`283464d3`), and
+upstream is now `5ad5a025`, tagged `v4.6.0-beta1`; the milestone has 0 open items. The combined branch
+was rebased onto `5ad5a025`. `git range-diff` shows the patches unchanged, and the build has 0 errors with
+`FullExtentRegion` and `TestDicomSeriesDetection` passing. It was then **pushed** to `origin`
+(`a5759611`, 3 ahead and 0 behind upstream master). The PR is not opened yet, the full suite has not
+run, and Jilei's manual checks of both branches are still to do.
+
+**2026-10-30:** full suite on the pushed tip of `bug/rf-crashes-and-full-extent` (`a5759611`, standalone
+in `build-full-extent-off-by-one`): **81/81 pass**, none skipped, 21 min, macOS. `verified-at` set in
+MERGE_ORDER, and the PR text's full-suite line filled in. Upstream is still `5ad5a025`. The PR is not
+opened yet, and Jilei's manual checks are still to do.
+
+**2026-10-30, later:** Jilei's manual test of free rotation looks good, on `pr-test/free-rotation`
+(`9cdc7bc6`). While writing manual steps for the bug-fix branch, the draft turned out to be wrong in two
+ways, and it is corrected:
+- The classifier guard can't be reached by normal clicks: **Train Classifier** is only on the page
+  that creates the engine. The old crash came from the harness problem (W8 15c), so the PR text now
+  calls this a safety check, and the title says "guard against" crashes.
+- Real data does show the cursor bug. With `MRIcrop-orig` + `MRIcrop-seg-hippoL-04mm`, old code gives X
+  -113 to 82, Y -65 to 210, Z 0 to 160, and new code gives X -112 to 82, Y -65 to 209, Z 0 to 159,
+  matching a voxel-by-voxel count. Measured with a probe linking each version of
+  `GenericImageData.cxx`, not in the app. (`build-ui-language-setting/ITK-SNAP` was named as the "before"
+  build here; that was wrong, see 2026-11-02.)
+The commit message of `dbe478d7` still says that clicking Train crashed; changing it needs a
+force-push, so it was left. The PR is not opened yet.
+
+**2026-11-02:** Jilei's manual cursor check in `build-ui-language-setting/ITK-SNAP` gave X min -114, Y
+max 209, Z max 159, not the expected -113, 210, 160. My mistake: that binary was built on 2026-09-30
+from `52ee94fa`, before #261. I had checked #261 against the archive tags, not against what the binary
+was built from. The fix itself is fine. `build-full-extent-off-by-one/ITK-SNAP-before-fix` is now the
+before build (the same tree, relinked with master's `GenericImageData.cxx`). Real spin-box limits, read
+by a script passed to `--test`, after `-g MRIcrop-orig -s MRIcrop-seg-hippoL-04mm`:
+
+| Build | X | Y | Z |
+|---|---|---|---|
+| `ITK-SNAP` (pushed tip) | -112 to 82 | -65 to 209 | 0 to 159 |
+| `ITK-SNAP-before-fix` | -113 to 82 | -65 to 210 | 0 to 160 |
+| Sep 30 binary (`52ee94fa`) | -114 to 82 | -66 to 209 | -1 to 159 |
+
+**Useful:** `--test` accepts a path to a script file, so a throwaway script can read any widget property
+from the real app without touching the build.
+
+Jilei's manual cursor check passed on 2026-11-02, with `ITK-SNAP-before-fix` as the before build. The
+classification and closing-layer checks are still to do.
+
+Jilei's classification and closing-layer checks also passed on 2026-11-02, so all manual checks for
+`bug/rf-crashes-and-full-extent` are done. `FullExtentRegion` re-measured on the current base: layouts
+3 and 4 fail without the fix. PR text rewritten for the community with Jilei's two screenshots
+(`reviews/pr-bugfix-images/`). The PR is not opened yet.
+
+**2026-11-02, later:** at Jilei's request, free rotation joined the same PR. The three commits were
+cherry-picked onto `bug/rf-crashes-and-full-extent` (`ad8d68f0`, `335c6737`, `a9b09a91`), with patches
+identical to `cd72d7fa` and to the `d09de39f` Jilei tested, per `git range-diff`. Upstream's commits
+since that test build touch none of these files. Pushed as a fast-forward (6 ahead of `5ad5a025`, 0
+behind). `bug/free-rotation-3d-sync` is retired from the queue. PR text updated; it now says Fixes #229.
+
+**Correction:** this worktree's `c3d` and `greedy` were 22 and 57 commits behind what master records,
+because a rebase does not move submodules. So the 81/81 of 2026-10-30 was not on the branch's exact
+tree. They were synced with `git submodule update`, and the new run is **82/82**, none skipped, 21 min,
+macOS, with 0 build errors. MERGE_ORDER "How to update" now says to sync submodules first.
+
+`FreeRotation3D` re-measured on this base by relinking it with the rotation matrix replaced by identity:
+9 of 15 checks fail. It does not cover spray paint, the camera, or refreshing during a rotation.
+
+**Open:** #229 is in milestone v4.6.2, and this PR is otherwise a v4.6.0 bug-fix PR. The commits split
+cleanly at `a5759611` if Paul wants the free-rotation part separately. Jilei's free-rotation test was
+reported overall, so the PR's testing line stays general. The PR is not opened yet.
+
+## 2026-11-04 → 05 (Mac) — #128 report: first 4D CTA time point upside down; fix (#307) and beta.2 (#308)
+
+**Goal (Jilei's):** a user who tested 4.6.0-beta1 with real GE 4D CTA data (comment on #128,
+2026-11-03) reported that the 4D image is detected, but the first time point has its slices in
+reverse order. They gave four lines that change `make_dicom_ct_exam.py` to reproduce it.
+
+**Upstream:** `a16d5c3e` (2026-11-02) = `v4.6.0-beta1` + **#306**, our combined bug-fix PR (free
+rotation, Fixes #229; the full-extent off-by-one; the RF and Layer Inspector guards), merged by Jilei.
+This had not been logged: the 2026-11-02 entry still says "the PR is not opened yet".
+
+**Cause.** Each time point is a stack of files. `MFOrderByIPPStrategy` asked GDCM's `IPPSorter`
+whether the stack was consistent, and reversed it only if GDCM said yes. `IPPSorter` compares
+`GantryDetectorTilt` as text, so `"0.000000"` in one file and `"0.0"` in the others counts as two
+tilts, and it refuses. (It even sorted correctly into a member, `GetFilenames()`, which ITK-SNAP never
+read.) So the time point holding that file kept the opposite order. `GuidedNativeImageIO` copies the
+4D geometry from time point 1, so when that is the refused one, the whole image is also one volume
+length too low. The reporter's reversed file order plays no part: with every tilt written alike, the
+same files load correctly.
+
+**Landed** (`jilei-hao/itksnap`, both pushed):
+- `bug/4dcta-slice-order` `b1da5935`, on `a16d5c3e`: each time point is sorted by Z position with
+  `std::stable_sort`, highest first, without GDCM. The test exam's series 4 now has the reporter's
+  case (first file tilt `"0.000000"`, the others `"0.0"`). `TestDicomSeriesDetection` fails without
+  the fix ("[Dynamic CTA] 14 slices have the wrong intensity") and passes with it. Full suite
+  **82/82**, macOS, 1272 s, the same as the upstream-identical baseline. Before/after test plan and
+  scripts: `reviews/4dcta-slice-order-test-plan.md`, `reviews/4dcta-slice-order-scripts/`.
+- `release/4.6.0-beta.2`, on `a16d5c3e`. **Jilei's call: its own branch and PR**, like upstream's
+  beta.1 bump (#303).
+  - `af8485c4`: version 4.6.0-beta.2, Nov 4, 2026, plus notes for #306 and the 4D CTA fix.
+  - `af1cf05f`: three fixes the notes had missed: #223, #225 and #241. They were found by checking
+    every `jilei-hao` PR and commit since v4.4.0 against the 4.6 section.
+  - `7385e8fe` (2026-11-05): two of the new lines stated the bug without saying it was fixed (Jilei
+    spotted it). Both now start with "Fixed".
+  - Configured, not built: only the generated version strings change, and they read `4.6.0-beta.2`
+    and "Nov 4, 2026".
+- **PRs:** [#307](https://github.com/pyushkevich/itksnap/pull/307) (the fix; 6 CI checks were
+  pending when opened) and [#308](https://github.com/pyushkevich/itksnap/pull/308) (its description
+  says to merge #307 first). MERGE_ORDER has both, with the constraint #307 before #308. All 15 pairs
+  merge cleanly.
+
+**Not done:**
+- The reply on #128 is not posted; it needs Jilei's OK. Draft:
+  > Thanks @a-a-danilov — reproduced with your script change, and you're right that #302 missed
+  > this. The trigger is the `GantryDetectorTilt` formatting: the 4D CTA reader checked each time
+  > point with GDCM's IPPSorter, which compares that tag as text, so the time point holding the first
+  > file (`0.000000` vs `0`) was rejected and kept the opposite slice order. Since the 4D geometry is
+  > taken from the first time point, the whole image was also shifted along Z. #307 sorts every time
+  > point by slice position directly, so tag formatting no longer matters, and your case is now in
+  > the test exam. It would be great if you could try it on your data.
+- Jilei opened the reporter's data in both builds. The GUI steps 2–4 of the test plan are not
+  recorded, and the AVRP real-data before/after has not been run.
+- `bug/rf-crashes-and-full-extent` is merged (#306) but still in the MERGE_ORDER queue, and still
+  in upstream.md's "not yet upstream" list.
+- Paul's own sub-bullets under "Large images" and "Windows" in the release notes also state the bug
+  without "Fixed". Left as they are: that is his style under a group heading.
+
+**Surprises:**
+- `gh` is unusable on this Mac: the keyring token is invalid, and `api.github.com` gives TLS x509
+  errors. The PRs were opened through Claude in Chrome. Of the connected Chrome browsers, the first
+  one tried was not signed in; the other is signed in as `jilei-hao`.
+- Regenerating the test DICOM files with pydicom 3.0.2 changes the Implementation Version Name in
+  every file. Use `~/miniconda3/envs/instant3d` (pydicom 3.0.1): its output is byte-identical.
+- The git hook does not watch `release/` branches, so their MERGE_ORDER Status must be refreshed by
+  hand (`scripts/merge_order_status.py`).
+
+**Handoff:** no tests were run (Jilei's call). The last results are the 82/82 above, on `b1da5935`.
+The checkpoint commits the sprint docs, which had been uncommitted since 2026-09-30, so it also
+carries the 2026-10-21, 10-28 and 11-02 work. The wrapper's `itksnap` pointer (`4ec6ac0b`, a local
+staging tip, not pushed) and its `itksnap-dls` pointer are left out.
