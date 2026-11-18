@@ -20,10 +20,8 @@ The script reads this block: keep one branch per line, as `branch  verified-at  
 <!-- QUEUE:BEGIN -->
 ```text
 # branch                    verified-at  why this position
+bug/large-image-loading     a725b797     #146, for 4.6.0 (Jilei, 2026-11-17): Linux refused every image over 4 GB (free memory read as 0); 4D time points past 2^32 values showed an earlier time point; the macOS memory check refused images that fit
 bug/linux-gcc-build         -            one line: the VTK floor to 9.5.2 (Q2); the GCC fixes went obsolete with upstream's Qt 6.9.3 floor
-bug/rf-crashes-and-full-extent  a9b09a91  one bug-fix PR (Jilei, 2026-10-28, 2026-11-02): free rotation (Fixes #229), the full-extent fix with its test, and the two RF/Layer Inspector crash guards; replaces bug/rf-layer-crashes, bug/full-extent-off-by-one and bug/free-rotation-3d-sync
-bug/4dcta-slice-order       b1da5935     PR #307; reported on #128 against 4.6.0-beta1 (2026-11-03): the first 4D CTA time point loads upside down; one function and its test, on the current upstream/master
-release/4.6.0-beta.2        -            PR #308; version bump + release notes for #306 and the 4D CTA fix (Jilei, 2026-11-04); its own PR like upstream's #303; not seen by the git hook (release/ prefix), so refresh Status by hand
 test/seg-anchor-4d          -            tests only (seg_anchor with 4D data)
 feature/cardiac-io          -            largest; its echo read guards were dropped for upstream's d61b7418
 ```
@@ -39,9 +37,8 @@ backticked branch names.
 
 | Before | After | Why | Evidence | Verified |
 |---|---|---|---|---|
-| `bug/4dcta-slice-order` | `release/4.6.0-beta.2` | the beta.2 release notes describe the 4D CTA fix (#308 says "merge #307 first") | the notes' DICOM bullet "Fixed one time point of a 4D CTA series loading upside down"; no shared files, so it is order of meaning, not a merge conflict | 2026-11-04 |
 
-Until 2026-11-04 there were no rows since 2026-10-21. The one row then (`bug/rf-layer-crashes` before
+None since 2026-11-17: the one row added 2026-11-04 (`bug/4dcta-slice-order` before `release/4.6.0-beta.2`) went when both merged as #307 and #308 on 2026-11-05. Before that there were none since 2026-10-21. The one row then (`bug/rf-layer-crashes` before
 `test/harness-false-green`) went with the retired branch, and `bug/rf-layer-crashes` is no longer
 indivisible: upstream registered `RandomForestBailOut` itself (`8f210627`).
 
@@ -98,24 +95,22 @@ ones) and `archive/staging-v460-1021`.
 ## Status
 
 <!-- AUTO:BEGIN -->
-_Generated 2026-11-05 10:30 EST by `scripts/merge_order_status.py` — do not edit by hand._
+_Generated 2026-11-18 11:44 EST by `scripts/merge_order_status.py` — do not edit by hand._
 
-`upstream/master` = `a16d5c3e` (2026-11-02).
+`upstream/master` = `8fdc1b37` (2026-11-18).
 
 | # | Branch | Tip | Ahead | Base | On `origin` | Verified | Why this position |
 |---:|---|---|---:|---|---|---|---|
-| 1 | `bug/linux-gcc-build` | `9a6d45c6` | 1 | ⚠️ old (`a4f01e8d`) — rebase | ⚠️ diverged | ⚠️ never | one line: the VTK floor to 9.5.2 (Q2); the GCC fixes went obsolete with upstream's Qt 6.9.3 floor |
-| 2 | `bug/rf-crashes-and-full-extent` | `a9b09a91` | 0 | ⚠️ old (`a9b09a91`) — rebase | ✅ in sync | ✅ `a9b09a91` | one bug-fix PR (Jilei, 2026-10-28, 2026-11-02): free rotation (Fixes #229), the full-extent fix with its test, and the two RF/Layer Inspector crash guards; replaces bug/rf-layer-crashes, bug/full-extent-off-by-one and bug/free-rotation-3d-sync |
-| 3 | `bug/4dcta-slice-order` | `b1da5935` | 1 | current | ✅ in sync | ✅ `b1da5935` | PR #307; reported on #128 against 4.6.0-beta1 (2026-11-03): the first 4D CTA time point loads upside down; one function and its test, on the current upstream/master |
-| 4 | `release/4.6.0-beta.2` | `7385e8fe` | 3 | current | ✅ in sync | ⚠️ never | PR #308; version bump + release notes for #306 and the 4D CTA fix (Jilei, 2026-11-04); its own PR like upstream's #303; not seen by the git hook (release/ prefix), so refresh Status by hand |
-| 5 | `test/seg-anchor-4d` | `bac56a42` | 1 | ⚠️ old (`a4f01e8d`) — rebase | ⚠️ diverged | ⚠️ never | tests only (seg_anchor with 4D data) |
-| 6 | `feature/cardiac-io` | `c9a4e4a1` | 13 | ⚠️ old (`a4f01e8d`) — rebase | ⚠️ diverged | ⚠️ never | largest; its echo read guards were dropped for upstream's d61b7418 |
+| 1 | `bug/large-image-loading` | `a725b797` | 3 | ⚠️ old (`1db8f623`) — rebase | ✅ in sync | ✅ `a725b797` | #146, for 4.6.0 (Jilei, 2026-11-17): Linux refused every image over 4 GB (free memory read as 0); 4D time points past 2^32 values showed an earlier time point; the macOS memory check refused images that fit |
+| 2 | `bug/linux-gcc-build` | `9a6d45c6` | 1 | ⚠️ old (`a4f01e8d`) — rebase | ⚠️ diverged | ⚠️ never | one line: the VTK floor to 9.5.2 (Q2); the GCC fixes went obsolete with upstream's Qt 6.9.3 floor |
+| 3 | `test/seg-anchor-4d` | `bac56a42` | 1 | ⚠️ old (`a4f01e8d`) — rebase | ⚠️ diverged | ⚠️ never | tests only (seg_anchor with 4D data) |
+| 4 | `feature/cardiac-io` | `c9a4e4a1` | 13 | ⚠️ old (`a4f01e8d`) — rebase | ⚠️ diverged | ⚠️ never | largest; its echo read guards were dropped for upstream's d61b7418 |
 
-**Pairwise merges:** all 15 pairs merge cleanly.
-**Ordering constraints:** queue order satisfies 1 of 1.
-**`staging/v460`** (`4ec6ac0b`): ⚠️ rebuild — not on the current `upstream/master`; missing `bug/rf-crashes-and-full-extent`, `bug/4dcta-slice-order`, `release/4.6.0-beta.2`; 6 commit(s) not on any queue branch (SPRINT_PLAN §7).
+**Pairwise merges:** all 6 pairs merge cleanly.
+**Ordering constraints:** queue order satisfies 0 of 0.
+**`staging/v460`** (`4ec6ac0b`): ⚠️ rebuild — not on the current `upstream/master`; missing `bug/large-image-loading`; 6 commit(s) not on any queue branch (SPRINT_PLAN §7).
 
-**Needs attention:** `bug/linux-gcc-build` is not on the current `upstream/master`; `bug/linux-gcc-build` differs from `origin/bug/linux-gcc-build`; `bug/linux-gcc-build` has never been verified; `bug/rf-crashes-and-full-extent` is not on the current `upstream/master`; `release/4.6.0-beta.2` has never been verified; `test/seg-anchor-4d` is not on the current `upstream/master`; `test/seg-anchor-4d` differs from `origin/test/seg-anchor-4d`; `test/seg-anchor-4d` has never been verified; `feature/cardiac-io` is not on the current `upstream/master`; `feature/cardiac-io` differs from `origin/feature/cardiac-io`; `feature/cardiac-io` has never been verified; `staging/v460` needs a rebuild.
+**Needs attention:** `bug/large-image-loading` is not on the current `upstream/master`; `bug/linux-gcc-build` is not on the current `upstream/master`; `bug/linux-gcc-build` differs from `origin/bug/linux-gcc-build`; `bug/linux-gcc-build` has never been verified; `test/seg-anchor-4d` is not on the current `upstream/master`; `test/seg-anchor-4d` differs from `origin/test/seg-anchor-4d`; `test/seg-anchor-4d` has never been verified; `feature/cardiac-io` is not on the current `upstream/master`; `feature/cardiac-io` differs from `origin/feature/cardiac-io`; `feature/cardiac-io` has never been verified; `staging/v460` needs a rebuild.
 <!-- AUTO:END -->
 
 ---

@@ -1046,6 +1046,84 @@ It also adds three fixes from earlier in the 4.6 cycle that the notes had missed
 
 ---
 
+## 15 · `bug/large-image-loading` — very large images: Linux memory check, 4D time points past 2³² values, macOS memory check (#146)
+
+> **New, 2026-11-17 (Jilei's call: "we do, credit them"), for 4.6.0. PR [#310](https://github.com/pyushkevich/itksnap/pull/310), opened 2026-11-17.** Three commits on `upstream/master`
+> `1db8f623`: `dfc09218` (Linux; Harry Carey / @PolarBean as co-author), `c085ad87` (64-bit offsets),
+> `a725b797` (macOS). Found in the v4.6.2 milestone triage the same day: the Linux bug was reported on
+> #146 on 2026-11-06, after Paul's 10-28 triage put #146 on 4.6.2, and nobody had replied.
+
+### PR description
+
+**Title:** Fix three problems loading very large images (#146)
+
+Fixes #146: three problems with very large images. Thanks to @PolarBean, who found the Linux problem, worked out its cause, and confirmed the fix with their own 8.9 GB image.
+
+**1. Linux refused every image larger than 4 GB.** Before loading, ITK-SNAP checks that the image fits in the free memory. On Linux, that check always read the free memory as 0, then fell back to a fixed 4 GB limit. So any image over 4 GB was refused with "only 0.0 GB is currently available", even on a machine with 100 GB free. ITK-SNAP 4.4 has no such check, so this is new in the 4.6 betas. The check now reads the free memory correctly.
+
+**2. Large 4D images showed the wrong data in later time points.** Once a time point started more than about 4 billion values into the image (4 GB of 8-bit data, 16 GB of floating point), ITK-SNAP lost track of where it began. It showed an earlier time point instead, with no error. This is also in 4.4. Every time point is now found correctly, and so is a single 3D image of more than 4 billion values. A similar count that is too small on Windows, in the code that converts pixel types, is fixed too.
+
+**3. On macOS, the memory check refused images that would fit.** It counted only part of the memory macOS can give a program, and left out memory the system frees on demand, such as file cache. The check now uses the share of memory that macOS itself reports as free. If macOS doesn't provide that figure, the check works as before.
+
+**What users will notice**
+
+| Image | Before | After |
+|---|---|---|
+| Any image over 4 GB, on Linux | refused: "only 0.0 GB is currently available" | loads if it fits in the free memory |
+| A 5 GB image on a 16 GB Mac in everyday use | refused: the check allowed between 4 and 5 GB, depending on the moment | loads |
+| A 4D image of more than 4 billion values in all | the time points past that point show an earlier time point | every time point shows its own data |
+| Any image that loaded before | | unchanged |
+
+The Linux rows come from the code and from @PolarBean's test; the others were measured on a 16 GB Mac (see Testing).
+
+**Testing**
+- A new check in `TestLargeImageCheck` fails if the free-memory reading is 0 on Linux, macOS or Windows. Before this change it would have failed on Linux.
+- Synthetic NIfTI images on a 16 GB Apple M3 Mac, where each time point or slice holds a known value:
+  - **4D, 256 × 256 × 256 × 257 voxels, 8-bit (4.0 GB).** Time point 257 starts exactly 2³² values into the image. With this change, time points 1, 2, 256 and 257 each show their own value. With only the fix for problem 2 taken out, time point 257 shows the value of time point 1.
+  - **3D, 1750³ voxels, 8-bit (5.0 GB, more than 2³² values).** It loads, and slices 11, 1001 and 1701 show the right values. At the same time, the old memory check on this Mac read 5.5 GB free and so allowed 4.9 GB: it would have refused this image. The new check read 8.5 GB.
+- The full test suite on macOS: 81 of 82 on the first run. The one failure was `SegmentationAutosave`, where the recovered segmentation counted 726 painted voxels instead of 676. It then passed 3 times out of 3 on its own. It shares no code with this change, and looks like a timing problem in that test; we'll look at it separately.
+- Not run on Linux: our Linux machine can't build with the current Qt requirement. @PolarBean's build with their one-line version of the same fix loads their 8.9 GB image.
+- Problem 2 has no automated test, because reaching it needs a 4D image of more than 4 GB in memory, more than the CI machines can spare.
+
+### Review notes (planning meeting)
+
+- **Linux, mechanism:** `GetAvailableMemory()` looped `meminfo >> key >> val`. Line 1 parses; on line 2
+  `key` gets `kB` and `val` fails on `MemFree:`, so the stream fails before `MemAvailable` (line 3). The
+  result is 0, and `CheckImageFitsInMemory` uses `4ULL << 30` when the query returns 0. Reproduced with
+  the loop on a sample `/proc/meminfo` (0 GB; fixed loop 98.7 GB, also with a unit-less line). The
+  reporter's fix (`>> key >> val >> unit`) works only because `MemAvailable` comes before the unit-less
+  lines; ours skips to the end of each line instead.
+- **Linux, history:** the reader came in with Jilei's `3b4a1f5c` (2026-02-28, the out-of-memory dialog);
+  Paul's `82a2418c` (2026-10-12, D9) extended the check to DICOM series. Not in 4.4.0 (`20f63186`).
+  `TestLargeImageCheck` sized its oversized image at 8 GB when the query returned 0, so Linux CI passed.
+- **Offsets:** `ConfigureTimePointImageFromImage4D` (three specializations in `ImageWrapper.cxx`) used
+  `unsigned int nt, bytes_per_volume`, and `bytes_per_volume * tp` was computed in 32 bits.
+  `bytes_per_volume` is really an element count. Also truncated: the size of a single volume above 2³²
+  elements (`nt` = 1). Same lines in 4.4.0. `unsigned long nval` in the pixel-type conversion loop is
+  32-bit under MSVC. The 4D DICOM assembly (`ElementIdType`) was already 64-bit.
+- **Why ship the offsets with the Linux fix:** the broken Linux check capped everything at 4 GB, which
+  hid the wrap on Linux. Fixing the check alone would turn a refusal into silently wrong time points.
+- **macOS:** `kern.memorystatus_level` (the percentage `memory_pressure` prints) × `hw.memsize`; falls back
+  to free + inactive pages if the sysctl fails, so the limit is never stricter than before. It is not a
+  documented Apple API, but Apple's own tool reports it. If it ever returns nothing, the fallback applies
+  and `TestAvailableMemoryKnown` still passes, because the fallback is non-zero.
+- **Checked (2026-11-17, macOS arm64, 16 GB):** build 821/821, 0 errors, no new warnings.
+  `TestLargeImageCheck` passes (9.28 GB available). Full suite **81/82**: `SegmentationAutosave` failed
+  once (recovered file 726 voxels vs 676), then passed 3/3 alone at 42 s. It is new to our records;
+  W8 candidate. Canaries ran for real: `RandomForestBailOut` 21.2 s, `4DContinuousRendering` 38.6 s,
+  `MeshWorkspace` 47.7 s; `4DReplayWithMeshUpdate` and all remote tests passed.
+- **Large-image runs** (scripts and generators in the session scratchpad, images deleted; `--test <script>`
+  reads the voxel under the cursor):
+  - 4D 256³ × 257 uint8, frame t = t % 250 + 1: after, time points 1/2/256/257 read 1/2/6/7. With
+    `c085ad87` reverted (only the app rebuilt), time point 257 read **1**.
+  - 3D 1750³ uint8, slice z = z % 250 + 1: after, slices 11/1001/1701 read 11/1/201.
+  - Back-to-back `TestLargeImageCheck`: old build (`build-4dcta-slice-order`) 5.49 GB available (limit
+    4.9 GB, so the 5.0 GB image is refused); new 8.48 GB. Earlier the same day the old reading was 4.6
+    GB (limit 4.1 GB). The old reading moves with the inactive-page count.
+- **Not run:** Linux (Qt ≥ 6.9.3 floor, W8 42) and Windows. Problem 2 has no CI test (needs > 4 GB).
+
+---
+
 ## Not branched
 
 | What | Why |
